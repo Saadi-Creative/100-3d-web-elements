@@ -10,173 +10,119 @@
         canvas { display: block; position: fixed; inset: 0; z-index: 0; pointer-events: none; }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root">
+        <div class="w-full h-screen relative flex items-center justify-center">
+            
+            <canvas id="cyber-grid"></canvas>
 
-    <script type="text/babel" data-type="module">
-        import React, { useEffect, useRef } from 'react';
-        import { createRoot } from 'react-dom/client';
-
-        // --- HIGH PERFORMANCE NATIVE HTML5 CANVAS ENGINE ---
-        // Completely bypasses React renders for the mouse movement mathematics to ensure perfectly locked 60FPS.
-        
-        const CyberGridCanvas = () => {
-            const canvasRef = useRef(null);
-            const mouseRef = useRef({ x: -1000, y: -1000 }); // track mouse natively
-
-            useEffect(() => {
-                const canvas = canvasRef.current;
-                const ctx = canvas.getContext('2d');
-                let animationFrameId;
-                
-                let width, height;
-                const spacing = 40; // Grid cell size
-                const radius = 200; // How far the gravitational pull reaches
-                const strength = 35; // Maximum pixel distortion at the apex
-
-                const resize = () => {
-                    // Set canvas size natively
-                    width = window.innerWidth;
-                    height = window.innerHeight;
-                    // Handle high-DPI (Retina) displays for crisp lines
-                    const dpr = window.devicePixelRatio || 1;
-                    canvas.width = width * dpr;
-                    canvas.height = height * dpr;
-                    ctx.scale(dpr, dpr);
-                    canvas.style.width = `${width}px`;
-                    canvas.style.height = `${height}px`;
-                };
-
-                const handleMouseMove = (e) => {
-                    mouseRef.current.x = e.clientX;
-                    mouseRef.current.y = e.clientY;
-                };
-
-                const handleMouseLeave = () => {
-                    mouseRef.current.x = -1000;
-                    mouseRef.current.y = -1000;
-                };
-
-                window.addEventListener('resize', resize);
-                window.addEventListener('mousemove', handleMouseMove);
-                window.addEventListener('mouseleave', handleMouseLeave);
-                resize(); // Initial sizing
-
-                const render = () => {
-                    ctx.clearRect(0, 0, width, height);
-                    ctx.strokeStyle = 'rgba(16, 185, 129, 0.15)'; // Neon Emerald
-                    ctx.lineWidth = 1;
-                    ctx.lineCap = 'round';
-                    ctx.lineJoin = 'round';
-
-                    const mx = mouseRef.current.x;
-                    const my = mouseRef.current.y;
-
-                    // Helper function to calculate a vertex's warped coordinate
-                    const getWarpedPoint = (px, py) => {
-                        const dx = px - mx;
-                        const dy = py - my;
-                        const dist = Math.hypot(dx, dy);
-
-                        // If point is outside the radius, NO mathematical warp at all
-                        if (dist > radius || mx < 0) return { x: px, y: py };
-
-                        // Topographical physics calculation (Gravity Well)
-                        // Uses a bell curve shape so it smoothly repels the lines
-                        const force = Math.max(0, 1 - (dist / radius));
-                        // Shift it outward along the angle vector
-                        const angle = Math.atan2(dy, dx);
-                        const pushDist = (Math.sin(force * Math.PI / 2)) * strength;
-                        
-                        return {
-                            x: px + Math.cos(angle) * pushDist,
-                            y: py + Math.sin(angle) * pushDist
-                        };
-                    };
-
-                    ctx.beginPath();
-
-                    // Draw Horizontal Lines (Iterating down)
-                    for (let y = 0; y <= height + spacing; y += spacing) {
-                        for (let x = 0; x <= width + spacing; x += spacing) {
-                            const start = getWarpedPoint(x, y);
-                            if (x === 0) ctx.moveTo(start.x, start.y);
-                            else ctx.lineTo(start.x, start.y);
-                        }
-                    }
-
-                    // Draw Vertical Lines (Iterating across)
-                    for (let x = 0; x <= width + spacing; x += spacing) {
-                        for (let y = 0; y <= height + spacing; y += spacing) {
-                            const start = getWarpedPoint(x, y);
-                            if (y === 0) ctx.moveTo(start.x, start.y);
-                            else ctx.lineTo(start.x, start.y);
-                        }
-                    }
-
-                    ctx.stroke();
-
-                    // Draw a glowing beacon at the exact cursor spot onto the canvas layer uniquely
-                    if (mx > 0 && my > 0) {
-                        ctx.beginPath();
-                        const gradient = ctx.createRadialGradient(mx, my, 0, mx, my, radius);
-                        gradient.addColorStop(0, 'rgba(16, 185, 129, 0.2)');
-                        gradient.addColorStop(1, 'transparent');
-                        ctx.fillStyle = gradient;
-                        ctx.arc(mx, my, radius, 0, Math.PI * 2);
-                        ctx.fill();
-                    }
-
-                    animationFrameId = window.requestAnimationFrame(render);
-                };
-
-                render();
-
-                return () => {
-                    window.removeEventListener('resize', resize);
-                    window.removeEventListener('mousemove', handleMouseMove);
-                    window.removeEventListener('mouseleave', handleMouseLeave);
-                    window.cancelAnimationFrame(animationFrameId);
-                };
-            }, []);
-
-            return <canvas ref={canvasRef} />;
-        };
-
-        const App = () => {
-            return (
-                <div className="w-full h-screen relative flex items-center justify-center">
-                    
-                    {/* The Background Engine */}
-                    <CyberGridCanvas />
-
-                    {/* Simple React UI layered on top */}
-                    <div className="relative z-10 text-center max-w-2xl px-6 pointer-events-none">
-                        <div className="inline-block p-4 bg-emerald-500/10 rounded-full mb-6 border border-emerald-500/30 backdrop-blur-sm">
-                            <svg className="w-8 h-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" /></svg>
-                        </div>
-                        <h1 className="text-5xl font-black text-white tracking-tighter mb-4 drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]">Topographical Grid</h1>
-                        <p className="text-slate-400 font-medium leading-relaxed">
-                            Move your cursor. Utilizing raw HTML5 Canvas mathematical path rendering tied to <code className="text-emerald-400">requestAnimationFrame</code>. It creates a physical gravity well that repels the intersecting vectors, completely independent of the React render cycle.
-                        </p>
-                    </div>
-
+            <div class="relative z-10 text-center max-w-2xl px-6 pointer-events-none">
+                <div class="inline-block p-4 bg-emerald-500/10 rounded-full mb-6 border border-emerald-500/30 backdrop-blur-sm">
+                    <svg class="w-8 h-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" /></svg>
                 </div>
-            );
-        };
+                <h1 class="text-5xl font-black text-white tracking-tighter mb-4 drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]">Topographical Grid</h1>
+                <p class="text-slate-400 font-medium leading-relaxed">
+                    Move your cursor. Utilizing raw HTML5 Canvas mathematical path rendering tied to <code class="text-emerald-400">requestAnimationFrame</code>. It creates a physical gravity well that repels the intersecting vectors, completely independent of the React render cycle.
+                </p>
+            </div>
 
-        createRoot(document.getElementById('root')).render(<App />);
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('cyber-grid');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        const spacing = 40; 
+        const radius = 200; 
+        const strength = 35; 
+        
+        let mx = -1000;
+        let my = -1000;
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            ctx.scale(dpr, dpr);
+            canvas.style.width = `${width}px`;
+            canvas.style.height = `${height}px`;
+        }
+
+        window.addEventListener('resize', resize);
+        window.addEventListener('mousemove', (e) => {
+            mx = e.clientX;
+            my = e.clientY;
+        });
+        window.addEventListener('mouseleave', () => {
+            mx = -1000;
+            my = -1000;
+        });
+        
+        resize();
+
+        function getWarpedPoint(px, py) {
+            const dx = px - mx;
+            const dy = py - my;
+            const dist = Math.hypot(dx, dy);
+
+            if (dist > radius || mx < 0) return { x: px, y: py };
+
+            const force = Math.max(0, 1 - (dist / radius));
+            const angle = Math.atan2(dy, dx);
+            const pushDist = (Math.sin(force * Math.PI / 2)) * strength;
+            
+            return {
+                x: px + Math.cos(angle) * pushDist,
+                y: py + Math.sin(angle) * pushDist
+            };
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.strokeStyle = 'rgba(16, 185, 129, 0.15)';
+            ctx.lineWidth = 1;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            ctx.beginPath();
+
+            for (let y = 0; y <= height + spacing; y += spacing) {
+                for (let x = 0; x <= width + spacing; x += spacing) {
+                    const start = getWarpedPoint(x, y);
+                    if (x === 0) ctx.moveTo(start.x, start.y);
+                    else ctx.lineTo(start.x, start.y);
+                }
+            }
+
+            for (let x = 0; x <= width + spacing; x += spacing) {
+                for (let y = 0; y <= height + spacing; y += spacing) {
+                    const start = getWarpedPoint(x, y);
+                    if (y === 0) ctx.moveTo(start.x, start.y);
+                    else ctx.lineTo(start.x, start.y);
+                }
+            }
+
+            ctx.stroke();
+
+            if (mx > 0 && my > 0) {
+                ctx.beginPath();
+                const gradient = ctx.createRadialGradient(mx, my, 0, mx, my, radius);
+                gradient.addColorStop(0, 'rgba(16, 185, 129, 0.2)');
+                gradient.addColorStop(1, 'transparent');
+                ctx.fillStyle = gradient;
+                ctx.arc(mx, my, radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            requestAnimationFrame(render);
+        }
+
+        render();
     </script>
 </body>
 </html>

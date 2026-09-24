@@ -3,171 +3,282 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reverse Shell Tunnel</title>
-    <script>
-        const origWarn = console.warn;
-        console.warn = function(...args) {
-            const msg = args[0];
-            if (typeof msg === 'string' && (msg.includes('Babel') || msg.includes('Tailwind') || msg.includes('tailwindcss'))) return;
-            origWarn.apply(console, args);
-        };
-    </script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Reverse Shell Hex-Tunnel</title>
+    <link rel="stylesheet" href="../../styles/shared.css">
     <style>
-        body { margin: 0; background: #020804; min-height: 400vh; overflow-x: hidden; font-family: 'Inter', sans-serif; color: #aaffaa; }
-        #root { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; z-index: -1; pointer-events: none;}
-        .content { position: absolute; top: 0; left: 0; width: 100%; pointer-events: none; z-index: 10;}
-        .section { height: 100vh; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; padding: 15vh 10vw;}
-        .terminal-box { background: rgba(0, 20, 0, 0.7); border: 1px solid #00ff44; padding: 2rem; border-radius: 8px; backdrop-filter: blur(4px); max-width: 600px; box-shadow: 0 0 20px rgba(0, 255, 68, 0.1); }
-        h1, h2, p { text-shadow: 0 2px 10px rgba(0,255,68,0.4); }
-        .cursor { display: inline-block; width: 10px; height: 1.2em; background: #00ff44; animation: blink 1s step-end infinite; vertical-align: bottom; }
-        @keyframes blink { 50% { opacity: 0; } }
-    </style>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.12?external=react,react-dom,three",
-            "three": "https://esm.sh/three@0.160.0"
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #010803;
+            min-height: 100vh;
+            overflow: hidden;
+            color: #4ade80;
+            font-family: var(--font-mono, monospace);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
         }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+        #webgl-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .terminal-overlay {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            background: rgba(1, 20, 8, 0.8);
+            border: 1px solid rgba(74, 222, 128, 0.4);
+            border-radius: 12px;
+            padding: 16px 20px;
+            backdrop-filter: blur(12px);
+            z-index: 10;
+            max-width: 440px;
+            box-shadow: 0 0 30px rgba(74, 222, 128, 0.15);
+            pointer-events: none;
+        }
+
+        .term-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid rgba(74, 222, 128, 0.2);
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+            font-size: 11px;
+            color: #86efac;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .term-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 8px #22c55e;
+        }
+
+        .term-line {
+            font-size: 12px;
+            line-height: 1.6;
+            color: #bbf7d0;
+        }
+
+        .term-highlight {
+            color: #4ade80;
+            font-weight: 700;
+        }
+
+        /* Controls Bottom Bar */
+        .controls-bar {
+            position: absolute;
+            bottom: 24px;
+            display: flex;
+            gap: 12px;
+            z-index: 20;
+        }
+
+        .btn-term {
+            background: rgba(2, 44, 18, 0.9);
+            border: 1px solid #22c55e;
+            color: #4ade80;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-family: var(--font-mono, monospace);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-term:hover {
+            background: #22c55e;
+            color: #010803;
+            box-shadow: 0 0 30px rgba(34, 197, 94, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .telemetry-right {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            font-family: var(--font-mono, monospace);
+            font-size: 10px;
+            color: #16a34a;
+            z-index: 10;
+            pointer-events: none;
+            text-align: right;
+        }
+    </style>
 </head>
 <body>
-    <div id="root"></div>
-    <div class="content" style="font-family: 'Fira Code', monospace;">
-        <div class="section">
-            <div class="terminal-box">
-                <h1 class="text-4xl font-bold mb-4 text-[#00ff44]">> _INITIALIZE_BREACH</h1>
-                <p class="text-lg text-[#88ffaa]">SYSTEM CONNECTED. ENCRYPTED TUNNEL ESTABLISHED.</p>
-                <p class="text-sm text-[#44aa66] mt-4">SCROLL DOWN TO PENETRATE DEEPER INTO THE NETWORK ARCHITECTURE.</p>
-            </div>
+
+    <canvas id="webgl-canvas"></canvas>
+
+    <div class="terminal-overlay">
+        <div class="term-header">
+            <span class="term-dot"></span>
+            <span>Reverse Encrypted Vector · Session #0x9F4A</span>
         </div>
-        <div class="section">
-            <div class="terminal-box ml-auto">
-                <h2 class="text-3xl font-semibold mb-3 text-[#00ff44]">> BYPASS_FIREWALL_LAYERS</h2>
-                <p class="text-lg text-[#88ffaa]">Analyzing proxy nodes and rerouting traffic through hexagonal vectors.</p>
-            </div>
-        </div>
-        <div class="section">
-            <div class="terminal-box">
-                <h2 class="text-3xl font-semibold mb-3 text-[#00ff44]">> INITIATE_HYPERSPEED</h2>
-                <p class="text-lg text-[#88ffaa]">Increase scroll velocity to warp the visual field of view (FOV). This simulates high-speed data exfiltration.</p>
-            </div>
-        </div>
-        <div class="section">
-            <div class="terminal-box mx-auto text-center" style="margin-top: 10vh;">
-                <h2 class="text-5xl font-bold mb-3 text-[#00ff44]">ROOT_ACCESS_GRANTED<span class="cursor"></span></h2>
-                <p class="text-xl text-[#88ffaa]">You have reached the core mainframe.</p>
-            </div>
-        </div>
+        <div class="term-line">> <span class="term-highlight">INITIATE_BREACH:</span> mTLS Proxy Cleared</div>
+        <div class="term-line">> Route: [IPv6/Hex] 2001:db8:85a3::8a2e:370:7334</div>
+        <div class="term-line">> Exfiltration Tunnel: <span class="term-highlight">ESTABLISHED (10 Gbps)</span></div>
+        <div class="term-line">> Tap [WARP EXFILTRATION] to ignite hyper-speed FOV stretch</div>
     </div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useRef, useMemo } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { Canvas, useFrame, useThree } from '@react-three/fiber';
-        import * as THREE from 'three';
+    <div class="controls-bar">
+        <button class="btn-term" id="warp-btn">
+            <span>⚡</span> WARP EXFILTRATION
+        </button>
+        <button class="btn-term" id="pulse-btn">
+            <span>📡</span> FIREWALL PROBE
+        </button>
+    </div>
 
-        const DataPacket = ({ index }) => {
-            const ref = useRef();
-            const startZ = useMemo(() => -250 + Math.random() * 300, []);
-            const speed = useMemo(() => 0.5 + Math.random() * 2.5, []);
-            const radius = useMemo(() => 0.03 + Math.random() * 0.08, []);
-            const angle = useMemo(() => Math.random() * Math.PI * 2, []);
-            const dist = useMemo(() => 1.5 + Math.random() * 6.5, []);
+    <div class="telemetry-right">
+        <div>PACKET FLUX: 1.48 TB/S</div>
+        <div id="depth-readout">TUNNEL DEPTH: 1,420m</div>
+    </div>
 
-            useFrame(({ clock }) => {
-                if(!ref.current) return;
-                const time = clock.getElapsedTime();
-                // Move towards camera repeatedly
-                let z = startZ + (time * speed * 25) % 350;
-                if (z > 60) z -= 350;
-                
-                ref.current.position.set(
-                    Math.cos(angle) * dist,
-                    Math.sin(angle) * dist,
-                    z
-                );
+    <script type="module">
+        import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+
+        const canvas = document.getElementById('webgl-canvas');
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x010803, 0.04);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 0, 0);
+
+        // Procedural Hexagonal Wireframe Ring Corridor
+        const RING_COUNT = 60;
+        const RING_SPACING = 1.2;
+        const rings = [];
+
+        const hexGeo = new THREE.CylinderGeometry(2.5, 2.5, 0.1, 6, 1, true);
+        const hexEdges = new THREE.EdgesGeometry(hexGeo);
+
+        for (let i = 0; i < RING_COUNT; i++) {
+            const mat = new THREE.LineBasicMaterial({
+                color: i % 4 === 0 ? 0x4ade80 : 0x15803d,
+                transparent: true,
+                opacity: 0.8
             });
+            const mesh = new THREE.LineSegments(hexEdges, mat);
+            mesh.position.z = -i * RING_SPACING;
+            mesh.rotation.x = Math.PI / 2;
+            mesh.rotation.z = (i * 0.1);
+            scene.add(mesh);
+            rings.push(mesh);
+        }
 
-            return (
-                <mesh ref={ref}>
-                    <sphereGeometry args={[radius, 8, 8]} />
-                    <meshBasicMaterial color="#aaffaa" />
-                </mesh>
-            );
-        };
+        // Particle Stream Corridor
+        const PARTICLE_COUNT = 1500;
+        const pGeo = new THREE.BufferGeometry();
+        const pPos = new Float32Array(PARTICLE_COUNT * 3);
 
-        const Tunnel = () => {
-            const meshRef = useRef();
-            const { camera } = useThree();
-            const lastScroll = useRef(window.scrollY);
-            const scrollVelocity = useRef(0);
-            
-            useFrame(({ clock }) => {
-                const scrollY = window.scrollY;
-                const delta = scrollY - lastScroll.current;
-                lastScroll.current = scrollY;
-                
-                // Track velocity with exponential smoothing
-                scrollVelocity.current += (delta - scrollVelocity.current) * 0.1;
-                
-                const time = clock.getElapsedTime();
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+            const theta = Math.random() * Math.PI * 2;
+            const r = 0.5 + Math.random() * 2.0;
+            pPos[i * 3] = Math.cos(theta) * r;
+            pPos[i * 3 + 1] = Math.sin(theta) * r;
+            pPos[i * 3 + 2] = -Math.random() * (RING_COUNT * RING_SPACING);
+        }
 
-                // Move camera down the Z axis
-                // Start at z = 50, move deep to negative z
-                camera.position.z = 50 - scrollY * 0.06; 
-                
-                // FoV warp effect based on absolute velocity (Hyperspeed!)
-                // Base FOV 60, stretches up to 130 when scrolling fast
-                const targetFov = 60 + Math.min(Math.abs(scrollVelocity.current) * 1.5, 70);
-                camera.fov += (targetFov - camera.fov) * 0.1;
-                camera.updateProjectionMatrix();
+        pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+        const pMat = new THREE.PointsMaterial({
+            color: 0x86efac,
+            size: 0.04,
+            transparent: true,
+            opacity: 0.7
+        });
+        const particles = new THREE.Points(pGeo, pMat);
+        scene.add(particles);
 
-                // Rotate the main cylinder
-                if(meshRef.current) {
-                    meshRef.current.rotation.y = time * 0.15;
-                    // Slightly tilt the tunnel to make it feel organic/curved
-                    meshRef.current.rotation.x = Math.PI / 2 + Math.sin(time * 0.4) * 0.05;
-                    meshRef.current.rotation.z = Math.cos(time * 0.3) * 0.05;
+        let speed = 8.0;
+        let targetSpeed = 8.0;
+        let isWarping = false;
+
+        document.getElementById('warp-btn').addEventListener('click', () => {
+            isWarping = !isWarping;
+            targetSpeed = isWarping ? 32.0 : 8.0;
+            camera.fov = isWarping ? 85 : 60;
+            camera.updateProjectionMatrix();
+        });
+
+        document.getElementById('pulse-btn').addEventListener('click', () => {
+            rings.forEach(r => {
+                r.material.color.setHex(0xffffff);
+                setTimeout(() => r.material.color.setHex(0x4ade80), 300);
+            });
+        });
+
+        // Mouse Steering
+        let mouseX = 0;
+        let mouseY = 0;
+        window.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+            mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+        });
+
+        let totalDistance = 0;
+        const depthReadout = document.getElementById('depth-readout');
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+
+            speed += (targetSpeed - speed) * 0.05;
+            totalDistance += speed * delta * 10;
+            depthReadout.textContent = `TUNNEL DEPTH: ${Math.floor(totalDistance)}m`;
+
+            // Camera subtle lag steer
+            camera.position.x += (mouseX * 0.6 - camera.position.x) * 0.05;
+            camera.position.y += (-mouseY * 0.6 - camera.position.y) * 0.05;
+            camera.rotation.z += 0.005;
+
+            // Move rings toward camera and cycle to back
+            const maxZ = RING_COUNT * RING_SPACING;
+            rings.forEach(r => {
+                r.position.z += speed * delta;
+                if (r.position.z > 2.0) {
+                    r.position.z -= maxZ;
                 }
             });
 
-            return (
-                <mesh ref={meshRef} position={[0, 0, -100]}>
-                    {/* length 400 is enough for 400vh scrolling at 0.06 multiplier (400vh ~= 3500px -> 210 units) */}
-                    <cylinderGeometry args={[5, 12, 400, 6, 80, true]} />
-                    <meshBasicMaterial 
-                        color="#00ff44" 
-                        wireframe={true} 
-                        transparent 
-                        opacity={0.35} 
-                        fog={true}
-                    />
-                </mesh>
-            );
-        };
+            // Move particles
+            const pArray = pGeo.attributes.position.array;
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                pArray[i * 3 + 2] += speed * delta * 1.5;
+                if (pArray[i * 3 + 2] > 2.0) {
+                    pArray[i * 3 + 2] -= maxZ;
+                }
+            }
+            pGeo.attributes.position.needsUpdate = true;
 
-        const App = () => {
-            return (
-                <Canvas camera={{ position: [0, 0, 50], fov: 60 }}>
-                    <color attach="background" args={['#020804']} />
-                    <fog attach="fog" args={['#020804', 15, 90]} />
-                    <Tunnel />
-                    
-                    {Array.from({ length: 200 }).map((_, i) => (
-                        <DataPacket key={i} index={i} />
-                    ))}
-                </Canvas>
-            );
-        };
+            renderer.render(scene, camera);
+        }
 
-        const root = createRoot(document.getElementById('root'));
-        root.render(<App />);
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
     </script>
 </body>
 </html>

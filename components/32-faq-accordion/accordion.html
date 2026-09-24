@@ -1,289 +1,233 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Cascading FAQ Accordion</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] }
-                }
-            }
-        }
-    </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: #08080c;
-            min-height: 100vh;
-            font-family: 'Inter', sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            overflow-x: hidden;
-        }
-        #root { width: 100%; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 40px 20px; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>32 - Cascading 3D Folder Deck FAQ</title>
+  <link rel="stylesheet" href="../../styles/shared.css" />
+  <style>
+    .demo-container {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-8);
+      background: radial-gradient(circle at 50% 30%, #1e1b4b 0%, #020617 80%);
+      font-family: var(--font-sans);
+      perspective: 1200px;
+    }
+
+    .faq-header {
+      text-align: center;
+      margin-bottom: var(--space-8);
+    }
+
+    .faq-title {
+      font-size: var(--text-3xl);
+      font-weight: 800;
+      color: var(--text-heading);
+      letter-spacing: var(--tracking-tight);
+    }
+
+    .faq-sub {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      letter-spacing: var(--tracking-wider);
+      text-transform: uppercase;
+      margin-top: var(--space-2);
+    }
+
+    /* Accordion Stack */
+    .faq-stack {
+      width: 100%;
+      max-width: 580px;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+      transform-style: preserve-3d;
+    }
+
+    /* 3D Folder Card */
+    .faq-card {
+      border-radius: var(--radius-2xl);
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-lg);
+      transform-style: preserve-3d;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer;
+      overflow: hidden;
+      outline: none;
+    }
+
+    .faq-card:hover {
+      border-color: var(--border-strong);
+      transform: translateY(-2px);
+    }
+
+    .faq-card.is-open {
+      border-color: rgba(99, 102, 241, 0.6);
+      box-shadow: 0 20px 40px rgba(99, 102, 241, 0.2);
+    }
+
+    .card-header {
+      padding: var(--space-5) var(--space-6);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .card-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      background: var(--surface-overlay);
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: var(--text-base);
+    }
+
+    .card-question {
+      font-size: var(--text-sm);
+      font-weight: 700;
+      color: var(--text-heading);
+    }
+
+    .card-category {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: var(--tracking-wider);
+      text-transform: uppercase;
+      color: var(--accent-base);
+    }
+
+    .toggle-arrow {
+      font-size: var(--text-sm);
+      color: var(--text-subtle);
+      transition: transform 0.3s ease;
+    }
+
+    .faq-card.is-open .toggle-arrow {
+      transform: rotate(180deg);
+      color: var(--accent-base);
+    }
+
+    .card-body {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      padding: 0 var(--space-6);
+      transition: max-height 0.4s ease, opacity 0.3s ease, padding 0.3s ease;
+      color: var(--text-muted);
+      font-size: var(--text-xs);
+      line-height: var(--leading-relaxed);
+      border-top: 1px solid transparent;
+    }
+
+    .faq-card.is-open .card-body {
+      max-height: 200px;
+      opacity: 1;
+      padding: var(--space-4) var(--space-6) var(--space-6);
+      border-top-color: var(--border-subtle);
+    }
+  </style>
 </head>
 <body>
-    <div id="root"></div>
+  <div class="demo-container">
+    <div class="faq-header">
+      <h1 class="faq-title">Frequently Asked Questions</h1>
+      <p class="faq-sub">Cascading 3D Folder Deck</p>
+    </div>
 
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@11.0.8?external=react,react-dom"
+    <div class="faq-stack" role="region" aria-label="FAQ Accordion">
+      <!-- Item 1 -->
+      <div class="faq-card is-open" tabindex="0" role="button" aria-expanded="true">
+        <div class="card-header">
+          <div class="header-left">
+            <div class="card-icon">🚀</div>
+            <div>
+              <span class="card-category">Getting Started</span>
+              <h2 class="card-question">How do I integrate 3D web components?</h2>
+            </div>
+          </div>
+          <span class="toggle-arrow">▼</span>
+        </div>
+        <div class="card-body">
+          Every component in this library is standalone, lightweight, and hardware-accelerated. You can drop them into any web framework or vanilla project with zero bundle overhead.
+        </div>
+      </div>
+
+      <!-- Item 2 -->
+      <div class="faq-card" tabindex="0" role="button" aria-expanded="false">
+        <div class="card-header">
+          <div class="header-left">
+            <div class="card-icon">🔒</div>
+            <div>
+              <span class="card-category">Security</span>
+              <h2 class="card-question">Is telemetry encrypted at rest?</h2>
+            </div>
+          </div>
+          <span class="toggle-arrow">▼</span>
+        </div>
+        <div class="card-body">
+          All data is encrypted using AES-256 at rest and TLS 1.3 in transit. Enterprise customers benefit from dedicated key management and zero-knowledge storage.
+        </div>
+      </div>
+
+      <!-- Item 3 -->
+      <div class="faq-card" tabindex="0" role="button" aria-expanded="false">
+        <div class="card-header">
+          <div class="header-left">
+            <div class="card-icon">⚡</div>
+            <div>
+              <span class="card-category">Performance</span>
+              <h2 class="card-question">What are the frame rate performance guarantees?</h2>
+            </div>
+          </div>
+          <span class="toggle-arrow">▼</span>
+        </div>
+        <div class="card-body">
+          All shaders and 3D transforms are capped for low-spec mobile and integrated GPU devices to guarantee consistent 60fps rendering without memory leaks.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const cards = document.querySelectorAll('.faq-card');
+
+    cards.forEach((card) => {
+      card.addEventListener('click', () => {
+        const isOpen = card.classList.contains('is-open');
+        cards.forEach((c) => {
+          c.classList.remove('is-open');
+          c.setAttribute('aria-expanded', 'false');
+        });
+
+        if (!isOpen) {
+          card.classList.add('is-open');
+          card.setAttribute('aria-expanded', 'true');
         }
-    }
-    </script>
+      });
 
-    <script>
-        const origWarn = console.warn;
-        console.warn = function(...args) {
-            if (args[0] && typeof args[0] === 'string' && (args[0].includes('in-browser Babel transformer') || args[0].includes('cdn.tailwindcss.com should not be used in production'))) return;
-            origWarn.apply(console, args);
-        };
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-    <script type="text/babel" data-type="module">
-        import React, { useState } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, AnimatePresence } from 'framer-motion';
-
-        const faqData = [
-            {
-                id: 1, category: 'Getting Started',
-                question: 'How do I create my first project?',
-                answer: 'Navigate to the dashboard and click "New Project". Choose a template or start from scratch. Our AI-powered wizard will guide you through setting up your workspace, configuring integrations, and deploying your first build in under 5 minutes.',
-                icon: '🚀', accent: '#818cf8'
-            },
-            {
-                id: 2, category: 'Billing',
-                question: 'What payment methods do you accept?',
-                answer: 'We accept all major credit cards (Visa, Mastercard, Amex), PayPal, wire transfers, and cryptocurrency (BTC, ETH). Enterprise customers can also request invoice-based billing with NET-30 terms. All transactions are encrypted with bank-level AES-256 security.',
-                icon: '💳', accent: '#34d399'
-            },
-            {
-                id: 3, category: 'Security',
-                question: 'Is my data encrypted at rest?',
-                answer: 'Absolutely. All data is encrypted using AES-256 at rest and TLS 1.3 in transit. We maintain SOC 2 Type II compliance and undergo regular third-party penetration testing. Your encryption keys are managed through AWS KMS with automatic rotation every 90 days.',
-                icon: '🔒', accent: '#f472b6'
-            },
-            {
-                id: 4, category: 'API',
-                question: 'What are the API rate limits?',
-                answer: 'Free tier: 1,000 requests/minute. Pro tier: 10,000 requests/minute. Enterprise: unlimited with dedicated infrastructure. All tiers include burst allowance of 2x for 30 seconds. Rate limit headers (X-RateLimit-*) are included in every response for real-time monitoring.',
-                icon: '⚡', accent: '#fbbf24'
-            },
-            {
-                id: 5, category: 'Support',
-                question: 'How do I reach the support team?',
-                answer: 'You can reach us through live chat (24/7), email at support@platform.io (< 2hr response), or schedule a video call with a specialist. Pro and Enterprise customers get a dedicated Slack channel with direct access to our engineering team.',
-                icon: '💬', accent: '#06b6d4'
-            },
-            {
-                id: 6, category: 'Integrations',
-                question: 'Which third-party tools can I connect?',
-                answer: 'We support 200+ integrations including Slack, GitHub, Jira, Figma, Notion, Linear, Zapier, and all major CI/CD pipelines. Our webhook system and OAuth 2.0 support make custom integrations straightforward — most developers ship them in under an hour.',
-                icon: '🔗', accent: '#a78bfa'
-            }
-        ];
-
-        /* ──────────── Single FAQ Card ──────────── */
-        const FAQCard = ({ item, isOpen, index, openIndex, onClick, totalCards }) => {
-            const isBelowOpen = openIndex !== null && index > openIndex;
-            const distanceFromOpen = openIndex !== null ? Math.abs(index - openIndex) : index;
-
-            const tiltAngle = isBelowOpen ? Math.min(42 + distanceFromOpen * 3, 55) : 0;
-            const zOffset = isBelowOpen ? -distanceFromOpen * 18 : 0;
-            const yOffset = isBelowOpen ? distanceFromOpen * -6 : 0;
-            const scaleVal = isBelowOpen ? Math.max(1 - distanceFromOpen * 0.03, 0.88) : 1;
-            const opacityVal = isBelowOpen ? Math.max(1 - distanceFromOpen * 0.15, 0.3) : 1;
-
-            return (
-                <motion.div
-                    layout
-                    onClick={onClick}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
-                    style={{
-                        transformPerspective: 1200,
-                        transformOrigin: 'center top',
-                        zIndex: isOpen ? 50 : totalCards - index,
-                        cursor: 'pointer',
-                        userSelect: 'none',
-                    }}
-                    animate={{
-                        rotateX: isOpen ? 0 : tiltAngle,
-                        translateZ: zOffset,
-                        translateY: yOffset,
-                        scale: scaleVal,
-                        opacity: opacityVal,
-                    }}
-                    transition={{ type: 'spring', stiffness: 260, damping: 28, mass: 0.8 }}
-                    className="relative group"
-                >
-                    {/* Entire Card Surface — one single click target */}
-                    <motion.div
-                        layout
-                        className="rounded-2xl overflow-hidden border relative"
-                        style={{
-                            background: isOpen
-                                ? `linear-gradient(135deg, ${item.accent}12, ${item.accent}06, rgba(20,20,30,0.95))`
-                                : 'rgba(18,18,28,0.92)',
-                            borderColor: isOpen ? `${item.accent}40` : 'rgba(255,255,255,0.06)',
-                            boxShadow: isOpen
-                                ? `0 20px 60px ${item.accent}15, 0 0 40px ${item.accent}08, inset 0 1px 0 rgba(255,255,255,0.06)`
-                                : '0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)',
-                        }}
-                    >
-                        {/* Glow line at top */}
-                        <motion.div
-                            className="absolute top-0 left-0 right-0 h-[2px] pointer-events-none"
-                            animate={{
-                                background: isOpen
-                                    ? `linear-gradient(90deg, transparent, ${item.accent}, transparent)`
-                                    : 'linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent)',
-                            }}
-                        />
-
-                        {/* Question Row */}
-                        <div className="flex items-center gap-4 px-6 py-5">
-                            <motion.div
-                                animate={{
-                                    background: isOpen ? `${item.accent}25` : 'rgba(255,255,255,0.05)',
-                                    scale: isOpen ? 1.05 : 1,
-                                }}
-                                className="w-12 h-12 rounded-xl flex items-center justify-center text-xl flex-shrink-0 pointer-events-none"
-                            >
-                                {item.icon}
-                            </motion.div>
-
-                            <div className="flex-1 min-w-0 pointer-events-none">
-                                <motion.span
-                                    className="block text-[10px] uppercase tracking-[2px] mb-1 font-semibold"
-                                    animate={{ color: isOpen ? item.accent : 'rgba(255,255,255,0.3)' }}
-                                >
-                                    {item.category}
-                                </motion.span>
-                                <h3 className="text-[15px] font-semibold text-white/90 leading-snug">
-                                    {item.question}
-                                </h3>
-                            </div>
-
-                            <motion.div
-                                animate={{ rotate: isOpen ? 180 : 0 }}
-                                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 pointer-events-none"
-                                style={{ background: isOpen ? `${item.accent}20` : 'rgba(255,255,255,0.04)' }}
-                            >
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={isOpen ? item.accent : 'rgba(255,255,255,0.4)'} strokeWidth="2.5" strokeLinecap="round">
-                                    <path d="M6 9l6 6 6-6" />
-                                </svg>
-                            </motion.div>
-                        </div>
-
-                        {/* Answer — Animated Height */}
-                        <AnimatePresence mode="sync">
-                            {isOpen && (
-                                <motion.div
-                                    initial={{ height: 0, opacity: 0 }}
-                                    animate={{ height: 'auto', opacity: 1 }}
-                                    exit={{ height: 0, opacity: 0 }}
-                                    transition={{
-                                        height: { type: 'spring', stiffness: 200, damping: 24 },
-                                        opacity: { duration: 0.25, delay: 0.05 },
-                                    }}
-                                    className="overflow-hidden"
-                                >
-                                    <div className="px-6 pb-6 pt-0">
-                                        <div className="h-px w-full mb-4 pointer-events-none" style={{ background: `linear-gradient(90deg, transparent, ${item.accent}30, transparent)` }} />
-                                        <p className="text-[14px] leading-relaxed text-white/55 pl-16 pointer-events-none">
-                                            {item.answer}
-                                        </p>
-                                        <div className="flex gap-3 mt-4 pl-16">
-                                            <button
-                                                className="px-4 py-2 rounded-lg text-[11px] font-semibold uppercase tracking-wider transition-all hover:scale-105 pointer-events-auto"
-                                                style={{ background: `${item.accent}15`, color: item.accent, border: `1px solid ${item.accent}30` }}
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                Learn More →
-                                            </button>
-                                            <button
-                                                className="px-4 py-2 rounded-lg text-[11px] font-semibold uppercase tracking-wider text-white/40 bg-white/[0.03] border border-white/[0.06] transition-all hover:bg-white/[0.06] hover:scale-105 pointer-events-auto"
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                Copy Link
-                                            </button>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </motion.div>
-
-                    {/* Physical Folder Shadow under tilted cards */}
-                    {isBelowOpen && (
-                        <div className="absolute inset-x-2 -bottom-1 h-3 rounded-b-xl pointer-events-none"
-                            style={{ background: `linear-gradient(to bottom, ${item.accent}08, transparent)`, filter: 'blur(4px)' }} />
-                    )}
-                </motion.div>
-            );
-        };
-
-        /* ──────────── Main App ──────────── */
-        const App = () => {
-            const [openIndex, setOpenIndex] = useState(0);
-
-            return (
-                <div className="w-full max-w-2xl mx-auto">
-                    <div className="text-center mb-12">
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-                            <span className="inline-block px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-[3px] mb-5"
-                                style={{ background: 'rgba(129,140,248,0.1)', color: '#818cf8', border: '1px solid rgba(129,140,248,0.2)' }}>
-                                Help Center
-                            </span>
-                            <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4"
-                                style={{ background: 'linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.6) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                                Frequently Asked<br />Questions
-                            </h1>
-                            <p className="text-white/30 text-sm max-w-md mx-auto leading-relaxed">
-                                Click any question to unfold it from the 3D stack.
-                            </p>
-                        </motion.div>
-                    </div>
-
-                    <motion.div className="flex flex-col gap-3" style={{ transformPerspective: 1400, transformStyle: 'preserve-3d' }}>
-                        {faqData.map((item, index) => (
-                            <FAQCard
-                                key={item.id}
-                                item={item}
-                                index={index}
-                                isOpen={openIndex === index}
-                                openIndex={openIndex}
-                                totalCards={faqData.length}
-                                onClick={() => setOpenIndex(openIndex === index ? null : index)}
-                            />
-                        ))}
-                    </motion.div>
-
-                    <motion.div className="text-center mt-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}>
-                        <p className="text-[11px] text-white/15 uppercase tracking-[3px]">✦ CSS 3D Transforms · Framer Motion · Zero WebGL ✦</p>
-                    </motion.div>
-                </div>
-            );
-        };
-
-        const root = createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          card.click();
+        }
+      });
+    });
+  </script>
 </body>
 </html>

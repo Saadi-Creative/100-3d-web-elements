@@ -8,139 +8,198 @@
     <style>
         body { margin: 0; background: #0f172a; min-height: 100vh; overflow: hidden; font-family: 'Inter', sans-serif; }
         #root { width: 100%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; perspective: 1200px; }
+        
         .glass-panel {
             background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.02) 100%);
             backdrop-filter: blur(16px);
             border: 1px solid rgba(255,255,255,0.1);
             box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
         }
+        
+        .stack-container {
+            position: relative;
+            width: 20rem; /* w-80 */
+            height: 400px;
+            transform-style: preserve-3d;
+        }
+        
+        @media (min-width: 768px) {
+            .stack-container { width: 24rem; /* w-96 */ }
+        }
+
+        .notification {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            transform-origin: top center;
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.6s;
+            cursor: pointer;
+        }
+        
+        .notification.exiting {
+            transform: scale(0.5) !important;
+            opacity: 0 !important;
+            transition: transform 0.2s, opacity 0.2s;
+        }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-    <div id="root"></div>
-    <script type="text/babel" data-type="module">
-        import React, { useState } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, AnimatePresence } from 'framer-motion';
+    <div id="root">
+        <div class="w-full h-full relative flex flex-col items-center justify-start pt-32">
+            <div class="mb-20 text-center z-50">
+                <button id="triggerBtn" class="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-full font-semibold transition-colors glass-panel active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.1)]">
+                    Trigger Notification
+                </button>
+                <p class="text-slate-400 mt-4 text-sm max-w-sm drop-shadow">Appears at top and pushes the stack into Z-depth. Hover the stack to un-collapse.</p>
+            </div>
 
+            <div id="stack" class="stack-container"></div>
+        </div>
+    </div>
+
+    <script>
         const mapColor = {
-            sky: "bg-sky-500/20 border-sky-500/50 text-sky-400 shadow-[0_0_10px_#38bdf8] bg-sky-400",
-            rose: "bg-rose-500/20 border-rose-500/50 text-rose-400 shadow-[0_0_10px_#fb7185] bg-rose-400",
-            emerald: "bg-emerald-500/20 border-emerald-500/50 text-emerald-400 shadow-[0_0_10px_#34d399] bg-emerald-400",
-            amber: "bg-amber-500/20 border-amber-500/50 text-amber-400 shadow-[0_0_10px_#fbbf24] bg-amber-400",
-            indigo: "bg-indigo-500/20 border-indigo-500/50 text-indigo-400 shadow-[0_0_10px_#818cf8] bg-indigo-400"
+            sky: {
+                base: "bg-sky-500/20 border-sky-500/50 text-sky-400 shadow-[0_0_10px_#38bdf8]",
+                inner: "bg-sky-400"
+            },
+            rose: {
+                base: "bg-rose-500/20 border-rose-500/50 text-rose-400 shadow-[0_0_10px_#fb7185]",
+                inner: "bg-rose-400"
+            },
+            emerald: {
+                base: "bg-emerald-500/20 border-emerald-500/50 text-emerald-400 shadow-[0_0_10px_#34d399]",
+                inner: "bg-emerald-400"
+            },
+            amber: {
+                base: "bg-amber-500/20 border-amber-500/50 text-amber-400 shadow-[0_0_10px_#fbbf24]",
+                inner: "bg-amber-400"
+            },
+            indigo: {
+                base: "bg-indigo-500/20 border-indigo-500/50 text-indigo-400 shadow-[0_0_10px_#818cf8]",
+                inner: "bg-indigo-400"
+            }
         };
 
-        const App = () => {
-            const [notifications, setNotifications] = useState([
-                { id: 3, title: "System Update", color: "sky", time: "Just now" },
-                { id: 2, title: "New Message", color: "rose", time: "2m ago" },
-                { id: 1, title: "Task Completed", color: "emerald", time: "10m ago" },
-            ]);
-            const [isHovered, setIsHovered] = useState(false);
-            const [counter, setCounter] = useState(4);
+        let notifications = [
+            { id: 3, title: "System Update", color: "sky", time: "Just now" },
+            { id: 2, title: "New Message", color: "rose", time: "2m ago" },
+            { id: 1, title: "Task Completed", color: "emerald", time: "10m ago" },
+        ];
+        
+        let counter = 4;
+        let isHovered = false;
 
-            const addNotification = () => {
-                const colors = ['sky', 'rose', 'emerald', 'amber', 'indigo'];
-                const randomColor = colors[Math.floor(Math.random() * colors.length)];
-                const newNotif = {
-                    id: counter,
-                    title: `Notification ${counter}`,
-                    color: randomColor,
-                    time: "Just now"
-                };
-                setNotifications(prev => [newNotif, ...prev].slice(0, 5)); // Keep max 5
-                setCounter(c => c + 1);
+        const stackEl = document.getElementById('stack');
+        const triggerBtn = document.getElementById('triggerBtn');
+
+        function renderStack() {
+            // Keep track of existing nodes to update them or remove them smoothly
+            const currentIds = notifications.map(n => n.id.toString());
+            
+            // Remove old ones
+            Array.from(stackEl.children).forEach(child => {
+                if (!currentIds.includes(child.dataset.id)) {
+                    if (!child.classList.contains('exiting')) {
+                        child.classList.add('exiting');
+                        setTimeout(() => child.remove(), 200);
+                    }
+                }
+            });
+
+            // Update or create new ones
+            notifications.forEach((notif, index) => {
+                let el = stackEl.querySelector(`[data-id="${notif.id}"]`);
+                
+                if (!el) {
+                    el = document.createElement('div');
+                    el.className = 'notification glass-panel rounded-2xl p-4 flex items-start gap-4';
+                    el.dataset.id = notif.id;
+                    
+                    const cData = mapColor[notif.color];
+                    
+                    el.innerHTML = `
+                        <div class="w-10 h-10 rounded-full border flex items-center justify-center shrink-0 ${cData.base}">
+                            <div class="w-4 h-4 rounded-full ${cData.inner}"></div>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-center mb-1">
+                                <h3 class="text-white font-semibold text-sm">${notif.title}</h3>
+                                <span class="text-slate-400 text-xs">${notif.time}</span>
+                            </div>
+                            <p class="text-slate-300 text-xs line-clamp-1">Click to dismiss this alert from the system.</p>
+                        </div>
+                    `;
+                    
+                    el.addEventListener('click', () => removeNotification(notif.id));
+                    
+                    // Initial animation state
+                    el.style.transform = `translateY(-50px) scale(0.8) rotateX(20deg)`;
+                    el.style.opacity = '0';
+                    
+                    stackEl.appendChild(el);
+                    
+                    // Force reflow
+                    void el.offsetWidth;
+                }
+
+                // Update styling based on index and hover state
+                const scale = isHovered ? 1 : Math.pow(0.9, index);
+                const z = isHovered ? 0 : index * -50;
+                const y = isHovered ? index * 85 : index * 10;
+                const opacity = isHovered ? 1 : Math.pow(0.7, index);
+                const rotateX = isHovered ? 0 : 5;
+                
+                el.style.zIndex = notifications.length - index;
+                
+                // Slight delay on hover unstack based on index
+                if (isHovered) {
+                    el.style.transitionDelay = `${index * 0.04}s`;
+                } else {
+                    el.style.transitionDelay = '0s';
+                }
+                
+                el.style.transform = `translateY(${y}px) translateZ(${z}px) scale(${scale}) rotateX(${rotateX}deg)`;
+                el.style.opacity = opacity;
+            });
+        }
+
+        function addNotification() {
+            const colors = ['sky', 'rose', 'emerald', 'amber', 'indigo'];
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            const newNotif = {
+                id: counter++,
+                title: `Notification ${counter - 1}`,
+                color: randomColor,
+                time: "Just now"
             };
+            
+            notifications = [newNotif, ...notifications].slice(0, 5);
+            renderStack();
+        }
 
-            const removeNotification = (id) => {
-                setNotifications(prev => prev.filter(n => n.id !== id));
-            };
+        function removeNotification(id) {
+            notifications = notifications.filter(n => n.id !== id);
+            renderStack();
+        }
 
-            return (
-                <div className="w-full h-full relative flex flex-col items-center justify-start pt-32">
-                    <div className="mb-20 text-center z-50">
-                        <button 
-                            onClick={addNotification}
-                            className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-full font-semibold transition-colors glass-panel active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.1)]">
-                            Trigger Notification
-                        </button>
-                        <p className="text-slate-400 mt-4 text-sm max-w-sm drop-shadow">Appears at top and pushes the stack into Z-depth. Hover the stack to un-collapse.</p>
-                    </div>
+        triggerBtn.addEventListener('click', addNotification);
 
-                    <div 
-                        className="relative w-80 md:w-96 perspective-[1200px]"
-                        onMouseEnter={() => setIsHovered(true)}
-                        onMouseLeave={() => setIsHovered(false)}
-                        style={{ height: 400, transformStyle: 'preserve-3d' }}
-                    >
-                        <AnimatePresence>
-                            {notifications.map((notif, index) => {
-                                const isFront = index === 0;
-                                const scale = isHovered ? 1 : Math.pow(0.9, index);
-                                const z = isHovered ? 0 : index * -50;
-                                const y = isHovered ? index * 85 : index * 10;
-                                const opacity = isHovered ? 1 : Math.pow(0.7, index);
-                                const cClass = mapColor[notif.color];
-                                
-                                return (
-                                    <motion.div
-                                        key={notif.id}
-                                        layout
-                                        initial={{ opacity: 0, y: -50, scale: 0.8, rotateX: 20 }}
-                                        animate={{ 
-                                            opacity: opacity,
-                                            y: y,
-                                            z: z,
-                                            scale: scale,
-                                            rotateX: isHovered ? 0 : 5
-                                        }}
-                                        exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
-                                        transition={{ 
-                                            type: "spring", 
-                                            stiffness: 400, 
-                                            damping: 25,
-                                            mass: 1,
-                                            delay: isHovered ? index * 0.04 : 0 
-                                        }}
-                                        className={`absolute top-0 left-0 w-full glass-panel rounded-2xl p-4 flex items-start gap-4 cursor-pointer`}
-                                        style={{ 
-                                            zIndex: notifications.length - index,
-                                            transformOrigin: "top center"
-                                        }}
-                                        onClick={() => removeNotification(notif.id)}
-                                    >
-                                        <div className={`w-10 h-10 rounded-full border flex items-center justify-center shrink-0 ${cClass.split(' ')[0]} ${cClass.split(' ')[1]}`}>
-                                            <div className={`w-4 h-4 rounded-full ${cClass.split(' ')[4]} ${cClass.split(' ')[3]}`}></div>
-                                        </div>
-                                        <div className="flex-1">
-                                            <div className="flex justify-between items-center mb-1">
-                                                <h3 className="text-white font-semibold text-sm">{notif.title}</h3>
-                                                <span className="text-slate-400 text-xs">{notif.time}</span>
-                                            </div>
-                                            <p className="text-slate-300 text-xs line-clamp-1">Click to dismiss this alert from the system.</p>
-                                        </div>
-                                    </motion.div>
-                                );
-                            })}
-                        </AnimatePresence>
-                    </div>
-                </div>
-            );
-        };
+        stackEl.addEventListener('mouseenter', () => {
+            isHovered = true;
+            renderStack();
+        });
+        
+        stackEl.addEventListener('mouseleave', () => {
+            isHovered = false;
+            renderStack();
+        });
 
-        createRoot(document.getElementById('root')).render(<App />);
+        // Initial render
+        // Small delay to let the initial animation play
+        setTimeout(renderStack, 50);
     </script>
 </body>
 </html>

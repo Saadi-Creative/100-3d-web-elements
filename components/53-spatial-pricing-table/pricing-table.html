@@ -3,152 +3,352 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spatial 3D Pricing Table</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>3D Spatial Pricing Matrix</title>
+    <link rel="stylesheet" href="../../styles/shared.css">
     <style>
-        body { margin: 0; background: #050508; min-height: 100vh; overflow: hidden; font-family: 'Inter', sans-serif; color: white; display: flex; align-items: center; justify-content: center; }
-        #root { width: 100%; height: 100vh; display: flex; align-items: center; justify-content: center; }
-        
-        .preserve-3d { transform-style: preserve-3d; }
-        
-        .glass-card {
-            background: linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
+        body {
+            background: radial-gradient(circle at center, #0e1220 0%, #05070d 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            user-select: none;
+            perspective: 1200px;
+            gap: 32px;
+            padding: 20px;
+        }
+
+        .pricing-header {
+            text-align: center;
+            z-index: 10;
+        }
+
+        .pricing-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(56, 189, 248, 0.12);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            padding: 4px 14px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-family: var(--font-mono, monospace);
+            color: #38bdf8;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .pricing-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: #f8fafc;
+            letter-spacing: -0.02em;
+        }
+
+        /* Billing Switcher */
+        .billing-toggle {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(18, 24, 38, 0.8);
             backdrop-filter: blur(16px);
-            border: 1px solid rgba(255,255,255,0.05);
-            box-shadow: 0 40px 100px -20px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 4px 6px;
+            border-radius: 9999px;
+            margin-top: 12px;
         }
-        
-        .text-gradient {
-            background: linear-gradient(to right, #fff, #a5a5a5);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
+
+        .billing-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-family: var(--font-mono, monospace);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
-        
-        .bg-gradient-pro {
-            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+
+        .billing-btn.active {
+            background: #38bdf8;
+            color: #04060a;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.5);
+        }
+
+        /* 3D Pricing Grid */
+        .pricing-deck {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            transform-style: preserve-3d;
+            max-width: 960px;
+            width: 100%;
+        }
+
+        .price-card {
+            position: relative;
+            flex: 1;
+            background: rgba(18, 24, 38, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 28px 24px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 380px;
+            transform-style: preserve-3d;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: pointer;
+        }
+
+        .price-card:hover {
+            border-color: rgba(255, 255, 255, 0.25);
+            transform: translate3d(0, -8px, 20px);
+            box-shadow: 0 35px 70px rgba(0, 0, 0, 0.8);
+        }
+
+        /* Pro Featured Card Elevation */
+        .price-card.featured {
+            background: linear-gradient(180deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98));
+            border: 1.5px solid #38bdf8;
+            box-shadow: 
+                0 30px 60px rgba(0, 0, 0, 0.8),
+                0 0 35px rgba(56, 189, 248, 0.25);
+            transform: translate3d(0, -12px, 35px) scale(1.04);
+        }
+
+        .price-card.featured:hover {
+            transform: translate3d(0, -18px, 50px) scale(1.06);
+            box-shadow: 
+                0 40px 80px rgba(0, 0, 0, 0.9),
+                0 0 45px rgba(56, 189, 248, 0.4);
+        }
+
+        .card-top {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .plan-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .plan-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #f8fafc;
+        }
+
+        .featured-tag {
+            font-size: 9px;
+            font-family: var(--font-mono, monospace);
+            padding: 3px 8px;
+            border-radius: 9999px;
+            background: rgba(56, 189, 248, 0.2);
+            color: #38bdf8;
+            border: 1px solid #38bdf8;
+            font-weight: 700;
+        }
+
+        .plan-price-row {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+
+        .price-currency {
+            font-size: 20px;
+            font-weight: 700;
+            color: #94a3b8;
+        }
+
+        .price-val {
+            font-size: 36px;
+            font-weight: 800;
+            font-family: var(--font-mono, monospace);
+            color: #ffffff;
+            letter-spacing: -0.03em;
+        }
+
+        .price-period {
+            font-size: 12px;
+            color: #64748b;
+            font-family: var(--font-mono, monospace);
+        }
+
+        .feature-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12.5px;
+            color: #cbd5e1;
+        }
+
+        .check-icon {
+            color: #38bdf8;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .cta-btn {
+            width: 100%;
+            height: 44px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #f8fafc;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .cta-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #ffffff;
+            transform: translateY(-2px);
+        }
+
+        .price-card.featured .cta-btn {
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            border-color: #38bdf8;
+            box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);
+        }
+
+        .price-card.featured .cta-btn:hover {
+            background: #38bdf8;
+            color: #04060a;
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.6);
         }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-    <div id="root"></div>
-    <script type="text/babel" data-type="module">
-        import React, { useState } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion } from 'framer-motion';
 
-        const plans = [
-            { id: 'basic', name: 'Basic', price: '$0', desc: 'For individuals', features: ['1 Workspace', '5GB Storage', 'Community Support'] },
-            { id: 'pro', name: 'Pro', price: '$29', desc: 'For professionals', features: ['Unlimited Workspaces', '500GB Storage', 'Priority Support', 'Advanced Analytics'] },
-            { id: 'enterprise', name: 'Enterprise', price: '$99', desc: 'For large teams', features: ['Custom Limits', 'Unlimited Storage', '24/7 Dedicated Support', 'Custom Branding', 'SSO Intgeration'] }
-        ];
+    <div class="pricing-header">
+        <div class="pricing-badge">
+            <span>💎</span>
+            <span>Spatial Cluster Infrastructure</span>
+        </div>
+        <div class="pricing-title">Predictable Scalability for High-Load Systems</div>
 
-        const App = () => {
-            const [hoveredId, setHoveredId] = useState(null);
+        <div class="billing-toggle">
+            <button class="billing-btn active" id="btn-monthly">Monthly</button>
+            <button class="billing-btn" id="btn-annual">Annual (20% OFF)</button>
+        </div>
+    </div>
 
-            return (
-                <div style={{ perspective: 1800 }} className="w-full h-full flex flex-col items-center justify-center relative preserve-3d">
-                    {/* Background glows */}
-                    <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none flex justify-center items-center">
-                        <div className="w-[800px] h-[800px] bg-indigo-600/10 rounded-full blur-[120px]" />
-                    </div>
-
-                    <div className="z-10 text-center mb-16 transform translate-z-[-200px]">
-                        <h1 className="text-5xl font-black mb-4 tracking-tight text-gradient shadow-black">Unlock Your Potential</h1>
-                        <p className="text-white/40 font-medium">Choose the plan that's right for you. Change anytime.</p>
-                    </div>
-
-                    <div className="flex gap-8 items-center justify-center preserve-3d z-10 w-full max-w-6xl px-12">
-                        {plans.map((plan) => {
-                            const isHovered = hoveredId === plan.id;
-                            const isOtherHovered = hoveredId !== null && hoveredId !== plan.id;
-                            const isPro = plan.id === 'pro';
-
-                            return (
-                                <motion.div
-                                    key={plan.id}
-                                    className={`relative glass-card rounded-[32px] p-8 flex flex-col w-full max-w-sm h-[520px] preserve-3d cursor-pointer ${isPro ? 'border-indigo-500/30 ring-1 ring-indigo-500/20' : ''}`}
-                                    onClick={() => alert(`Selected ${plan.name} Plan!`)}
-                                    onHoverStart={() => setHoveredId(plan.id)}
-                                    onHoverEnd={() => setHoveredId(null)}
-                                    initial={{ z: 0, rotateX: 15, opacity: 1, filter: 'blur(0px) brightness(1)' }}
-                                    animate={{ 
-                                        z: isHovered ? 50 : isOtherHovered ? -50 : 0,
-                                        rotateX: isHovered ? 0 : 15,
-                                        opacity: isOtherHovered ? 0.4 : 1,
-                                        filter: isOtherHovered ? 'blur(8px) brightness(0.6)' : 'blur(0px) brightness(1)',
-                                        scale: isHovered ? 1.05 : 1,
-                                        y: isHovered ? -15 : 0
-                                    }}
-                                    transition={{ duration: 0.6, type: "spring", bounce: 0.2 }}
-                                    style={{ transformStyle: "preserve-3d" }}
-                                >
-                                    {isPro && (
-                                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-pro text-white text-xs font-bold px-4 py-1.5 rounded-full tracking-[0.2em] uppercase shadow-[0_10px_20px_rgba(99,102,241,0.4)] z-20 pointer-events-none">
-                                            Most Popular
-                                        </div>
-                                    )}
-                                    
-                                    {/* Inner 3D Content Container */}
-                                    <motion.div 
-                                        className="preserve-3d flex-grow flex flex-col pointer-events-none"
-                                        animate={{ z: isHovered ? 30 : 0 }}
-                                        transition={{ duration: 0.4 }}
-                                    >
-                                        <div className="mb-8">
-                                            <h3 className="text-xl font-bold text-white/90 mb-1">{plan.name}</h3>
-                                            <p className="text-sm text-white/40">{plan.desc}</p>
-                                        </div>
-
-                                        <div className="flex items-baseline mb-8">
-                                            <span className="text-5xl font-black text-white">{plan.price}</span>
-                                            <span className="text-white/40 ml-2 font-medium">/mo</span>
-                                        </div>
-                                        
-                                        <ul className="space-y-4 mb-8 flex-grow">
-                                            {plan.features.map((feature, idx) => (
-                                                <li key={idx} className="flex items-center text-sm font-medium text-white/70">
-                                                    <div className={`w-5 h-5 rounded-full flex items-center justify-center mr-3 ${isPro ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/5 text-white/40'}`}>
-                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                                                    </div>
-                                                    {feature}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </motion.div>
-
-                                    {/* 3D Pop-out Button container inside the clickable card */}
-                                    <motion.div 
-                                        className={`mt-auto w-full py-4 rounded-2xl font-bold tracking-widest uppercase text-center text-sm shadow-xl transition-colors preserve-3d pointer-events-none relative z-50 ${isPro ? 'bg-white text-indigo-900' : 'bg-white/10 text-white'}`}
-                                        animate={{ 
-                                            z: isHovered ? 60 : 0, 
-                                            scale: isHovered ? 1.05 : 1,
-                                            boxShadow: isHovered ? (isPro ? '0 20px 40px -10px rgba(255,255,255,0.3)' : '0 20px 40px -10px rgba(0,0,0,0.5)') : '0 0 0 transparent'
-                                        }}
-                                        transition={{ duration: 0.5, type: "spring", bounce: 0.4 }}
-                                    >
-                                        Select Plan
-                                    </motion.div>
-                                </motion.div>
-                            );
-                        })}
-                    </div>
+    <div class="pricing-deck" id="deck">
+        <!-- Starter Plan -->
+        <div class="price-card">
+            <div class="card-top">
+                <div class="plan-header">
+                    <span class="plan-name">Developer Core</span>
                 </div>
-            );
-        };
+                <div class="plan-price-row">
+                    <span class="price-currency">$</span>
+                    <span class="price-val" data-monthly="0" data-annual="0">0</span>
+                    <span class="price-period">/ mo</span>
+                </div>
+                <div class="feature-list">
+                    <div class="feature-item"><span class="check-icon">✓</span> 2 Edge Nodes</div>
+                    <div class="feature-item"><span class="check-icon">✓</span> 50k monthly queries</div>
+                    <div class="feature-item"><span class="check-icon">✓</span> Community Discord</div>
+                </div>
+            </div>
+            <button class="cta-btn">Deploy Starter</button>
+        </div>
 
-        createRoot(document.getElementById('root')).render(<App />);
+        <!-- Pro Tier (Featured) -->
+        <div class="price-card featured">
+            <div class="card-top">
+                <div class="plan-header">
+                    <span class="plan-name">Hyper Scale Pro</span>
+                    <span class="featured-tag">POPULAR</span>
+                </div>
+                <div class="plan-price-row">
+                    <span class="price-currency">$</span>
+                    <span class="price-val" data-monthly="49" data-annual="39">49</span>
+                    <span class="price-period">/ mo</span>
+                </div>
+                <div class="feature-list">
+                    <div class="feature-item"><span class="check-icon">✓</span> 64 Edge Micro-Pods</div>
+                    <div class="feature-item"><span class="check-icon">✓</span> 50M monthly queries</div>
+                    <div class="feature-item"><span class="check-icon">✓</span> Real-time LiDAR Telemetry</div>
+                    <div class="feature-item"><span class="check-icon">✓</span> 99.99% Guaranteed SLA</div>
+                </div>
+            </div>
+            <button class="cta-btn">Ignite Pro Cluster</button>
+        </div>
+
+        <!-- Enterprise Tier -->
+        <div class="price-card">
+            <div class="card-top">
+                <div class="plan-header">
+                    <span class="plan-name">Dedicated Mesh</span>
+                </div>
+                <div class="plan-price-row">
+                    <span class="price-currency">$</span>
+                    <span class="price-val" data-monthly="199" data-annual="159">199</span>
+                    <span class="price-period">/ mo</span>
+                </div>
+                <div class="feature-list">
+                    <div class="feature-item"><span class="check-icon">✓</span> Unlimited Dedicated PoPs</div>
+                    <div class="feature-item"><span class="check-icon">✓</span> Custom WASM kernels</div>
+                    <div class="feature-item"><span class="check-icon">✓</span> 24/7 War Room Support</div>
+                </div>
+            </div>
+            <button class="cta-btn">Contact Mesh Architects</button>
+        </div>
+    </div>
+
+    <script>
+        const btnMonthly = document.getElementById('btn-monthly');
+        const btnAnnual = document.getElementById('btn-annual');
+        const priceVals = document.querySelectorAll('.price-val');
+        const deck = document.getElementById('deck');
+
+        let isAnnual = false;
+
+        function setBilling(annual) {
+            isAnnual = annual;
+            btnMonthly.classList.toggle('active', !isAnnual);
+            btnAnnual.classList.toggle('active', isAnnual);
+
+            priceVals.forEach(val => {
+                val.textContent = isAnnual ? val.dataset.annual : val.dataset.monthly;
+            });
+        }
+
+        btnMonthly.addEventListener('click', () => setBilling(false));
+        btnAnnual.addEventListener('click', () => setBilling(true));
+
+        // 3D Mouse Parallax Tilt
+        document.addEventListener('mousemove', (e) => {
+            const cx = window.innerWidth / 2;
+            const cy = window.innerHeight / 2;
+            const tiltX = -(e.clientY - cy) * 0.02;
+            const tiltY = (e.clientX - cx) * 0.02;
+
+            deck.style.transform = `rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+        });
     </script>
 </body>
 </html>

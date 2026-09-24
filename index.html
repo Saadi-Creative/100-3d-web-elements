@@ -1,548 +1,494 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Web Elements - Interactive Form Controls</title>
-    <meta name="description" content="Premium 3D form controls with vibrant colors and animations">
+    <title>3D Web Elements - Gallery</title>
+    <meta name="description" content="Sophisticated interactive component library.">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/design-system.css">
     <style>
-        :root {
-            --bg-primary: #0f172a;
-            --bg-secondary: #1e293b;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-        }
-
-        * {
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, #334155 100%);
-            min-height: 100vh;
+        .gallery-header {
+            text-align: center;
+            padding: var(--space-16) var(--space-4) var(--space-8);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .gallery-header h1 {
+            font-size: var(--text-4xl);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: var(--space-4);
             color: var(--text-primary);
         }
 
-        .header {
-            text-align: center;
-            padding: 50px 20px 30px;
-        }
-
-        .header h1 {
-            font-size: 3rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #f472b6 0%, #8b5cf6 50%, #06b6d4 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 10px;
-        }
-
-        .header p {
-            font-size: 1.1rem;
+        .gallery-header p {
+            font-size: var(--text-lg);
             color: var(--text-secondary);
+            font-weight: 400;
+            line-height: 1.6;
         }
 
-        .grid {
+        .gallery-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-            gap: 25px;
+            grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+            gap: var(--space-8);
             max-width: 1800px;
             margin: 0 auto;
-            padding: 30px 25px 60px;
+            padding: var(--space-4) var(--space-6) var(--space-16);
         }
 
-        .card {
-            background: rgba(30, 41, 59, 0.7);
-            border-radius: 20px;
+        .component-stage {
+            background-color: var(--bg-secondary);
+            border-radius: var(--radius-xl);
             overflow: hidden;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border-subtle);
+            transition: border-color var(--time-base) var(--ease-out);
         }
 
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-            border-color: rgba(139, 92, 246, 0.4);
+        .component-stage:hover {
+            border-color: var(--border-strong);
         }
 
-        .card-header {
-            padding: 15px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        .stage-header {
+            padding: var(--space-4) var(--space-6);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-bottom: 1px solid var(--border-subtle);
+            background-color: var(--bg-elevated);
         }
 
-        .card-title {
-            font-size: 1.05rem;
-            font-weight: 600;
+        .stage-title {
+            font-size: var(--text-base);
+            font-weight: 500;
+            color: var(--text-primary);
         }
 
         .badge {
-            padding: 5px 14px;
-            border-radius: 20px;
-            font-size: 0.7rem;
+            font-size: var(--text-xs);
+            padding: var(--space-1) var(--space-3);
+            border-radius: var(--radius-full);
             font-weight: 600;
             text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
-        .badge-toggle {
-            background: rgba(16, 185, 129, 0.25);
-            color: #6ee7b7;
+        /* Generic badge styling to catch all previous ones */
+        [class*="badge-"] { background: var(--surface-interactive); color: var(--accent-base); }
+        .badge-webgl, .badge-shader { color: var(--info); }
+        .badge-css, .badge-scroll { color: var(--success); }
+        .badge-drag, .badge-click { color: var(--warning); }
+
+        .stage-preview {
+            height: 500px;
+            position: relative;
+            background-color: var(--bg-primary);
         }
 
-        .badge-click {
-            background: rgba(139, 92, 246, 0.25);
-            color: #c4b5fd;
-        }
-
-        .badge-drag {
-            background: rgba(6, 182, 212, 0.25);
-            color: #67e8f9;
-        }
-
-        .badge-input {
-            background: rgba(251, 191, 36, 0.25);
-            color: #fcd34d;
-        }
-
-        .badge-draw {
-            background: rgba(59, 130, 246, 0.25);
-            color: #93c5fd;
-        }
-
-        .badge-webgl {
-            background: rgba(239, 68, 68, 0.25);
-            color: #fca5a5;
-        }
-
-        .badge-shader {
-            background: rgba(245, 158, 11, 0.25);
-            color: #fcd34d;
-        }
-
-        .badge-css {
-            background: rgba(236, 72, 153, 0.25);
-            color: #f9a8d4;
-        }
-
-        .badge-scroll {
-            background: rgba(16, 185, 129, 0.2);
-            color: #6ee7b7;
-        }
-
-        .demo-area {
-            height: 480px;
-        }
-
-        .demo-area iframe {
-            border: none;
+        .stage-preview iframe {
             width: 100%;
             height: 100%;
-        }
-
-        /* Larger sizes for complex components */
-        .card.xl .demo-area {
-            height: 550px;
+            border: none;
+            display: block;
         }
 
         .section-divider {
             text-align: center;
-            padding: 30px 20px 10px;
-            color: rgba(255,255,255,0.15);
-            font-size: 11px;
-            letter-spacing: 4px;
+            padding: var(--space-16) var(--space-4) var(--space-8);
+            color: var(--text-muted);
+            font-size: var(--text-sm);
+            letter-spacing: 0.2em;
             text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-4);
         }
 
-        .section-divider::before {
-            content: '';
-            display: block;
-            width: 60px;
+        .section-divider::before,
+        .section-divider::after {
+            content: "";
             height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(139,92,246,0.4), transparent);
-            margin: 0 auto 14px;
+            width: 60px;
+            background-color: var(--border-subtle);
         }
 
-        @media (max-width: 950px) {
-            .grid {
+        @media (max-width: 768px) {
+            .gallery-grid {
                 grid-template-columns: 1fr;
-                padding: 20px 15px 50px;
+                gap: var(--space-6);
             }
-
-            .header h1 {
-                font-size: 2rem;
-            }
-
-            .demo-area {
-                height: 420px;
-            }
-
-            .card.xl .demo-area {
-                height: 480px;
+            .stage-preview {
+                height: 400px;
             }
         }
     </style>
 </head>
-
 <body>
-    <header class="header">
-        <h1>✨ 3D Web Elements</h1>
-        <p>Premium interactive components · Three.js · CSS3D · GLSL Shaders</p>
+    <header class="gallery-header">
+        <h1>Interaction Laboratory</h1>
+        <p>A sophisticated collection of original, interactive components exploring motion, space, and material.</p>
     </header>
 
-    <main class="grid">
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">3D Button</h2>
+    <main class="gallery-grid">
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">3D Button</h2>
                 <span class="badge badge-click">Click</span>
             </div>
-            <div class="demo-area"><iframe src="components/01-3d-button/button.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/01-3d-button/button.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Elastic Toggle</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Elastic Toggle</h2>
                 <span class="badge badge-toggle">Toggle</span>
             </div>
-            <div class="demo-area"><iframe src="components/02-elastic-toggle/toggle.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/02-elastic-toggle/toggle.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Morphing Input</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Morphing Input</h2>
                 <span class="badge badge-input">Input</span>
             </div>
-            <div class="demo-area"><iframe src="components/03-morphing-input/input.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/03-morphing-input/input.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Magnetic Card</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Magnetic Card</h2>
                 <span class="badge badge-drag">Drag</span>
             </div>
-            <div class="demo-area"><iframe src="components/04-magnetic-card/card.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/04-magnetic-card/card.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Sculpted Progress</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Sculpted Progress</h2>
                 <span class="badge badge-toggle">Animate</span>
             </div>
-            <div class="demo-area"><iframe src="components/05-sculpted-progress/progress.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/05-sculpted-progress/progress.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Notification Block</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Notification Block</h2>
                 <span class="badge badge-click">Notify</span>
             </div>
-            <div class="demo-area"><iframe src="components/06-notification-block/notification.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/06-notification-block/notification.html"></iframe></div>
         </article>
     </main>
 
-    <main class="grid">
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Curved Context Menu</h2>
+    <main class="gallery-grid">
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Curved Context Menu</h2>
                 <span class="badge badge-drag">3D Menu</span>
             </div>
-            <div class="demo-area"><iframe src="components/07-curved-menu/menu.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/07-curved-menu/menu.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Pressure Rating</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Pressure Rating</h2>
                 <span class="badge badge-click">Rate</span>
             </div>
-            <div class="demo-area"><iframe src="components/08-pressure-rating/rating.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/08-pressure-rating/rating.html"></iframe></div>
         </article>
     </main>
 
     <div class="section-divider">⬡ Advanced 3D Showcase · New Collection</div>
 
-    <main class="grid">
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">3D Product Showcase</h2>
+    <main class="gallery-grid">
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">3D Product Showcase</h2>
                 <span class="badge badge-drag">Tilt</span>
             </div>
-            <div class="demo-area"><iframe src="components/09-product-showcase/showcase.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/09-product-showcase/showcase.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Glassmorphism Shapes</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Glassmorphism Shapes</h2>
                 <span class="badge badge-webgl">Three.js</span>
             </div>
-            <div class="demo-area"><iframe src="components/10-glassmorphism-shapes/shapes.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/10-glassmorphism-shapes/shapes.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Cyber-Node Globe</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Cyber-Node Globe</h2>
                 <span class="badge badge-webgl">WebGL</span>
             </div>
-            <div class="demo-area"><iframe src="components/11-cyber-globe/globe.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/11-cyber-globe/globe.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Liquid Distortion</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Liquid Distortion</h2>
                 <span class="badge badge-shader">GLSL</span>
             </div>
-            <div class="demo-area"><iframe src="components/12-liquid-distortion/distortion.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/12-liquid-distortion/distortion.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">3D Auth Flip Card</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">3D Auth Flip Card</h2>
                 <span class="badge badge-css">CSS 3D</span>
             </div>
-            <div class="demo-area"><iframe src="components/13-auth-flip/auth.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/13-auth-flip/auth.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Infinite Tunnel</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Infinite Tunnel</h2>
                 <span class="badge badge-scroll">Scroll</span>
             </div>
-            <div class="demo-area"><iframe src="components/14-infinite-tunnel/tunnel.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/14-infinite-tunnel/tunnel.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Magnetic Buttons</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Magnetic Buttons</h2>
                 <span class="badge badge-drag">Magnetic</span>
             </div>
-            <div class="demo-area"><iframe src="components/15-magnetic-buttons/buttons.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/15-magnetic-buttons/buttons.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Particle Assembly Text</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Particle Assembly Text</h2>
                 <span class="badge badge-webgl">Instanced</span>
             </div>
-            <div class="demo-area"><iframe src="components/16-particle-text/particles.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/16-particle-text/particles.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">3D Carousel Slider</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">3D Carousel Slider</h2>
                 <span class="badge badge-css">CSS 3D</span>
             </div>
-            <div class="demo-area"><iframe src="components/17-carousel-slider/carousel.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/17-carousel-slider/carousel.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Holographic Ticket</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Holographic Ticket</h2>
                 <span class="badge badge-css">Holo CSS</span>
             </div>
-            <div class="demo-area"><iframe src="components/18-holographic-ticket/ticket.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/18-holographic-ticket/ticket.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">3D Ambient Snow Background</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">3D Ambient Snow Background</h2>
                 <span class="badge badge-scroll">Winter Aesthetic</span>
             </div>
-            <div class="demo-area"><iframe src="components/19-snow/snow.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/19-snow/snow.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">3D Origami Menu</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">3D Origami Menu</h2>
                 <span class="badge badge-css">CSS 3D</span>
             </div>
-            <div class="demo-area"><iframe src="components/20-origami-menu/origami.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/20-origami-menu/origami.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Fluid Aurora Background</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Fluid Aurora Background</h2>
                 <span class="badge badge-shader">GLSL</span>
             </div>
-            <div class="demo-area"><iframe src="components/21-fluid-aurora/aurora.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/21-fluid-aurora/aurora.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Gooey Cursor Blob</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Gooey Cursor Blob</h2>
                 <span class="badge badge-css">CSS Filter</span>
             </div>
-            <div class="demo-area"><iframe src="components/22-gooey-cursor/gooey.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/22-gooey-cursor/gooey.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Zen Sand Garden</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Zen Sand Garden</h2>
                 <span class="badge badge-shader">Shader</span>
             </div>
-            <div class="demo-area"><iframe src="components/23-zen-garden/garden.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/23-zen-garden/garden.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Isometric Voxel Loader</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Isometric Voxel Loader</h2>
                 <span class="badge badge-webgl">Instanced</span>
             </div>
-            <div class="demo-area"><iframe src="components/24-voxel-loader/voxels.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/24-voxel-loader/voxels.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Spotlight Text Reveal</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Spotlight Text Reveal</h2>
                 <span class="badge badge-css">CSS Mask</span>
             </div>
-            <div class="demo-area"><iframe src="components/25-spotlight-reveal/spotlight.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/25-spotlight-reveal/spotlight.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Matrix Digital Rain</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Matrix Digital Rain</h2>
                 <span class="badge badge-shader">GLSL Repo</span>
             </div>
-            <div class="demo-area"><iframe src="components/26-matrix-rain/matrix.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/26-matrix-rain/matrix.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Kinetic Typography</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Kinetic Typography</h2>
                 <span class="badge badge-webgl">React Three Fiber</span>
             </div>
-            <div class="demo-area"><iframe src="components/27-kinetic-typography/portal.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/27-kinetic-typography/portal.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Bento Box Grid</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Bento Box Grid</h2>
                 <span class="badge badge-drag">Framer Motion</span>
             </div>
-            <div class="demo-area"><iframe src="components/28-bento-grid/bento.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/28-bento-grid/bento.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Interactive 3D Timeline</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Interactive 3D Timeline</h2>
                 <span class="badge badge-drag">Scroll Action</span>
             </div>
-            <div class="demo-area"><iframe src="components/29-interactive-timeline/timeline.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/29-interactive-timeline/timeline.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Morphing Blob Background</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Morphing Blob Background</h2>
                 <span class="badge badge-webgl">R3F / Drei</span>
             </div>
-            <div class="demo-area"><iframe src="components/30-morphing-blob/blob.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/30-morphing-blob/blob.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Looking Glass Scroll</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Looking Glass Scroll</h2>
                 <span class="badge badge-drag">Scroll Action</span>
             </div>
-            <div class="demo-area"><iframe src="components/31-looking-glass/glass.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/31-looking-glass/glass.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">3D Magnetic Navbar Dock</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">3D Magnetic Navbar Dock</h2>
                 <span class="badge badge-css">Framer Motion</span>
             </div>
-            <div class="demo-area"><iframe src="components/38-magnetic-navbar/navbar.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/38-magnetic-navbar/navbar.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">3D Cylinder Roller Tabs</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">3D Cylinder Roller Tabs</h2>
                 <span class="badge badge-webgl">R3F Procedural</span>
             </div>
-            <div class="demo-area"><iframe src="components/39-cylinder-tabs/tabs.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/39-cylinder-tabs/tabs.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">3D Ribbon Unfurl Dropdown</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">3D Ribbon Unfurl Dropdown</h2>
                 <span class="badge badge-css">Framer Motion</span>
             </div>
-            <div class="demo-area"><iframe src="components/40-ribbon-dropdown/dropdown.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/40-ribbon-dropdown/dropdown.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Procedural Cryptex Date Picker</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Procedural Cryptex Date Picker</h2>
                 <span class="badge badge-webgl">R3F Draggable</span>
             </div>
-            <div class="demo-area"><iframe src="components/41-cryptex-datepicker/datepicker.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/41-cryptex-datepicker/datepicker.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Anti-Gravity Physics Tags</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Anti-Gravity Physics Tags</h2>
                 <span class="badge badge-drag">Physics Sim</span>
             </div>
-            <div class="demo-area"><iframe src="components/42-physics-multiselect/multiselect.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/42-physics-multiselect/multiselect.html"></iframe></div>
         </article>
     </main>
 
     <div class="section-divider">⬡ 3D Interactive Experiences · Latest Drop</div>
 
-    <main class="grid">
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">3D FAQ Accordion</h2>
+    <main class="gallery-grid">
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">3D FAQ Accordion</h2>
                 <span class="badge badge-css">CSS 3D</span>
             </div>
-            <div class="demo-area"><iframe src="components/32-faq-accordion/accordion.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/32-faq-accordion/accordion.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">3D Conversion Funnel</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">3D Conversion Funnel</h2>
                 <span class="badge badge-webgl">R3F / Drei</span>
             </div>
-            <div class="demo-area"><iframe src="components/33-conversion-funnel/funnel.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/33-conversion-funnel/funnel.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Spatial Form Tracker</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Spatial Form Tracker</h2>
                 <span class="badge badge-webgl">R3F</span>
             </div>
-            <div class="demo-area"><iframe src="components/34-form-tracker/tracker.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/34-form-tracker/tracker.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Isometric Architecture</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Isometric Architecture</h2>
                 <span class="badge badge-css">CSS 3D</span>
             </div>
-            <div class="demo-area"><iframe src="components/35-architecture-layers/layers.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/35-architecture-layers/layers.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Rolodex Testimonials</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Rolodex Testimonials</h2>
                 <span class="badge badge-css">CSS 3D</span>
             </div>
-            <div class="demo-area"><iframe src="components/36-rolodex-testimonials/testimonials.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/36-rolodex-testimonials/testimonials.html"></iframe></div>
         </article>
 
-        <article class="card">
-            <div class="card-header">
-                <h2 class="card-title">Black Hole 404</h2>
+        <article class="component-stage">
+            <div class="stage-header">
+                <h2 class="stage-title">Black Hole 404</h2>
                 <span class="badge badge-shader">GLSL</span>
             </div>
-            <div class="demo-area"><iframe src="components/37-blackhole-404/blackhole.html"></iframe></div>
+            <div class="stage-preview"><iframe src="components/37-blackhole-404/blackhole.html"></iframe></div>
         </article>
     </main>
 </body>

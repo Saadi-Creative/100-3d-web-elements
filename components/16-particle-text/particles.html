@@ -1,315 +1,254 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Particle Assembly Text</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>16 - Kinetic Particle Typography Matrix</title>
+  <link rel="stylesheet" href="../../styles/shared.css" />
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: #000;
+    .demo-container {
+      position: relative;
       width: 100%;
       height: 100vh;
       overflow: hidden;
-      font-family: 'Courier New', monospace;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      background: radial-gradient(circle at 50% 50%, #1e1b4b 0%, #030712 100%);
+      font-family: var(--font-sans);
     }
+
     #canvas-container {
       position: absolute;
       inset: 0;
+      z-index: 1;
     }
-    canvas { display: block; }
-    .ui-overlay {
+
+    /* HUD Header */
+    .hud-header {
       position: absolute;
-      bottom: 24px;
+      top: var(--space-6);
+      left: var(--space-6);
+      right: var(--space-6);
+      z-index: 10;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .hud-title {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: var(--tracking-widest);
+      text-transform: uppercase;
+      color: var(--text-heading);
+      padding: var(--space-3) var(--space-5);
+      border-radius: var(--radius-full);
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      backdrop-filter: blur(16px);
+      pointer-events: auto;
+    }
+
+    /* Mode Toolbar */
+    .hud-toolbar {
+      position: absolute;
+      bottom: var(--space-6);
       left: 50%;
       transform: translateX(-50%);
-      display: flex;
-      gap: 12px;
       z-index: 10;
+      display: flex;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-full);
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      backdrop-filter: blur(16px);
     }
-    .ctrl-btn {
-      padding: 8px 18px;
-      border-radius: 50px;
-      border: 1px solid rgba(255,255,255,0.15);
-      background: rgba(255,255,255,0.05);
-      color: rgba(255,255,255,0.5);
-      font-size: 11px;
-      letter-spacing: 1px;
+
+    .mode-btn {
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius-full);
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: var(--text-xs);
+      font-weight: 600;
       cursor: pointer;
-      font-family: 'Courier New', monospace;
-      backdrop-filter: blur(10px);
       transition: all 0.2s ease;
     }
-    .ctrl-btn:hover {
-      border-color: rgba(255,255,255,0.35);
-      color: white;
-      background: rgba(255,255,255,0.1);
-    }
-    .ctrl-btn.active {
-      border-color: rgba(139,92,246,0.6);
-      background: rgba(139,92,246,0.15);
-      color: #a78bfa;
+
+    .mode-btn.is-active {
+      background: var(--surface-overlay);
+      border-color: var(--border-subtle);
+      color: var(--accent-base);
+      box-shadow: 0 0 12px var(--accent-glow);
     }
   </style>
 </head>
 <body>
+  <div class="demo-container">
+    <div class="hud-header">
+      <span class="hud-title">Kinetic Particle Typography Matrix</span>
+    </div>
 
-<div id="canvas-container"></div>
+    <div id="canvas-container"></div>
 
-<div class="ui-overlay">
-  <button class="ctrl-btn active" id="btnAssemble">ASSEMBLE</button>
-  <button class="ctrl-btn" id="btnExplode">EXPLODE</button>
-  <button class="ctrl-btn" id="btnOrbit">ORBIT</button>
-</div>
+    <div class="hud-toolbar" role="toolbar" aria-label="Particle modes">
+      <button class="mode-btn is-active" data-mode="assemble">Assemble Matrix</button>
+      <button class="mode-btn" data-mode="orbit">Gravitate Orbit</button>
+      <button class="mode-btn" data-mode="disperse">Dispersion Wave</button>
+    </div>
+  </div>
 
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+    }
   }
-}
-</script>
+  </script>
 
-<script type="module">
-import * as THREE from 'three';
+  <script type="module">
+    import * as THREE from 'three';
 
-const container = document.getElementById('canvas-container');
-const W = container.clientWidth || window.innerWidth;
-const H = container.clientHeight || window.innerHeight;
+    const container = document.getElementById('canvas-container');
+    const W = container.clientWidth, H = container.clientHeight;
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-renderer.setSize(W, H);
-renderer.setClearColor(0x000000);
-container.appendChild(renderer.domElement);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.setSize(W, H);
+    container.appendChild(renderer.domElement);
 
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(60, W / H, 0.1, 200);
-camera.position.z = 5;
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(55, W / H, 0.1, 100);
+    camera.position.z = 4.5;
 
-// Read text pixels from a 2D canvas
-function getTextPixels(text, fontSize, fontName, canvasW, canvasH, density) {
-  const offscreen = document.createElement('canvas');
-  offscreen.width = canvasW;
-  offscreen.height = canvasH;
-  const ctx = offscreen.getContext('2d');
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, canvasW, canvasH);
-  ctx.fillStyle = '#fff';
-  ctx.font = `900 ${fontSize}px "${fontName}", Arial, sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(text, canvasW / 2, canvasH / 2);
+    // Generate Text Target Coordinates via 2D Canvas
+    function generateTextPoints(text) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 400;
+      canvas.height = 100;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, 400, 100);
+      ctx.fillStyle = '#fff';
+      ctx.font = '900 64px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, 200, 50);
 
-  const data = ctx.getImageData(0, 0, canvasW, canvasH).data;
-  const points = [];
-  for (let y = 0; y < canvasH; y += density) {
-    for (let x = 0; x < canvasW; x += density) {
-      const idx = (y * canvasW + x) * 4;
-      if (data[idx] > 128) {
-        // Map canvas coords to 3D world coords
-        const px = ((x / canvasW) - 0.5) * 8;
-        const py = -((y / canvasH) - 0.5) * 3;
-        points.push(px, py, 0);
+      const data = ctx.getImageData(0, 0, 400, 100).data;
+      const points = [];
+      const density = 4;
+      for (let y = 0; y < 100; y += density) {
+        for (let x = 0; x < 400; x += density) {
+          if (data[(y * 400 + x) * 4] > 128) {
+            points.push(
+              ((x / 400) - 0.5) * 6,
+              -((y / 100) - 0.5) * 1.8,
+              0
+            );
+          }
+        }
       }
+      return points;
     }
-  }
-  return points;
-}
 
-// Two words alternating
-const words = ['WEB3D', 'CREATE'];
-let wordIndex = 0;
+    const words = ['SPATIAL', 'KINETIC', 'SYSTEM'];
+    let wordIdx = 0;
+    let targetCoords = generateTextPoints(words[wordIdx]);
+    const PARTICLE_COUNT = Math.max(900, targetCoords.length / 3);
 
-// Generate target positions
-function generateTargetPositions(word) {
-  return getTextPixels(word, 72, 'Arial Black', 400, 100, 4);
-}
+    const particleGeo = new THREE.SphereGeometry(0.024, 4, 4);
+    const particleMat = new THREE.MeshBasicMaterial({
+      color: 0x8b5cf6,
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending
+    });
 
-let targetPositions = generateTargetPositions(words[wordIndex]);
-const PARTICLE_COUNT = Math.max(800, targetPositions.length / 3);
+    const instancedMesh = new THREE.InstancedMesh(particleGeo, particleMat, PARTICLE_COUNT);
+    scene.add(instancedMesh);
 
-// InstancedMesh — single draw call
-const particleGeo = new THREE.SphereGeometry(0.028, 4, 4); // low-poly sphere per particle
-const particleMat = new THREE.MeshBasicMaterial({
-  color: 0x8b5cf6,
-  blending: THREE.AdditiveBlending,
-  transparent: true,
-  opacity: 0.9,
-  depthWrite: false,
-});
+    const positions = new Float32Array(PARTICLE_COUNT * 3);
+    const targets = new Float32Array(PARTICLE_COUNT * 3);
+    const velocities = new Float32Array(PARTICLE_COUNT * 3);
 
-const instancedMesh = new THREE.InstancedMesh(particleGeo, particleMat, PARTICLE_COUNT);
-instancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-scene.add(instancedMesh);
-
-// Per-instance state
-const positions    = new Float32Array(PARTICLE_COUNT * 3); // current pos
-const velocities   = new Float32Array(PARTICLE_COUNT * 3); // velocity for explosion
-const targets      = new Float32Array(PARTICLE_COUNT * 3); // assembled target
-const scatterPos   = new Float32Array(PARTICLE_COUNT * 3); // random scatter
-const colors       = new Float32Array(PARTICLE_COUNT * 3); // per-instance color
-
-// Color palette
-const palette = [
-  [0.545, 0.361, 0.965], // purple
-  [0.208, 0.714, 0.898], // cyan
-  [0.941, 0.420, 0.659], // pink
-  [0.373, 0.902, 0.576], // green
-];
-
-const dummy = new THREE.Object3D();
-const color = new THREE.Color();
-
-function initParticles(targets3) {
-  for (let i = 0; i < PARTICLE_COUNT; i++) {
-    // Random scatter start
-    scatterPos[i*3]   = (Math.random() - 0.5) * 18;
-    scatterPos[i*3+1] = (Math.random() - 0.5) * 8;
-    scatterPos[i*3+2] = (Math.random() - 0.5) * 10;
-
-    positions[i*3]   = scatterPos[i*3];
-    positions[i*3+1] = scatterPos[i*3+1];
-    positions[i*3+2] = scatterPos[i*3+2];
-
-    velocities[i*3]   = (Math.random() - 0.5) * 0.5;
-    velocities[i*3+1] = (Math.random() - 0.5) * 0.5;
-    velocities[i*3+2] = (Math.random() - 0.5) * 0.5;
-
-    // Assign target: cycle through available text points
-    const tIdx = (i % (targets3.length / 3)) * 3;
-    targets[i*3]   = targets3[tIdx]   || 0;
-    targets[i*3+1] = targets3[tIdx+1] || 0;
-    targets[i*3+2] = (Math.random() - 0.5) * 0.5;
-
-    // Color
-    const c = palette[Math.floor(Math.random() * palette.length)];
-    colors[i*3] = c[0]; colors[i*3+1] = c[1]; colors[i*3+2] = c[2];
-  }
-}
-
-initParticles(targetPositions);
-
-// Apply per-instance colors
-const instanceColor = new THREE.InstancedBufferAttribute(colors, 3);
-// Note: MeshBasicMaterial doesn't support instanceColor on its own
-// We use setColorAt instead
-for (let i = 0; i < PARTICLE_COUNT; i++) {
-  color.setRGB(colors[i*3], colors[i*3+1], colors[i*3+2]);
-  instancedMesh.setColorAt(i, color);
-}
-instancedMesh.instanceColor.needsUpdate = true;
-
-// Mode: 'assemble', 'explode', 'orbit'
-let mode = 'assemble';
-// Progress: 0 = scattered, 1 = assembled
-let assembleProgress = 0;
-let orbitAngle = 0;
-
-function setMode(m) {
-  mode = m;
-  document.querySelectorAll('.ctrl-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById(`btn${m.charAt(0).toUpperCase()+m.slice(1)}`).classList.add('active');
-
-  if (m === 'explain' || m === 'explode') {
     for (let i = 0; i < PARTICLE_COUNT; i++) {
-      velocities[i*3]   = (Math.random() - 0.5) * 0.25;
-      velocities[i*3+1] = (Math.random() - 0.5) * 0.25;
-      velocities[i*3+2] = (Math.random() - 0.5) * 0.25;
+      positions[i * 3]     = (Math.random() - 0.5) * 12;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 6;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 6;
+
+      const tIdx = (i % (targetCoords.length / 3)) * 3;
+      targets[i * 3]     = targetCoords[tIdx] || 0;
+      targets[i * 3 + 1] = targetCoords[tIdx + 1] || 0;
+      targets[i * 3 + 2] = (Math.random() - 0.5) * 0.2;
+
+      velocities[i * 3]     = (Math.random() - 0.5) * 0.05;
+      velocities[i * 3 + 1] = (Math.random() - 0.5) * 0.05;
+      velocities[i * 3 + 2] = (Math.random() - 0.5) * 0.05;
     }
-  }
 
-  if (m === 'assemble') {
-    // Cycle to next word
-    wordIndex = (wordIndex + 1) % words.length;
-    targetPositions = generateTargetPositions(words[wordIndex]);
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
-      const tIdx = (i % (targetPositions.length / 3)) * 3;
-      targets[i*3]   = targetPositions[tIdx]   || 0;
-      targets[i*3+1] = targetPositions[tIdx+1] || 0;
-      targets[i*3+2] = 0;
-    }
-  }
-}
+    const dummy = new THREE.Object3D();
+    let currentMode = 'assemble';
+    const clock = new THREE.Clock();
 
-document.getElementById('btnAssemble').addEventListener('click', () => setMode('assemble'));
-document.getElementById('btnExplode').addEventListener('click', () => setMode('explode'));
-document.getElementById('btnOrbit').addEventListener('click', () => setMode('orbit'));
+    function animate() {
+      requestAnimationFrame(animate);
+      const t = clock.getElapsedTime();
 
-function lerp(a, b, t) { return a + (b - a) * t; }
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        const ix = i * 3, iy = i * 3 + 1, iz = i * 3 + 2;
 
-const clock = new THREE.Clock();
+        if (currentMode === 'assemble') {
+          positions[ix] += (targets[ix] - positions[ix]) * 0.06;
+          positions[iy] += (targets[iy] - positions[iy]) * 0.06;
+          positions[iz] += (targets[iz] - positions[iz]) * 0.06;
+        } else if (currentMode === 'orbit') {
+          const orbitRadius = 0.4 + (i % 20) * 0.02;
+          positions[ix] += (targets[ix] + Math.cos(t * 2 + i) * orbitRadius - positions[ix]) * 0.05;
+          positions[iy] += (targets[iy] + Math.sin(t * 2 + i) * orbitRadius - positions[iy]) * 0.05;
+        } else if (currentMode === 'disperse') {
+          positions[ix] += velocities[ix];
+          positions[iy] += velocities[iy];
+          positions[iz] += velocities[iz];
+        }
 
-function animate() {
-  requestAnimationFrame(animate);
-  const dt = Math.min(clock.getDelta(), 0.05);
-
-  // Update ALL particle matrices in a single loop — crucial for InstancedMesh performance
-  for (let i = 0; i < PARTICLE_COUNT; i++) {
-    const ix = i*3, iy = i*3+1, iz = i*3+2;
-
-    if (mode === 'assemble') {
-      // Spring toward target
-      positions[ix] = lerp(positions[ix], targets[ix], 0.04);
-      positions[iy] = lerp(positions[iy], targets[iy], 0.04);
-      positions[iz] = lerp(positions[iz], targets[iz], 0.04);
-
-    } else if (mode === 'explode') {
-      // Physics-based scatter
-      velocities[iy] -= 0.002 * dt * 60; // gravity
-      positions[ix] += velocities[ix];
-      positions[iy] += velocities[iy];
-      positions[iz] += velocities[iz];
-      // Bounds reset
-      if (Math.abs(positions[ix]) > 12 || Math.abs(positions[iy]) > 8) {
-        positions[ix] = (Math.random() - 0.5) * 2;
-        positions[iy] = 4;
-        positions[iz] = (Math.random() - 0.5) * 2;
-        velocities[ix] = (Math.random() - 0.5) * 0.15;
-        velocities[iy] = (Math.random() - 0.5) * 0.1;
-        velocities[iz] = (Math.random() - 0.5) * 0.1;
+        dummy.position.set(positions[ix], positions[iy], positions[iz]);
+        dummy.updateMatrix();
+        instancedMesh.setMatrixAt(i, dummy.matrix);
       }
+      instancedMesh.instanceMatrix.needsUpdate = true;
 
-    } else if (mode === 'orbit') {
-      // Orbit around assembled text position
-      const t = clock.elapsedTime + i * 0.003;
-      const radius = 0.5 + (i % 30) * 0.02;
-      const speed = 0.4 + (i % 5) * 0.1;
-      positions[ix] = lerp(positions[ix], targets[ix] + Math.cos(t * speed) * radius, 0.03);
-      positions[iy] = lerp(positions[iy], targets[iy] + Math.sin(t * speed * 0.7) * radius * 0.5, 0.03);
-      positions[iz] = lerp(positions[iz], Math.sin(t * speed * 0.5) * radius, 0.03);
+      renderer.render(scene, camera);
     }
+    animate();
 
-    // Apply to InstancedMesh matrix
-    dummy.position.set(positions[ix], positions[iy], positions[iz]);
-    const scalePulse = mode === 'orbit' ? 1.0 + Math.sin(clock.elapsedTime * 3 + i * 0.2) * 0.15 : 1.0;
-    dummy.scale.setScalar(scalePulse);
-    dummy.updateMatrix();
-    instancedMesh.setMatrixAt(i, dummy.matrix);
-  }
+    window.addEventListener('resize', () => {
+      const W2 = container.clientWidth, H2 = container.clientHeight;
+      camera.aspect = W2 / H2;
+      camera.updateProjectionMatrix();
+      renderer.setSize(W2, H2);
+    });
 
-  instancedMesh.instanceMatrix.needsUpdate = true;
+    const modeBtns = document.querySelectorAll('.mode-btn');
+    modeBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        modeBtns.forEach((b) => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
 
-  // Slow camera rotation
-  camera.position.x = Math.sin(clock.elapsedTime * 0.05) * 0.5;
-  camera.position.y = Math.cos(clock.elapsedTime * 0.04) * 0.3;
-  camera.lookAt(0, 0, 0);
-
-  renderer.render(scene, camera);
-}
-
-animate();
-
-window.addEventListener('resize', () => {
-  const W2 = window.innerWidth, H2 = window.innerHeight;
-  camera.aspect = W2 / H2;
-  camera.updateProjectionMatrix();
-  renderer.setSize(W2, H2);
-});
-</script>
+        currentMode = btn.dataset.mode;
+        if (currentMode === 'assemble') {
+          wordIdx = (wordIdx + 1) % words.length;
+          targetCoords = generateTextPoints(words[wordIdx]);
+          for (let i = 0; i < PARTICLE_COUNT; i++) {
+            const tIdx = (i % (targetCoords.length / 3)) * 3;
+            targets[i * 3]     = targetCoords[tIdx] || 0;
+            targets[i * 3 + 1] = targetCoords[tIdx + 1] || 0;
+            targets[i * 3 + 2] = 0;
+          }
+        }
+      });
+    });
+  </script>
 </body>
 </html>

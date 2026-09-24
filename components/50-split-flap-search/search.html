@@ -3,224 +3,308 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Split-Flap Search Bar</title>
-    <script>
-        const origWarn = console.warn;
-        console.warn = function(...args) {
-            const msg = args[0];
-            if (typeof msg === 'string' && (msg.includes('Babel') || msg.includes('Tailwind') || msg.includes('tailwindcss'))) return;
-            origWarn.apply(console, args);
-        };
-    </script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Mechanical Split-Flap Search Matrix</title>
+    <link rel="stylesheet" href="../../styles/shared.css">
     <style>
-        body { margin: 0; background: #07090f; min-height: 100vh; overflow: hidden; font-family: 'JetBrains Mono', 'Fira Code', monospace; color: white; }
-        #root { width: 100%; height: 100vh; display: flex; align-items: center; justify-content: center; }
-        .flap-char { perspective: 200px; display: inline-block; line-height: 1; }
-        .flap-inner { display: inline-block; transform-origin: center top; backface-visibility: hidden; }
-    </style>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
+        body {
+            background: radial-gradient(circle at center, #0f121e 0%, #05070d 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            user-select: none;
+            perspective: 1000px;
+            gap: 28px;
+            font-family: var(--font-mono, monospace);
         }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+        .solari-hud {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 11px;
+            color: #94a3b8;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        .hud-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #fbbf24;
+            box-shadow: 0 0 10px #fbbf24;
+            animation: blink 1s infinite alternate;
+        }
+
+        @keyframes blink { 0% { opacity: 0.4; } 100% { opacity: 1; } }
+
+        /* Solari Search Chassis */
+        .solari-chassis {
+            position: relative;
+            background: #090c14;
+            border: 2px solid #1e293b;
+            border-radius: 20px;
+            padding: 24px 28px;
+            box-shadow: 
+                0 30px 60px rgba(0, 0, 0, 0.9),
+                inset 0 2px 4px rgba(0, 0, 0, 0.8),
+                0 0 30px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 640px;
+            width: 90%;
+        }
+
+        /* Input Row */
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 10px 16px;
+        }
+
+        .search-icon {
+            color: #fbbf24;
+            font-size: 16px;
+        }
+
+        .search-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #f8fafc;
+            font-family: var(--font-mono, monospace);
+            font-size: 14px;
+            letter-spacing: 0.05em;
+        }
+
+        .search-input::placeholder {
+            color: #475569;
+        }
+
+        /* 3D Split-Flap Cells Display Matrix */
+        .flap-board {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            overflow-x: auto;
+            padding: 10px 0;
+            perspective: 600px;
+        }
+
+        .flap-cell {
+            position: relative;
+            width: 32px;
+            height: 48px;
+            background: #111827;
+            border-radius: 6px;
+            border: 1px solid #1f2937;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.7);
+            transform-style: preserve-3d;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Horizontal Split Crease Line */
+        .flap-cell::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #030712;
+            z-index: 10;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+        }
+
+        .flap-half {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 50%;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            background: #131b2e;
+            color: #f8fafc;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .flap-top {
+            top: 0;
+            align-items: flex-end;
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+            border-bottom: 1px solid rgba(0,0,0,0.6);
+            transform-origin: bottom center;
+        }
+
+        .flap-bottom {
+            bottom: 0;
+            align-items: flex-start;
+            border-bottom-left-radius: 5px;
+            border-bottom-right-radius: 5px;
+            transform-origin: top center;
+        }
+
+        .flap-top span { transform: translateY(50%); }
+        .flap-bottom span { transform: translateY(-50%); }
+
+        /* Flip Animation */
+        .flap-cell.flipping .flap-top {
+            animation: flip-top 0.15s ease-in forwards;
+        }
+
+        @keyframes flip-top {
+            0% { transform: rotateX(0deg); }
+            100% { transform: rotateX(-90deg); }
+        }
+
+        .preset-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .preset-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #94a3b8;
+            font-family: var(--font-mono, monospace);
+            font-size: 10px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .preset-btn:hover {
+            background: rgba(251, 191, 36, 0.15);
+            border-color: #fbbf24;
+            color: #fbbf24;
+        }
+    </style>
 </head>
 <body>
-    <div id="root"></div>
-    <script type="text/babel" data-type="module">
-        import React, { useState, useRef, useEffect, useCallback } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, AnimatePresence } from 'framer-motion';
 
-        const SUGGESTIONS = [
-            'react three fiber',
-            'framer motion spring physics',
-            'split flap display animation',
-            'glassmorphism design 2025',
-            'webgl vertex shaders',
-            'three.js instanced mesh',
-            'motion design systems',
-            'scroll driven animations',
-        ];
+    <div class="solari-hud">
+        <span class="hud-dot"></span>
+        <span>Solari-Line Split-Flap Departure Index</span>
+    </div>
 
-        // A single flap character that animates in from top
-        const FlapChar = ({ char, delay }) => {
-            if (char === ' ') return <span style={{ display: 'inline-block', width: '0.5ch' }} />;
-            return (
-                <span className="flap-char">
-                    <motion.span
-                        className="flap-inner"
-                        style={{
-                            display: 'inline-block',
-                            color: '#f8fafc',
-                            transformOrigin: '50% 0%',
-                        }}
-                        initial={{ rotateX: -90, opacity: 0, y: -4 }}
-                        animate={{ rotateX: 0, opacity: 1, y: 0 }}
-                        transition={{
-                            rotateX: { type: 'spring', stiffness: 400, damping: 20, delay },
-                            opacity: { duration: 0.08, delay },
-                            y: { type: 'spring', stiffness: 300, damping: 18, delay },
-                        }}
-                    >
-                        {char}
-                    </motion.span>
-                </span>
-            );
-        };
+    <div class="solari-chassis">
+        <div class="input-row">
+            <span class="search-icon">🔍</span>
+            <input type="text" class="search-input" id="search-input" placeholder="Type query to flip flaps..." maxlength="14" autofocus>
+        </div>
 
-        // Full suggestion row rendered as flapping chars
-        const FlapSuggestion = ({ text, query, onClick, isFocused }) => {
-            // Split text into chars, highlight matched portion differently
-            const chars = text.split('');
-            const matchLen = query.length;
+        <div class="flap-board" id="flap-board">
+            <!-- 14 Flap cells rendered dynamically -->
+        </div>
 
-            return (
-                <motion.div
-                    onClick={onClick}
-                    className="px-5 py-3 cursor-pointer select-none flex items-center gap-3"
-                    style={{
-                        borderBottom: '1px solid rgba(255,255,255,0.05)',
-                        background: isFocused ? 'rgba(99,102,241,0.12)' : 'transparent',
-                    }}
-                    whileHover={{ background: 'rgba(255,255,255,0.04)' }}
-                    transition={{ duration: 0.12 }}
-                >
-                    {/* Search icon */}
-                    <span style={{ opacity: 0.35, fontSize: '0.8rem', flexShrink: 0 }}>⌕</span>
-                    <span style={{ fontSize: '0.85rem', letterSpacing: '0.02em' }}>
-                        {chars.map((char, i) => (
-                            <FlapChar
-                                key={`${text}-char-${i}`}
-                                char={char}
-                                delay={i * 0.018}
-                            />
-                        ))}
-                    </span>
-                </motion.div>
-            );
-        };
+        <div class="preset-tags">
+            <button class="preset-btn" data-text="DEPARTURES">DEPARTURES</button>
+            <button class="preset-btn" data-text="TOKENS / 3D">TOKENS / 3D</button>
+            <button class="preset-btn" data-text="CYBER VAULT">CYBER VAULT</button>
+            <button class="preset-btn" data-text="FLUID MATRIX">FLUID MATRIX</button>
+            <button class="preset-btn" data-text="TOPOLOGY">TOPOLOGY</button>
+        </div>
+    </div>
 
-        const SplitFlapSearch = () => {
-            const [query, setQuery] = useState('');
-            const [focused, setFocused] = useState(false);
-            const [selectedIndex, setSelectedIndex] = useState(-1);
-            const inputRef = useRef(null);
+    <script>
+        const CELL_COUNT = 14;
+        const flapBoard = document.getElementById('flap-board');
+        const searchInput = document.getElementById('search-input');
+        const presetBtns = document.querySelectorAll('.preset-btn');
 
-            const suggestions = query.trim()
-                ? SUGGESTIONS.filter(s => s.toLowerCase().includes(query.toLowerCase())).slice(0, 5)
-                : SUGGESTIONS.slice(0, 5);
+        // Web Audio Synthesized Split-Flap Rattle
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playFlapTick() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
 
-            const showDropdown = focused && suggestions.length > 0;
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(600 + Math.random() * 200, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.02);
 
-            const handleKeyDown = (e) => {
-                if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    setSelectedIndex(i => Math.min(i + 1, suggestions.length - 1));
-                } else if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    setSelectedIndex(i => Math.max(i - 1, -1));
-                } else if (e.key === 'Enter' && selectedIndex >= 0) {
-                    setQuery(suggestions[selectedIndex]);
-                    setFocused(false);
-                } else if (e.key === 'Escape') {
-                    setFocused(false);
+            gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.02);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.025);
+        }
+
+        const cells = [];
+        let currentText = 'DEPARTURES'.padEnd(CELL_COUNT, ' ');
+
+        for (let i = 0; i < CELL_COUNT; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'flap-cell';
+            cell.innerHTML = `
+                <div class="flap-half flap-top"><span>${currentText[i]}</span></div>
+                <div class="flap-half flap-bottom"><span>${currentText[i]}</span></div>
+            `;
+            flapBoard.appendChild(cell);
+            cells.push(cell);
+        }
+
+        function flipTo(targetStr) {
+            const targetPadded = targetStr.toUpperCase().padEnd(CELL_COUNT, ' ').slice(0, CELL_COUNT);
+
+            cells.forEach((cell, idx) => {
+                const targetChar = targetPadded[idx];
+                const topSpan = cell.querySelector('.flap-top span');
+                const botSpan = cell.querySelector('.flap-bottom span');
+
+                if (topSpan.textContent !== targetChar) {
+                    cell.classList.add('flipping');
+                    setTimeout(() => {
+                        topSpan.textContent = targetChar;
+                        botSpan.textContent = targetChar;
+                        cell.classList.remove('flipping');
+                        playFlapTick();
+                    }, 80 + idx * 20);
                 }
-            };
+            });
 
-            return (
-                <div className="w-full max-w-xl px-6">
-                    <div className="mb-8 text-center">
-                        <p className="text-xs uppercase tracking-[0.3em] text-slate-600 mb-2">Mechanical Board UI</p>
-                        <h1 className="text-4xl font-bold text-white mb-1">Split-Flap Search</h1>
-                        <p className="text-slate-500 text-sm">Type anything — each letter physically flips into place</p>
-                    </div>
+            currentText = targetPadded;
+        }
 
-                    <div className="relative">
-                        {/* Search input */}
-                        <div
-                            className="flex items-center rounded-2xl overflow-hidden"
-                            style={{
-                                background: 'rgba(255,255,255,0.04)',
-                                border: focused ? '1px solid rgba(99,102,241,0.6)' : '1px solid rgba(255,255,255,0.1)',
-                                boxShadow: focused ? '0 0 0 3px rgba(99,102,241,0.12)' : 'none',
-                                transition: 'border 0.2s, box-shadow 0.2s',
-                            }}
-                        >
-                            <span className="pl-5 text-slate-500 text-base">⌕</span>
-                            <input
-                                ref={inputRef}
-                                type="text"
-                                value={query}
-                                onChange={e => { setQuery(e.target.value); setSelectedIndex(-1); }}
-                                onFocus={() => setFocused(true)}
-                                onBlur={() => setTimeout(() => setFocused(false), 150)}
-                                onKeyDown={handleKeyDown}
-                                placeholder="Search anything..."
-                                className="w-full py-4 px-4 bg-transparent outline-none text-white placeholder-slate-600 text-sm"
-                                style={{ fontFamily: 'inherit', letterSpacing: '0.04em' }}
-                            />
-                            {query && (
-                                <button
-                                    className="pr-5 text-slate-500 hover:text-slate-300 transition-colors"
-                                    onClick={() => { setQuery(''); inputRef.current?.focus(); }}
-                                >
-                                    ✕
-                                </button>
-                            )}
-                        </div>
+        searchInput.addEventListener('input', (e) => {
+            flipTo(e.target.value || 'DEPARTURES');
+        });
 
-                        {/* Dropdown panel */}
-                        <AnimatePresence>
-                            {showDropdown && (
-                                <motion.div
-                                    className="absolute top-full left-0 right-0 mt-2 rounded-2xl overflow-hidden z-50"
-                                    style={{
-                                        background: 'rgba(10, 12, 20, 0.98)',
-                                        border: '1px solid rgba(255,255,255,0.08)',
-                                        boxShadow: '0 20px 60px rgba(0,0,0,0.7)',
-                                        backdropFilter: 'blur(16px)',
-                                    }}
-                                    initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                                >
-                                    <div className="px-5 pt-3 pb-1">
-                                        <p className="text-xs text-slate-600 uppercase tracking-widest">
-                                            {query ? 'Results' : 'Suggestions'}
-                                        </p>
-                                    </div>
-                                    {suggestions.map((s, i) => (
-                                        <FlapSuggestion
-                                            key={s}
-                                            text={s}
-                                            query={query}
-                                            isFocused={selectedIndex === i}
-                                            onClick={() => { setQuery(s); setFocused(false); }}
-                                        />
-                                    ))}
-                                    <div className="px-5 py-2 flex items-center gap-2" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                                        <kbd className="text-xs bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">↑↓</kbd>
-                                        <span className="text-xs text-slate-600">navigate</span>
-                                        <kbd className="text-xs bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-2">↵</kbd>
-                                        <span className="text-xs text-slate-600">select</span>
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
-                </div>
-            );
-        };
+        presetBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const text = btn.dataset.text;
+                searchInput.value = text;
+                flipTo(text);
+            });
+        });
 
-        createRoot(document.getElementById('root')).render(<SplitFlapSearch />);
+        // Auto suggestion cycle
+        const AUTO_SUGGESTIONS = ['QUANTUM CRYPT', 'NEURAL MESH', 'HYPERSPACE', 'SOLARI AIRPORT'];
+        let autoIdx = 0;
+        setInterval(() => {
+            if (document.activeElement === searchInput) return;
+            autoIdx = (autoIdx + 1) % AUTO_SUGGESTIONS.length;
+            flipTo(AUTO_SUGGESTIONS[autoIdx]);
+        }, 5000);
     </script>
 </body>
 </html>

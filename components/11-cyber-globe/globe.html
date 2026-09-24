@@ -3,300 +3,290 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Cyber-Node Interactive Globe</title>
+  <title>11 - Holographic Orbital Command Sphere</title>
+  <link rel="stylesheet" href="../../styles/shared.css" />
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: #000;
-      width: 100%; height: 100vh;
-      overflow: hidden;
-      font-family: 'Courier New', monospace;
+    .demo-container {
       position: relative;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 50%, #0b1329 0%, #030712 100%);
+      font-family: var(--font-sans);
+      display: flex;
+      flex-direction: column;
     }
+
     #canvas-container {
       position: absolute;
       inset: 0;
+      z-index: 1;
+      cursor: grab;
     }
-    .hud {
+
+    #canvas-container:active {
+      cursor: grabbing;
+    }
+
+    /* Tactical HUD Glass Frame */
+    .hud-header {
       position: absolute;
-      top: 0; left: 0; right: 0;
-      padding: 20px 24px;
+      top: var(--space-6);
+      left: var(--space-6);
+      right: var(--space-6);
       z-index: 10;
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
       pointer-events: none;
     }
-    .hud-left .title {
-      font-size: 11px;
+
+    .hud-brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-5);
+      border-radius: var(--radius-full);
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      backdrop-filter: blur(16px);
+      pointer-events: auto;
+    }
+
+    .hud-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 10px #10b981;
+      animation: pulseGlow 2s infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    .hud-title {
+      font-size: var(--text-xs);
       font-weight: 700;
-      letter-spacing: 4px;
-      color: #00ffcc;
+      letter-spacing: var(--tracking-widest);
       text-transform: uppercase;
-      text-shadow: 0 0 10px #00ffcc;
+      color: var(--text-heading);
     }
-    .hud-left .sub {
-      font-size: 9px;
-      letter-spacing: 2px;
-      color: rgba(0,255,204,0.4);
-      margin-top: 4px;
-    }
-    .hud-right {
+
+    .hud-stats {
       display: flex;
-      flex-direction: column;
-      gap: 4px;
-      align-items: flex-end;
+      gap: var(--space-4);
+      pointer-events: auto;
     }
-    .stat {
+
+    .stat-pill {
       display: flex;
-      gap: 10px;
-      font-size: 9px;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius-full);
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      backdrop-filter: blur(16px);
     }
-    .stat-label { color: rgba(0,255,204,0.35); letter-spacing: 2px; }
-    .stat-value { color: #00ffcc; text-shadow: 0 0 6px #00ffcc; font-weight: bold; }
-    .scan-line {
+
+    .stat-val {
+      font-weight: 700;
+      color: var(--accent-base);
+    }
+
+    /* Region Selector Toolbar */
+    .hud-toolbar {
       position: absolute;
-      left: 0; right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(0,255,204,0.15), transparent);
-      animation: scanMove 4s linear infinite;
-      z-index: 5;
-    }
-    @keyframes scanMove {
-      0% { top: 0%; opacity: 1; }
-      80% { opacity: 0.6; }
-      100% { top: 100%; opacity: 0; }
-    }
-    .corner {
-      position: absolute;
-      width: 16px; height: 16px;
-      border-color: rgba(0,255,204,0.4);
-      border-style: solid;
-      z-index: 10;
-    }
-    .corner.tl { top: 14px; left: 14px; border-width: 1px 0 0 1px; }
-    .corner.tr { top: 14px; right: 14px; border-width: 1px 1px 0 0; }
-    .corner.bl { bottom: 14px; left: 14px; border-width: 0 0 1px 1px; }
-    .corner.br { bottom: 14px; right: 14px; border-width: 0 1px 1px 0; }
-    .hint {
-      position: absolute;
-      bottom: 20px;
+      bottom: var(--space-6);
       left: 50%;
       transform: translateX(-50%);
-      font-size: 9px;
-      letter-spacing: 3px;
-      color: rgba(0,255,204,0.3);
-      text-transform: uppercase;
-      animation: pulse 2s ease-in-out infinite;
+      z-index: 10;
+      display: flex;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-full);
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      backdrop-filter: blur(16px);
     }
-    @keyframes pulse {
-      0%, 100% { opacity: 0.3; }
-      50% { opacity: 0.7; }
+
+    .region-btn {
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius-full);
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .region-btn:hover {
+      color: var(--text-heading);
+    }
+
+    .region-btn.is-active {
+      background: var(--surface-overlay);
+      border-color: var(--border-subtle);
+      color: var(--accent-base);
+      box-shadow: 0 0 12px var(--accent-glow);
     }
   </style>
 </head>
 <body>
+  <div class="demo-container">
+    <div class="hud-header">
+      <div class="hud-brand">
+        <div class="hud-indicator"></div>
+        <span class="hud-title">Orbital Mesh Telemetry</span>
+      </div>
 
-<div class="scan-line"></div>
-
-<div class="corner tl"></div>
-<div class="corner tr"></div>
-<div class="corner bl"></div>
-<div class="corner br"></div>
-
-<div class="hud">
-  <div class="hud-left">
-    <div class="title">DataMesh · Global</div>
-    <div class="sub">Real-Time Node Visualization</div>
-  </div>
-  <div class="hud-right">
-    <div class="stat">
-      <span class="stat-label">NODES</span>
-      <span class="stat-value">2,048</span>
+      <div class="hud-stats">
+        <div class="stat-pill">Nodes <span class="stat-val" id="nodeCount">2,048</span></div>
+        <div class="stat-pill">Sync <span class="stat-val">99.8%</span></div>
+      </div>
     </div>
-    <div class="stat">
-      <span class="stat-label">ACTIVE</span>
-      <span class="stat-value">1,893</span>
-    </div>
-    <div class="stat">
-      <span class="stat-label">LATENCY</span>
-      <span class="stat-value">14ms</span>
+
+    <div id="canvas-container"></div>
+
+    <div class="hud-toolbar" role="toolbar" aria-label="Region filters">
+      <button class="region-btn is-active" data-region="global">Global Mesh</button>
+      <button class="region-btn" data-region="americas">Americas Cluster</button>
+      <button class="region-btn" data-region="emea">EMEA Backbone</button>
+      <button class="region-btn" data-region="apac">APAC Node</button>
     </div>
   </div>
-</div>
 
-<div id="canvas-container"></div>
-
-<div class="hint">drag to rotate · scroll to zoom</div>
-
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
   }
-}
-</script>
+  </script>
 
-<script type="module">
-import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-const container = document.getElementById('canvas-container');
-const W = container.clientWidth, H = container.clientHeight;
+    const container = document.getElementById('canvas-container');
+    const W = container.clientWidth, H = container.clientHeight;
 
-// Renderer — demand rendering
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-renderer.setSize(W, H);
-renderer.setClearColor(0x000000, 1);
-container.appendChild(renderer.domElement);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.setSize(W, H);
+    container.appendChild(renderer.domElement);
 
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(50, W / H, 0.1, 100);
-camera.position.z = 3.5;
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100);
+    camera.position.z = 3.6;
 
-// OrbitControls — triggers re-render on interaction
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.06;
-controls.rotateSpeed = 0.5;
-controls.enableZoom = true;
-controls.minDistance = 2;
-controls.maxDistance = 6;
-controls.autoRotate = true;
-controls.autoRotateSpeed = 0.4;
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.rotateSpeed = 0.6;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.6;
+    controls.enableZoom = false;
 
-let needsRender = true;
-controls.addEventListener('change', () => { needsRender = true; });
-controls.addEventListener('start', () => { needsRender = true; });
+    // Outer Cyber Grid Sphere
+    const radius = 1.4;
+    const sphereGeo = new THREE.SphereGeometry(radius, 48, 36);
+    const pointMat = new THREE.PointsMaterial({
+      color: 0x3b82f6,
+      size: 0.016,
+      transparent: true,
+      opacity: 0.7,
+      sizeAttenuation: true
+    });
+    const globePoints = new THREE.Points(sphereGeo, pointMat);
+    scene.add(globePoints);
 
-// --- Globe points using SphereGeometry ---
-const GLOBE_RADIUS = 1.4;
-const sphereGeo = new THREE.SphereGeometry(GLOBE_RADIUS, 64, 48);
-const positions = sphereGeo.attributes.position;
+    // Inner Glowing Core
+    const coreGeo = new THREE.SphereGeometry(radius * 0.98, 32, 24);
+    const coreMat = new THREE.MeshBasicMaterial({
+      color: 0x6366f1,
+      transparent: true,
+      opacity: 0.08,
+      blending: THREE.AdditiveBlending
+    });
+    scene.add(new THREE.Mesh(coreGeo, coreMat));
 
-// Point material — glowing neon cyan
-const pointMat = new THREE.PointsMaterial({
-  color: 0x00ffcc,
-  size: 0.018,
-  sizeAttenuation: true,
-  transparent: true,
-  opacity: 0.85,
-});
+    // Orbital Rings
+    const ringGeo = new THREE.RingGeometry(radius + 0.15, radius + 0.16, 64);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
+      transparent: true,
+      opacity: 0.25,
+      side: THREE.DoubleSide
+    });
+    const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+    ringMesh.rotation.x = Math.PI / 3;
+    scene.add(ringMesh);
 
-const globe = new THREE.Points(sphereGeo, pointMat);
-scene.add(globe);
+    // Active Node Beacons
+    const nodeCount = 120;
+    const nodeGeo = new THREE.BufferGeometry();
+    const nodePos = new Float32Array(nodeCount * 3);
+    for (let i = 0; i < nodeCount; i++) {
+      const phi = Math.acos(2 * Math.random() - 1);
+      const theta = Math.random() * Math.PI * 2;
+      nodePos[i * 3]     = radius * Math.sin(phi) * Math.cos(theta);
+      nodePos[i * 3 + 1] = radius * Math.cos(phi);
+      nodePos[i * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
+    }
+    nodeGeo.setAttribute('position', new THREE.BufferAttribute(nodePos, 3));
+    const nodeMat = new THREE.PointsMaterial({
+      color: 0x34d399,
+      size: 0.035,
+      transparent: true,
+      opacity: 0.9,
+      blending: THREE.AdditiveBlending
+    });
+    const beaconMesh = new THREE.Points(nodeGeo, nodeMat);
+    scene.add(beaconMesh);
 
-// Inner glow sphere (additive blending for glow effect)
-const innerGeo = new THREE.SphereGeometry(GLOBE_RADIUS * 0.98, 32, 24);
-const innerMat = new THREE.MeshBasicMaterial({
-  color: 0x00ffcc,
-  transparent: true,
-  opacity: 0.012,
-  side: THREE.FrontSide,
-  blending: THREE.AdditiveBlending,
-  depthWrite: false,
-});
-scene.add(new THREE.Mesh(innerGeo, innerMat));
+    // Animation Loop
+    const clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const t = clock.getElapsedTime();
 
-// Active data nodes — random bright points on sphere surface
-const nodeCount = 80;
-const nodePositions = new Float32Array(nodeCount * 3);
-for (let i = 0; i < nodeCount; i++) {
-  // Random point on sphere
-  const phi = Math.acos(2 * Math.random() - 1);
-  const theta = Math.random() * Math.PI * 2;
-  nodePositions[i*3]   = GLOBE_RADIUS * Math.sin(phi) * Math.cos(theta);
-  nodePositions[i*3+1] = GLOBE_RADIUS * Math.cos(phi);
-  nodePositions[i*3+2] = GLOBE_RADIUS * Math.sin(phi) * Math.sin(theta);
-}
+      controls.update();
+      ringMesh.rotation.z = t * 0.1;
+      globePoints.rotation.y = t * 0.02;
 
-const nodeGeo = new THREE.BufferGeometry();
-nodeGeo.setAttribute('position', new THREE.BufferAttribute(nodePositions, 3));
-const nodeMat = new THREE.PointsMaterial({
-  color: 0xffffff,
-  size: 0.04,
-  transparent: true,
-  opacity: 0.9,
-  sizeAttenuation: true,
-  blending: THREE.AdditiveBlending,
-  depthWrite: false,
-});
-scene.add(new THREE.Points(nodeGeo, nodeMat));
+      renderer.render(scene, camera);
+    }
+    animate();
 
-// Grid rings (latitude/longitude lines feel)
-for (let lat = -60; lat <= 60; lat += 30) {
-  const phi = THREE.MathUtils.degToRad(90 - lat);
-  const r = GLOBE_RADIUS * Math.sin(phi);
-  const y = GLOBE_RADIUS * Math.cos(phi);
-  const ringGeo = new THREE.RingGeometry(r - 0.001, r + 0.001, 64);
-  const ringMat = new THREE.MeshBasicMaterial({
-    color: 0x00ffcc,
-    transparent: true,
-    opacity: 0.06,
-    side: THREE.DoubleSide,
-    depthWrite: false,
-  });
-  const ring = new THREE.Mesh(ringGeo, ringMat);
-  ring.rotation.x = Math.PI / 2;
-  ring.position.y = y;
-  scene.add(ring);
-}
+    window.addEventListener('resize', () => {
+      const W2 = container.clientWidth, H2 = container.clientHeight;
+      camera.aspect = W2 / H2;
+      camera.updateProjectionMatrix();
+      renderer.setSize(W2, H2);
+    });
 
-// Equator ring bright
-const eqGeo = new THREE.RingGeometry(GLOBE_RADIUS - 0.002, GLOBE_RADIUS + 0.002, 128);
-const eqMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false });
-const eqRing = new THREE.Mesh(eqGeo, eqMat);
-eqRing.rotation.x = Math.PI / 2;
-scene.add(eqRing);
+    // Region toolbar filter listener
+    const regionBtns = document.querySelectorAll('.region-btn');
+    const nodeCountEl = document.getElementById('nodeCount');
 
-// Ambient glow (additive sprite-like)
-const ambGeo = new THREE.SphereGeometry(GLOBE_RADIUS * 1.25, 16, 12);
-const ambMat = new THREE.MeshBasicMaterial({
-  color: 0x00ffcc,
-  transparent: true,
-  opacity: 0.025,
-  side: THREE.BackSide,
-  blending: THREE.AdditiveBlending,
-  depthWrite: false,
-});
-scene.add(new THREE.Mesh(ambGeo, ambMat));
+    regionBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        regionBtns.forEach((b) => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
 
-// Clock for auto-render
-const clock = new THREE.Clock();
-let autoRotateTimer = 0;
-
-function render() {
-  renderer.render(scene, camera);
-  needsRender = false;
-}
-
-function animate() {
-  requestAnimationFrame(animate);
-  controls.update();
-
-  autoRotateTimer += clock.getDelta();
-
-  // Always render when auto-rotating
-  if (controls.autoRotate) {
-    needsRender = true;
-  }
-
-  if (needsRender) {
-    render();
-  }
-}
-
-animate();
-
-window.addEventListener('resize', () => {
-  const W2 = container.clientWidth, H2 = container.clientHeight;
-  camera.aspect = W2 / H2;
-  camera.updateProjectionMatrix();
-  renderer.setSize(W2, H2);
-  needsRender = true;
-});
-</script>
+        const counts = { global: '2,048', americas: '840', emea: '620', apac: '588' };
+        nodeCountEl.textContent = counts[btn.dataset.region] || '1,000';
+      });
+    });
+  </script>
 </body>
 </html>

@@ -1,234 +1,256 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Glassmorphism Floating Shapes</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>10 - Prismatic Optical Crystal Hero</title>
+  <link rel="stylesheet" href="../../styles/shared.css" />
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      width: 100%; height: 100vh;
-      overflow: hidden;
-      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 30%, #4c1d95 60%, #5b21b6 100%);
-      font-family: 'Inter', sans-serif;
+    .demo-container {
       position: relative;
-    }
-    #canvas-container {
-      position: absolute;
-      inset: 0;
-      z-index: 0;
-    }
-    .hero-content {
-      position: absolute;
-      inset: 0;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      z-index: 10;
+      padding: var(--space-8);
+      overflow: hidden;
+      perspective: 1200px;
+    }
+
+    /* Background Ambient Gradients */
+    .ambient-glow {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.25) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(236, 72, 153, 0.2) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.15) 0%, transparent 60%);
+      filter: blur(80px);
+      z-index: 0;
       pointer-events: none;
+      transition: background 0.8s ease;
+    }
+
+    /* 3D Crystal Stage */
+    .crystal-stage {
+      position: relative;
+      width: 100%;
+      max-width: 520px;
+      height: 380px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform-style: preserve-3d;
+      z-index: 1;
+    }
+
+    /* Prism Nodes */
+    .prism-node {
+      position: absolute;
+      border-radius: var(--radius-2xl);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03));
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(20px);
+      box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+      transform-style: preserve-3d;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
+      cursor: pointer;
+    }
+
+    .prism-node:hover {
+      border-color: rgba(255, 255, 255, 0.5);
+      box-shadow: 0 30px 60px rgba(99, 102, 241, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+
+    .prism-main {
+      width: 220px;
+      height: 220px;
+      transform: translateZ(60px) rotateX(15deg) rotateY(-15deg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-6);
       text-align: center;
-      padding: 20px;
     }
-    .hero-badge {
-      display: inline-block;
-      padding: 6px 16px;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 50px;
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 3px;
-      color: rgba(255,255,255,0.6);
+
+    .prism-secondary-left {
+      width: 140px;
+      height: 140px;
+      top: 40px;
+      left: 20px;
+      transform: translateZ(20px) rotateX(-10deg) rotateY(20deg);
+    }
+
+    .prism-secondary-right {
+      width: 130px;
+      height: 130px;
+      bottom: 40px;
+      right: 30px;
+      transform: translateZ(40px) rotateX(20deg) rotateY(10deg);
+    }
+
+    /* Prism Content */
+    .prism-badge {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: var(--tracking-widest);
       text-transform: uppercase;
-      margin-bottom: 20px;
-      backdrop-filter: blur(10px);
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-heading);
+      margin-bottom: var(--space-3);
+      border: 1px solid rgba(255, 255, 255, 0.15);
     }
-    .hero-title {
-      font-size: clamp(2rem, 5vw, 3.5rem);
-      font-weight: 800;
-      color: white;
-      line-height: 1.1;
-      letter-spacing: -1.5px;
-      text-shadow: 0 2px 20px rgba(0,0,0,0.3);
-      margin-bottom: 16px;
+
+    .prism-title {
+      font-size: var(--text-lg);
+      font-weight: 700;
+      color: var(--text-heading);
+      letter-spacing: var(--tracking-tight);
+      line-height: var(--leading-tight);
     }
-    .hero-title span {
-      background: linear-gradient(135deg, #a78bfa, #f0abfc, #67e8f9);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+
+    .prism-sub {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      margin-top: var(--space-2);
     }
-    .hero-sub {
-      font-size: 15px;
-      color: rgba(255,255,255,0.45);
-      max-width: 360px;
-      line-height: 1.6;
+
+    /* Floating Geometry Wireframes */
+    .crystal-facets {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      border-radius: inherit;
+      background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.15), transparent 70%);
     }
-    canvas { display: block; }
+
+    /* Control Toolbar */
+    .controls-bar {
+      position: relative;
+      z-index: 2;
+      margin-top: var(--space-6);
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius-full);
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      backdrop-filter: blur(16px);
+    }
+
+    .control-btn {
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius-full);
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .control-btn:hover {
+      color: var(--text-heading);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .control-btn.is-active {
+      background: var(--surface-overlay);
+      border-color: var(--border-subtle);
+      color: var(--accent-base);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
   </style>
 </head>
 <body>
+  <div class="demo-container" id="stageContainer">
+    <div class="ambient-glow" id="ambientGlow"></div>
 
-<div id="canvas-container"></div>
+    <div class="crystal-stage" id="crystalStage">
+      <!-- Secondary Floating Prism (Left) -->
+      <div class="prism-node prism-secondary-left" id="nodeLeft">
+        <div class="crystal-facets"></div>
+      </div>
 
-<div class="hero-content">
-  <div class="hero-badge">✦ New Collection</div>
-  <h1 class="hero-title">Beyond the<br/><span>Ordinary</span></h1>
-  <p class="hero-sub">Crystalline experiences crafted at the intersection of art and technology.</p>
-</div>
+      <!-- Main Central Prism Node -->
+      <div class="prism-node prism-main" id="nodeMain">
+        <div class="crystal-facets"></div>
+        <span class="prism-badge">PRISMATIC 2.5D</span>
+        <h1 class="prism-title">Crystalline Optical Optics</h1>
+        <p class="prism-sub">Refractive multi-layer glass matrix</p>
+      </div>
 
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-  }
-}
-</script>
+      <!-- Secondary Floating Prism (Right) -->
+      <div class="prism-node prism-secondary-right" id="nodeRight">
+        <div class="crystal-facets"></div>
+      </div>
+    </div>
 
-<script type="module">
-import * as THREE from 'three';
+    <!-- Mode Selector Controls -->
+    <div class="controls-bar" role="toolbar" aria-label="Prism lighting controls">
+      <button class="control-btn is-active" data-theme="violet">Violet Aurora</button>
+      <button class="control-btn" data-theme="cyan">Cyber Cyan</button>
+      <button class="control-btn" data-theme="emerald">Emerald Spark</button>
+    </div>
+  </div>
 
-const container = document.getElementById('canvas-container');
-const W = container.clientWidth, H = container.clientHeight;
+  <script>
+    const crystalStage = document.getElementById('crystalStage');
+    const nodeMain = document.getElementById('nodeMain');
+    const nodeLeft = document.getElementById('nodeLeft');
+    const nodeRight = document.getElementById('nodeRight');
+    const ambientGlow = document.getElementById('ambientGlow');
+    const controlBtns = document.querySelectorAll('.control-btn');
 
-// Renderer — capped DPR [1, 1.5]
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-renderer.setSize(W, H);
-renderer.setClearColor(0x000000, 0);
-container.appendChild(renderer.domElement);
+    // Smooth Mouse Tilt & Parallax
+    window.addEventListener('mousemove', (e) => {
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
 
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100);
-camera.position.z = 6;
+      const rotX = ((e.clientY - centerY) / centerY) * -16;
+      const rotY = ((e.clientX - centerX) / centerX) * 16;
 
-// Lighting
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-scene.add(ambientLight);
+      nodeMain.style.transform = `translateZ(60px) rotateX(${15 + rotX * 0.8}deg) rotateY(${-15 + rotY * 0.8}deg)`;
+      nodeLeft.style.transform = `translateZ(20px) rotateX(${-10 + rotX * 0.5}deg) rotateY(${20 + rotY * 0.5}deg) translateX(${rotY * 0.5}px)`;
+      nodeRight.style.transform = `translateZ(40px) rotateX(${20 + rotX * 0.6}deg) rotateY(${10 + rotY * 0.6}deg) translateY(${rotX * 0.5}px)`;
+    });
 
-const light1 = new THREE.DirectionalLight(0xa78bfa, 2.5);
-light1.position.set(3, 4, 3);
-scene.add(light1);
+    // Theme preset switcher
+    const themes = {
+      violet: {
+        glow: 'radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.25) 0%, transparent 50%), radial-gradient(circle at 80% 70%, rgba(236, 72, 153, 0.2) 0%, transparent 50%)',
+        accent: '#6366f1'
+      },
+      cyan: {
+        glow: 'radial-gradient(circle at 30% 30%, rgba(6, 182, 212, 0.3) 0%, transparent 50%), radial-gradient(circle at 70% 70%, rgba(59, 130, 246, 0.25) 0%, transparent 50%)',
+        accent: '#06b6d4'
+      },
+      emerald: {
+        glow: 'radial-gradient(circle at 30% 40%, rgba(16, 185, 129, 0.3) 0%, transparent 50%), radial-gradient(circle at 70% 60%, rgba(234, 179, 8, 0.2) 0%, transparent 50%)',
+        accent: '#10b981'
+      }
+    };
 
-const light2 = new THREE.DirectionalLight(0x67e8f9, 1.5);
-light2.position.set(-3, -2, 2);
-scene.add(light2);
+    controlBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        controlBtns.forEach((b) => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
 
-const pointLight = new THREE.PointLight(0xf0abfc, 3, 10);
-pointLight.position.set(0, 2, 3);
-scene.add(pointLight);
-
-// Glassmorphism material (approximation without MeshTransmissionMaterial CDN issues)
-function makeGlassMaterial(color) {
-  return new THREE.MeshPhysicalMaterial({
-    color: color,
-    metalness: 0.0,
-    roughness: 0.05,
-    transmission: 0.92,
-    thickness: 0.5,
-    ior: 1.5,
-    reflectivity: 0.5,
-    transparent: true,
-    opacity: 0.55,
-    side: THREE.DoubleSide,
-    envMapIntensity: 1.5,
-    clearcoat: 1.0,
-    clearcoatRoughness: 0.1,
-    attenuationColor: new THREE.Color(color),
-    attenuationDistance: 0.5,
-  });
-}
-
-// Icosahedron — low poly (detail=0 gives 20 faces)
-const icoGeo = new THREE.IcosahedronGeometry(1.1, 0);
-const icoMat = makeGlassMaterial(0x8b5cf6);
-const icosahedron = new THREE.Mesh(icoGeo, icoMat);
-icosahedron.position.set(-1.5, 0.3, 0);
-scene.add(icosahedron);
-
-// Torus — low segments for performance
-const torusGeo = new THREE.TorusGeometry(0.8, 0.28, 8, 24);
-const torusMat = makeGlassMaterial(0x06b6d4);
-const torus = new THREE.Mesh(torusGeo, torusMat);
-torus.position.set(1.6, -0.2, -0.5);
-scene.add(torus);
-
-// Small sphere accent
-const sphereGeo = new THREE.IcosahedronGeometry(0.45, 1);
-const sphereMat = makeGlassMaterial(0xf0abfc);
-const sphere = new THREE.Mesh(sphereGeo, sphereMat);
-sphere.position.set(0.6, 1.4, 0.5);
-scene.add(sphere);
-
-// Wireframe overlays for edge glow effect
-function makeWireframe(geo, color) {
-  const wireMat = new THREE.MeshBasicMaterial({
-    color: color,
-    wireframe: true,
-    transparent: true,
-    opacity: 0.12
-  });
-  return new THREE.Mesh(geo, wireMat);
-}
-
-icosahedron.add(makeWireframe(icoGeo, 0xc4b5fd));
-torus.add(makeWireframe(torusGeo, 0x67e8f9));
-
-// Particle field
-const particleCount = 120;
-const positions = new Float32Array(particleCount * 3);
-for (let i = 0; i < particleCount * 3; i++) {
-  positions[i] = (Math.random() - 0.5) * 14;
-}
-const particleGeo = new THREE.BufferGeometry();
-particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-const particleMat = new THREE.PointsMaterial({
-  color: 0xa78bfa,
-  size: 0.025,
-  transparent: true,
-  opacity: 0.45,
-  sizeAttenuation: true
-});
-scene.add(new THREE.Points(particleGeo, particleMat));
-
-// Clock + animation
-const clock = new THREE.Clock();
-
-function animate() {
-  requestAnimationFrame(animate);
-  const t = clock.getElapsedTime();
-
-  // Slow continuous rotation
-  icosahedron.rotation.x = t * 0.18;
-  icosahedron.rotation.y = t * 0.25;
-  icosahedron.position.y = 0.3 + Math.sin(t * 0.7) * 0.18;
-
-  torus.rotation.x = t * 0.22;
-  torus.rotation.z = t * 0.15;
-  torus.position.y = -0.2 + Math.sin(t * 0.6 + 1) * 0.15;
-
-  sphere.rotation.y = t * 0.35;
-  sphere.rotation.x = t * 0.2;
-  sphere.position.y = 1.4 + Math.sin(t * 0.9) * 0.12;
-
-  // Subtle camera sway
-  camera.position.x = Math.sin(t * 0.12) * 0.3;
-  camera.position.y = Math.cos(t * 0.1) * 0.2;
-  camera.lookAt(0, 0, 0);
-
-  renderer.render(scene, camera);
-}
-
-animate();
-
-window.addEventListener('resize', () => {
-  const W2 = container.clientWidth, H2 = container.clientHeight;
-  camera.aspect = W2 / H2;
-  camera.updateProjectionMatrix();
-  renderer.setSize(W2, H2);
-});
-</script>
+        const themeKey = btn.dataset.theme;
+        const config = themes[themeKey];
+        ambientGlow.style.background = config.glow;
+        document.documentElement.style.setProperty('--accent-base', config.accent);
+      });
+    });
+  </script>
 </body>
 </html>

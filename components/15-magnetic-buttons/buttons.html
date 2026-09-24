@@ -3,318 +3,250 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Magnetic 3D CTA Buttons</title>
+  <title>15 - Electromagnetic Flux Actuators</title>
+  <link rel="stylesheet" href="../../styles/shared.css" />
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: radial-gradient(ellipse at 50% 0%, #1a0a2e 0%, #0d0d12 60%);
+    .demo-container {
+      position: relative;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      font-family: 'Inter', sans-serif;
-      gap: 28px;
-      overflow: hidden;
+      padding: var(--space-8);
+      gap: var(--space-8);
+      background: radial-gradient(circle at 50% 30%, #1e1b4b 0%, #020617 80%);
+      perspective: 1000px;
     }
 
-    .heading {
+    .demo-header {
       text-align: center;
-      margin-bottom: 10px;
     }
-    .heading h2 {
-      font-size: 11px;
-      letter-spacing: 5px;
-      color: rgba(255,255,255,0.25);
+
+    .demo-title {
+      font-size: var(--text-2xl);
+      font-weight: 800;
+      color: var(--text-heading);
+      letter-spacing: var(--tracking-tight);
+    }
+
+    .demo-sub {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      letter-spacing: var(--tracking-wider);
       text-transform: uppercase;
+      margin-top: var(--space-2);
     }
 
-    .magnetic-zone {
+    /* Magnetic Force Zone Wrapper */
+    .mag-zone {
       position: relative;
+      padding: var(--space-6);
       display: inline-flex;
-      padding: 24px;
-      cursor: none;
-    }
-
-    /* Custom magnetic cursor */
-    .custom-cursor {
-      position: fixed;
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: white;
-      pointer-events: none;
-      z-index: 9999;
-      transform: translate(-50%, -50%);
-      transition: transform 0.08s ease, width 0.2s ease, height 0.2s ease, background 0.2s ease;
-      mix-blend-mode: difference;
-    }
-
-    .magnetic-btn {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      padding: 16px 36px;
-      border-radius: 100px;
-      border: none;
-      font-size: 14px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      cursor: none;
-      outline: none;
-      will-change: transform;
-      /* No CSS transition — JS handles animation via style directly */
       transform-style: preserve-3d;
-      perspective: 600px;
     }
 
-    .btn-primary-mag {
-      background: linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7);
-      color: white;
-      box-shadow:
-        0 10px 30px rgba(139,92,246,0.35),
-        0 0 0 1px rgba(255,255,255,0.1) inset;
+    /* 3D Magnetic Actuator Button */
+    .mag-btn {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-4) var(--space-8);
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-subtle);
+      background: var(--surface-card);
+      color: var(--text-heading);
+      font-family: var(--font-sans);
+      font-size: var(--text-sm);
+      font-weight: 700;
+      letter-spacing: var(--tracking-wide);
+      cursor: pointer;
+      outline: none;
+      transform-style: preserve-3d;
+      box-shadow: var(--shadow-xl), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      transition: box-shadow 0.3s ease, border-color 0.3s ease;
+      will-change: transform;
     }
 
-    .btn-outline-mag {
-      background: transparent;
-      color: white;
-      border: 1px solid rgba(255,255,255,0.2);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    .mag-btn-primary {
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      border-color: rgba(99, 102, 241, 0.4);
+      color: #ffffff;
+      box-shadow: 0 10px 30px rgba(99, 102, 241, 0.35);
     }
 
-    .btn-neon-mag {
-      background: transparent;
-      color: #00ffaa;
-      border: 1px solid rgba(0,255,170,0.3);
-      box-shadow:
-        0 0 20px rgba(0,255,170,0.15),
-        inset 0 0 20px rgba(0,255,170,0.05);
-      font-family: 'Courier New', monospace;
-      letter-spacing: 2px;
-      font-size: 12px;
+    .mag-btn-emerald {
+      background: linear-gradient(135deg, #10b981, #059669);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: #ffffff;
+      box-shadow: 0 10px 30px rgba(16, 185, 129, 0.35);
     }
 
-    .btn-icon {
-      font-size: 16px;
-      line-height: 1;
+    .mag-btn-amber {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      border-color: rgba(245, 158, 11, 0.4);
+      color: #ffffff;
+      box-shadow: 0 10px 30px rgba(245, 158, 11, 0.35);
     }
 
-    .btn-text { position: relative; z-index: 1; }
-
-    /* Ripple layer */
-    .btn-ripple {
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      overflow: hidden;
-      pointer-events: none;
+    .mag-btn:focus-visible {
+      border-color: #ffffff;
+      box-shadow: 0 0 0 3px var(--accent-glow);
     }
 
-    .ripple-circle {
+    /* Shockwave Ripple Ring */
+    .mag-ripple {
       position: absolute;
       border-radius: 50%;
-      background: rgba(255,255,255,0.25);
-      transform: scale(0);
-      animation: rippleAnim 0.6s ease-out forwards;
-    }
-
-    @keyframes rippleAnim {
-      to { transform: scale(4); opacity: 0; }
-    }
-
-    /* Glow layer */
-    .btn-glow {
-      position: absolute;
-      inset: -2px;
-      border-radius: inherit;
-      opacity: 0;
-      transition: opacity 0.3s ease;
+      border: 2px solid rgba(255, 255, 255, 0.8);
       pointer-events: none;
+      animation: rippleExpand 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
-    .btn-primary-mag .btn-glow {
-      background: linear-gradient(135deg, #6366f1, #a855f7);
-      filter: blur(12px);
+    @keyframes rippleExpand {
+      0% {
+        width: 0px;
+        height: 0px;
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0);
+      }
+      100% {
+        width: 180px;
+        height: 180px;
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1);
+      }
     }
 
-    .btn-neon-mag .btn-glow {
-      background: #00ffaa;
-      filter: blur(14px);
-    }
-
-    .magnetic-btn:hover .btn-glow { opacity: 0.45; }
-
-    .row {
+    .btn-row {
       display: flex;
-      gap: 20px;
+      flex-wrap: wrap;
+      gap: var(--space-4);
       align-items: center;
+      justify-content: center;
     }
   </style>
 </head>
 <body>
+  <div class="demo-container">
+    <div class="demo-header">
+      <h1 class="demo-title">Electromagnetic Flux Actuators</h1>
+      <p class="demo-sub">3D Magnetic Spatial Pull & Force Vector Response</p>
+    </div>
 
-<div class="custom-cursor" id="cursor"></div>
+    <div class="btn-row">
+      <div class="mag-zone" data-pull="35">
+        <button class="mag-btn mag-btn-primary" id="btn1">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+          <span>Primary Flux</span>
+        </button>
+      </div>
 
-<div class="heading">
-  <h2>Magnetic 3D CTA Buttons</h2>
-</div>
+      <div class="mag-zone" data-pull="40">
+        <button class="mag-btn mag-btn-emerald" id="btn2">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          <span>Emerald Vector</span>
+        </button>
+      </div>
 
-<div class="row">
-  <div class="magnetic-zone" data-strength="40">
-    <button class="magnetic-btn btn-primary-mag" id="btn1">
-      <div class="btn-glow"></div>
-      <div class="btn-ripple"></div>
-      <span class="btn-icon">→</span>
-      <span class="btn-text">Get Started</span>
-    </button>
+      <div class="mag-zone" data-pull="45">
+        <button class="mag-btn mag-btn-amber" id="btn3">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          <span>Amber Ignition</span>
+        </button>
+      </div>
+    </div>
   </div>
 
-  <div class="magnetic-zone" data-strength="35">
-    <button class="magnetic-btn btn-outline-mag" id="btn2">
-      <div class="btn-glow"></div>
-      <div class="btn-ripple"></div>
-      <span class="btn-text">Learn More</span>
-    </button>
-  </div>
-</div>
+  <script>
+    const zones = document.querySelectorAll('.mag-zone');
 
-<div class="row">
-  <div class="magnetic-zone" data-strength="45">
-    <button class="magnetic-btn btn-neon-mag" id="btn3">
-      <div class="btn-glow"></div>
-      <div class="btn-ripple"></div>
-      <span class="btn-icon">⬡</span>
-      <span class="btn-text">ENTER.SYSTEM</span>
-    </button>
-  </div>
-</div>
-
-<script>
-  const cursor = document.getElementById('cursor');
-  const zones = document.querySelectorAll('.magnetic-zone');
-
-  // Track mouse globally
-  let mouseX = 0, mouseY = 0;
-  document.addEventListener('mousemove', (e) => {
-    mouseX = e.clientX;
-    mouseY = e.clientY;
-    cursor.style.left = mouseX + 'px';
-    cursor.style.top = mouseY + 'px';
-  });
-
-  // Animation state per zone — using motion values to bypass React render cycle
-  const zoneStates = new Map();
-
-  zones.forEach((zone) => {
-    const btn = zone.querySelector('.magnetic-btn');
-    const strength = parseFloat(zone.dataset.strength) || 40;
-
-    const state = {
-      tx: 0, ty: 0, // current position
-      rx: 0, ry: 0, // current rotation
-      sx: 1,        // scale
-      targetTx: 0, targetTy: 0,
-      targetRx: 0, targetRy: 0,
-      targetSx: 1,
-      isInside: false,
-      rafId: null,
-    };
-
-    zoneStates.set(zone, state);
-
-    function lerp(a, b, t) { return a + (b - a) * t; }
-
-    function animateBtn() {
-      state.tx = lerp(state.tx, state.targetTx, 0.1);
-      state.ty = lerp(state.ty, state.targetTy, 0.1);
-      state.rx = lerp(state.rx, state.targetRx, 0.1);
-      state.ry = lerp(state.ry, state.targetRy, 0.1);
-      state.sx = lerp(state.sx, state.targetSx, 0.12);
-
-      btn.style.transform = `
-        translate(${state.tx}px, ${state.ty}px)
-        rotateX(${state.rx}deg)
-        rotateY(${state.ry}deg)
-        scale(${state.sx})
-      `;
-
-      const stillMoving =
-        Math.abs(state.tx - state.targetTx) > 0.1 ||
-        Math.abs(state.ty - state.targetTy) > 0.1 ||
-        Math.abs(state.rx - state.targetRx) > 0.05 ||
-        Math.abs(state.ry - state.targetRy) > 0.05 ||
-        Math.abs(state.sx - state.targetSx) > 0.001;
-
-      if (stillMoving) {
-        state.rafId = requestAnimationFrame(animateBtn);
-      } else {
-        state.rafId = null;
-      }
+    function lerp(start, end, factor) {
+      return start + (end - start) * factor;
     }
 
-    function startAnim() {
-      if (!state.rafId) {
-        state.rafId = requestAnimationFrame(animateBtn);
+    zones.forEach((zone) => {
+      const btn = zone.querySelector('.mag-btn');
+      const pullPower = parseFloat(zone.dataset.pull) || 35;
+
+      let currentX = 0, currentY = 0, currentRotX = 0, currentRotY = 0, currentZ = 0;
+      let targetX = 0, targetY = 0, targetRotX = 0, targetRotY = 0, targetZ = 0;
+      let animId = null;
+
+      function updatePhysics() {
+        currentX = lerp(currentX, targetX, 0.12);
+        currentY = lerp(currentY, targetY, 0.12);
+        currentRotX = lerp(currentRotX, targetRotX, 0.12);
+        currentRotY = lerp(currentRotY, targetRotY, 0.12);
+        currentZ = lerp(currentZ, targetZ, 0.12);
+
+        btn.style.transform = `
+          translate3d(${currentX}px, ${currentY}px, ${currentZ}px)
+          rotateX(${currentRotX}deg)
+          rotateY(${currentRotY}deg)
+        `;
+
+        if (
+          Math.abs(targetX - currentX) > 0.1 ||
+          Math.abs(targetY - currentY) > 0.1 ||
+          Math.abs(targetZ - currentZ) > 0.1
+        ) {
+          animId = requestAnimationFrame(updatePhysics);
+        } else {
+          animId = null;
+        }
       }
-    }
 
-    zone.addEventListener('mousemove', (e) => {
-      const rect = btn.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      const dx = e.clientX - cx;
-      const dy = e.clientY - cy;
+      function requestAnim() {
+        if (!animId) animId = requestAnimationFrame(updatePhysics);
+      }
 
-      // Magnetic pull — translate toward cursor
-      state.targetTx = dx * (strength / rect.width) * 1.8;
-      state.targetTy = dy * (strength / rect.height) * 1.8;
+      zone.addEventListener('mousemove', (e) => {
+        const rect = btn.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
 
-      // 3D tilt based on position
-      const normX = dx / (rect.width / 2);
-      const normY = dy / (rect.height / 2);
-      state.targetRx = -normY * 12;
-      state.targetRy = normX * 12;
+        const deltaX = e.clientX - centerX;
+        const deltaY = e.clientY - centerY;
 
-      state.targetSx = 1.06;
-      state.isInside = true;
-      startAnim();
+        targetX = deltaX * (pullPower / rect.width);
+        targetY = deltaY * (pullPower / rect.height);
+        targetRotX = -(deltaY / (rect.height / 2)) * 14;
+        targetRotY = (deltaX / (rect.width / 2)) * 14;
+        targetZ = 15;
+
+        requestAnim();
+      });
+
+      zone.addEventListener('mouseleave', () => {
+        targetX = 0;
+        targetY = 0;
+        targetRotX = 0;
+        targetRotY = 0;
+        targetZ = 0;
+        requestAnim();
+      });
+
+      btn.addEventListener('mousedown', (e) => {
+        targetZ = 4;
+        requestAnim();
+
+        // Shockwave ripple
+        const ripple = document.createElement('div');
+        ripple.className = 'mag-ripple';
+        ripple.style.left = `${e.clientX - btn.getBoundingClientRect().left}px`;
+        ripple.style.top = `${e.clientY - btn.getBoundingClientRect().top}px`;
+        btn.appendChild(ripple);
+
+        ripple.addEventListener('animationend', () => ripple.remove());
+      });
+
+      btn.addEventListener('mouseup', () => {
+        targetZ = 15;
+        requestAnim();
+      });
     });
-
-    zone.addEventListener('mouseleave', () => {
-      state.targetTx = 0;
-      state.targetTy = 0;
-      state.targetRx = 0;
-      state.targetRy = 0;
-      state.targetSx = 1.0;
-      state.isInside = false;
-      startAnim();
-    });
-
-    // Click: scale down + ripple
-    btn.addEventListener('mousedown', (e) => {
-      state.targetSx = 0.95;
-      startAnim();
-
-      // Ripple effect
-      const rippleContainer = btn.querySelector('.btn-ripple');
-      const rect = btn.getBoundingClientRect();
-      const ripple = document.createElement('div');
-      ripple.className = 'ripple-circle';
-      const size = Math.max(rect.width, rect.height);
-      ripple.style.width = ripple.style.height = size + 'px';
-      ripple.style.left = (e.clientX - rect.left - size/2) + 'px';
-      ripple.style.top = (e.clientY - rect.top - size/2) + 'px';
-      rippleContainer.appendChild(ripple);
-      setTimeout(() => ripple.remove(), 700);
-    });
-
-    btn.addEventListener('mouseup', () => {
-      state.targetSx = state.isInside ? 1.06 : 1.0;
-      startAnim();
-    });
-  });
-</script>
+  </script>
 </body>
 </html>

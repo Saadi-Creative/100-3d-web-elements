@@ -3,175 +3,297 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Fluid Plane</title>
-    <script>
-        const origWarn = console.warn;
-        console.warn = function(...args) {
-            const msg = args[0];
-            if (typeof msg === 'string' && (msg.includes('Babel') || msg.includes('Tailwind') || msg.includes('tailwindcss'))) return;
-            origWarn.apply(console, args);
-        };
-    </script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>3D Hydrodynamic Fluid Wave Plane</title>
+    <link rel="stylesheet" href="../../styles/shared.css">
     <style>
-        body { margin: 0; background: #010204; min-height: 400vh; overflow-x: hidden; font-family: 'Inter', sans-serif; color: white; }
-        #root { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; z-index: -1; pointer-events: none;}
-        .content { position: absolute; top: 0; left: 0; width: 100%; pointer-events: none; }
-        .section { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;}
-        h1, h2, p { text-shadow: 0 4px 20px rgba(0,0,0,0.8); }
-    </style>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.12?external=react,react-dom,three",
-            "three": "https://esm.sh/three@0.160.0"
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #01040a;
+            min-height: 100vh;
+            overflow: hidden;
+            color: white;
+            font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, sans-serif);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
         }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+        #webgl-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .hud-overlay {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .hud-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(56, 189, 248, 0.15);
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-family: var(--font-mono, monospace);
+            color: #38bdf8;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .hud-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #f8fafc;
+            letter-spacing: -0.02em;
+        }
+
+        .controls-bar {
+            position: absolute;
+            bottom: 24px;
+            display: flex;
+            gap: 10px;
+            z-index: 20;
+        }
+
+        .btn-fluid {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            color: #bae6fd;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-family: var(--font-mono, monospace);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-fluid:hover {
+            background: rgba(56, 189, 248, 0.25);
+            border-color: #38bdf8;
+            color: #ffffff;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+        }
+
+        .telemetry-box {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 12px;
+            padding: 14px 18px;
+            backdrop-filter: blur(12px);
+            font-family: var(--font-mono, monospace);
+            font-size: 11px;
+            color: #94a3b8;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .val-cyan {
+            color: #38bdf8;
+            font-weight: 600;
+        }
+    </style>
 </head>
 <body>
-    <div id="root"></div>
-    <div class="content">
-        <div class="section">
-            <h1 class="text-7xl font-bold mb-4 tracking-tighter mix-blend-difference pb-8">Fluid Dynamics</h1>
-            <p class="text-xl text-slate-300 max-w-lg">A scroll-reactive 3D fluid plane powered by custom GLSL shaders. Scroll gently for ripples.</p>
+
+    <canvas id="webgl-canvas"></canvas>
+
+    <div class="hud-overlay">
+        <div class="hud-badge">
+            <span>🌊</span>
+            <span>GLSL Gerstner Hydrodynamics</span>
         </div>
-        <div class="section">
-            <h2 class="text-6xl font-bold mb-3 tracking-tight mix-blend-difference pb-8">Surge the Wave</h2>
-            <p class="text-xl text-slate-300 max-w-lg">Scroll rapidly to physically surge the liquid, creating a massive cinematic wave crashing towards the camera.</p>
-        </div>
-        <div class="section">
-            <h2 class="text-6xl font-bold mb-3 tracking-tight mix-blend-difference pb-8">Pure Mathematics</h2>
-            <p class="text-xl text-slate-300 max-w-lg">No heavy geometries. 60 FPS guaranteed by passing variables directly into the WebGL Vertex Shader.</p>
-        </div>
-        <div class="section">
-            <h2 class="text-6xl font-bold mb-3 tracking-tight mix-blend-difference pb-8">Settle</h2>
-            <p class="text-xl text-slate-300 max-w-lg">The physics naturally dampen, returning the surface to a calm, dark pool.</p>
-        </div>
+        <div class="hud-title">60 FPS Hardware Fluid Plane</div>
     </div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useRef, useMemo } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { Canvas, useFrame } from '@react-three/fiber';
-        import * as THREE from 'three';
+    <div class="controls-bar">
+        <button class="btn-fluid" id="surge-btn">
+            <span>⚡</span> Surge Tidal Wave
+        </button>
+        <button class="btn-fluid" id="calm-btn">
+            <span>🪞</span> Glass Surface
+        </button>
+        <button class="btn-fluid" id="wire-btn">
+            <span>⬡</span> Wireframe Mesh
+        </button>
+    </div>
 
-        const vertexShader = `
-            uniform float uTime;
-            uniform float uWaveAmp;
+    <div class="telemetry-box">
+        <div>WAVE AMPLITUDE: <span class="val-cyan" id="amp-val">0.65m</span></div>
+        <div>VERTEX COUNT: <span class="val-cyan">16,384</span></div>
+        <div>VISCOSITY: <span class="val-cyan">0.001 Pa·s (H₂O)</span></div>
+    </div>
 
-            varying vec2 vUv;
-            varying float vElevation;
+    <script type="module">
+        import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
 
-            void main() {
-                vUv = uv;
-                vec4 modelPosition = modelMatrix * vec4(position, 1.0);
-                
-                // Base broad wave
-                float elevation = sin(modelPosition.x * 0.3 + uTime * 0.8) * 
-                                  sin(modelPosition.z * 0.3 + uTime * 0.8) * uWaveAmp;
-                                  
-                // Secondary faster ripples
-                elevation += sin(modelPosition.x * 1.5 - uTime * 1.5) * 0.3 * uWaveAmp * 0.5;
-                elevation += cos(modelPosition.z * 2.0 + uTime * 2.0) * 0.2 * uWaveAmp * 0.5;
-                
-                modelPosition.y += elevation;
-                
-                vElevation = elevation;
-                
-                vec4 viewPosition = viewMatrix * modelPosition;
-                vec4 projectedPosition = projectionMatrix * viewPosition;
-                
-                gl_Position = projectedPosition;
-            }
-        `;
+        const canvas = document.getElementById('webgl-canvas');
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-        const fragmentShader = `
-            uniform vec3 uColorStart;
-            uniform vec3 uColorEnd;
-            uniform float uWaveAmp;
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 5, 8);
+        camera.lookAt(0, 0, 0);
 
-            varying vec2 vUv;
-            varying float vElevation;
+        // High-density fluid plane geometry
+        const SEGMENTS = 128;
+        const fluidGeo = new THREE.PlaneGeometry(12, 12, SEGMENTS, SEGMENTS);
+        fluidGeo.rotateX(-Math.PI / 2);
 
-            void main() {
-                // Mix colors based on elevation
-                // We divide by a calculated max elevation to normalize
-                float maxElev = max(0.5, uWaveAmp * 1.5);
-                float mixStrength = (vElevation + maxElev) / (maxElev * 2.0);
-                mixStrength = clamp(mixStrength, 0.0, 1.0);
-
-                // Add some highlight to the peaks
-                float highlight = smoothstep(0.7, 1.0, mixStrength) * 0.5;
-                
-                vec3 finalColor = mix(uColorStart, uColorEnd, mixStrength);
-                finalColor += vec3(highlight); // peak foam/highlight
-                
-                gl_FragColor = vec4(finalColor, 1.0);
-            }
-        `;
-
-        const Fluid = () => {
-            const materialRef = useRef();
-            const lastScroll = useRef(window.scrollY);
-            const scrollVelocity = useRef(0);
-            
-            const uniforms = useMemo(() => ({
+        // Gerstner Fluid Wave Shader Material
+        const fluidMat = new THREE.ShaderMaterial({
+            uniforms: {
                 uTime: { value: 0 },
-                uWaveAmp: { value: 0.15 },
-                uColorStart: { value: new THREE.Color('#030914') }, // dark deep
-                uColorEnd: { value: new THREE.Color('#2563eb') },   // bright peak
-            }), []);
+                uAmplitude: { value: 0.65 },
+                uMouse: { value: new THREE.Vector2(0, 0) }
+            },
+            vertexShader: `
+                uniform float uTime;
+                uniform float uAmplitude;
+                uniform vec2 uMouse;
+                varying vec3 vPos;
+                varying vec3 vNormal;
 
-            useFrame(({ clock }) => {
-                const scrollY = window.scrollY;
-                const delta = scrollY - lastScroll.current;
-                lastScroll.current = scrollY;
-                
-                // Smooth absolute velocity
-                scrollVelocity.current += (Math.abs(delta) - scrollVelocity.current) * 0.1;
+                // Gerstner Wave Formula
+                vec3 gerstnerWave(vec3 p, vec2 dir, float steepness, float wavelength, float time) {
+                    float k = 2.0 * 3.14159265 / wavelength;
+                    float c = sqrt(9.8 / k);
+                    vec2 d = normalize(dir);
+                    float f = k * (dot(d, p.xz) - c * time);
+                    float a = steepness / k * uAmplitude;
 
-                if (materialRef.current) {
-                    materialRef.current.uniforms.uTime.value = clock.getElapsedTime();
-                    
-                    // Base amplitude 0.2, surges up to 4.5 based on fast scroll
-                    const targetAmp = 0.2 + Math.min(scrollVelocity.current * 0.06, 4.5);
-                    
-                    // Smooth lerp for amplitude to make it feel fluid and heavy
-                    materialRef.current.uniforms.uWaveAmp.value += (targetAmp - materialRef.current.uniforms.uWaveAmp.value) * 0.05;
+                    return vec3(
+                        d.x * (a * cos(f)),
+                        a * sin(f),
+                        d.y * (a * cos(f))
+                    );
                 }
-            });
 
-            return (
-                <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]}>
-                    <planeGeometry args={[50, 50, 128, 128]} />
-                    <shaderMaterial 
-                        ref={materialRef}
-                        vertexShader={vertexShader}
-                        fragmentShader={fragmentShader}
-                        uniforms={uniforms}
-                        wireframe={false}
-                    />
-                </mesh>
-            );
-        };
+                void main() {
+                    vec3 p = position;
 
-        const App = () => {
-            return (
-                <Canvas camera={{ position: [0, 2, 12], fov: 45 }}>
-                    <color attach="background" args={['#010204']} />
-                    <fog attach="fog" args={['#010204', 10, 40]} />
-                    <Fluid />
-                </Canvas>
-            );
-        };
+                    // Mouse ripple displacement
+                    float mouseDist = length(p.xz - uMouse * 4.0);
+                    float ripple = sin(mouseDist * 4.0 - uTime * 6.0) * exp(-mouseDist * 0.8) * 0.3 * uAmplitude;
 
-        const root = createRoot(document.getElementById('root'));
-        root.render(<App />);
+                    // Compound 3 Gerstner waves
+                    vec3 w1 = gerstnerWave(p, vec2(1.0, 0.6), 0.3, 3.2, uTime * 1.2);
+                    vec3 w2 = gerstnerWave(p, vec2(-0.7, 0.8), 0.25, 2.1, uTime * 1.5);
+                    vec3 w3 = gerstnerWave(p, vec2(0.3, -1.0), 0.15, 1.4, uTime * 2.0);
+
+                    p += w1 + w2 + w3;
+                    p.y += ripple;
+
+                    vPos = p;
+                    vNormal = normal;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform float uTime;
+                varying vec3 vPos;
+                varying vec3 vNormal;
+
+                void main() {
+                    // Height-based oceanic color grading
+                    float h = (vPos.y + 0.5);
+                    vec3 deepBlue = vec3(0.01, 0.05, 0.15);
+                    vec3 cyanGlow = vec3(0.04, 0.45, 0.85);
+                    vec3 crestWhite = vec3(0.7, 0.95, 1.0);
+
+                    vec3 color = mix(deepBlue, cyanGlow, smoothstep(-0.3, 0.4, h));
+                    color = mix(color, crestWhite, smoothstep(0.4, 0.8, h));
+
+                    // Caustic Fresnel highlights
+                    float fresnel = pow(1.0 - max(dot(vNormal, vec3(0.0, 1.0, 0.0)), 0.0), 2.5);
+                    color += vec3(0.2, 0.6, 1.0) * fresnel * 0.6;
+
+                    gl_FragColor = vec4(color, 0.92);
+                }
+            `,
+            transparent: true,
+            side: THREE.DoubleSide
+        });
+
+        const fluidMesh = new THREE.Mesh(fluidGeo, fluidMat);
+        scene.add(fluidMesh);
+
+        // Controls
+        let targetAmplitude = 0.65;
+        const ampVal = document.getElementById('amp-val');
+
+        document.getElementById('surge-btn').addEventListener('click', () => {
+            targetAmplitude = 1.4;
+            setTimeout(() => { targetAmplitude = 0.65; }, 1800);
+        });
+
+        document.getElementById('calm-btn').addEventListener('click', () => {
+            targetAmplitude = targetAmplitude === 0.05 ? 0.65 : 0.05;
+        });
+
+        let isWire = false;
+        document.getElementById('wire-btn').addEventListener('click', () => {
+            isWire = !isWire;
+            fluidMat.wireframe = isWire;
+        });
+
+        // Mouse coordinates for wave excitation
+        let mouseX = 0;
+        let mouseY = 0;
+        window.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+            mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+            fluidMat.uniforms.uMouse.value.set(mouseX, -mouseY);
+        });
+
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+
+            fluidMat.uniforms.uTime.value = time;
+            fluidMat.uniforms.uAmplitude.value += (targetAmplitude - fluidMat.uniforms.uAmplitude.value) * 0.05;
+            ampVal.textContent = `${fluidMat.uniforms.uAmplitude.value.toFixed(2)}m`;
+
+            // Camera subtle orbit
+            camera.position.x = 8 * Math.sin(time * 0.1 + mouseX * 0.4);
+            camera.position.z = 8 * Math.cos(time * 0.1 + mouseX * 0.4);
+            camera.position.y = 5.0 - mouseY * 1.5;
+            camera.lookAt(0, 0, 0);
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
     </script>
 </body>
 </html>

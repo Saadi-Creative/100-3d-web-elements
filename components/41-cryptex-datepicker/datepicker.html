@@ -4,214 +4,334 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Procedural 3D Cryptex Date Picker</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../../styles/shared.css">
     <style>
-        body { margin: 0; background: linear-gradient(160deg, #0a0a1a 0%, #0f172a 40%, #1a1040 100%); min-height: 100vh; overflow: hidden; font-family: 'Inter', sans-serif; color: white; }
-        #root { width: 100%; height: 100vh; display: flex; align-items: center; justify-content: center; }
+        body {
+            background: radial-gradient(circle at center, #141724 0%, #06080e 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            user-select: none;
+            perspective: 1200px;
+        }
+
+        .cryptex-hud {
+            position: absolute;
+            top: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: var(--font-mono, monospace);
+            font-size: 11px;
+            color: #94a3b8;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        .hud-badge {
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            color: #fbbf24;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .cryptex-chassis {
+            position: relative;
+            width: 420px;
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 50%, #090d16 100%);
+            border: 2px solid rgba(251, 191, 36, 0.3);
+            border-radius: 28px;
+            padding: 32px 24px;
+            box-shadow: 
+                0 30px 60px rgba(0, 0, 0, 0.8),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2),
+                0 0 35px rgba(251, 191, 36, 0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+            transform-style: preserve-3d;
+        }
+
+        /* Cryptex Side Caps */
+        .cryptex-cap {
+            position: absolute;
+            top: 50%;
+            width: 18px;
+            height: 140px;
+            margin-top: -70px;
+            background: linear-gradient(90deg, #d97706, #78350f);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.8), 0 0 15px rgba(217, 119, 6, 0.3);
+            border-radius: 4px;
+        }
+
+        .cryptex-cap.left { left: -14px; }
+        .cryptex-cap.right { right: -14px; }
+
+        /* Cryptex Optical Lens Guide */
+        .cryptex-lens {
+            position: absolute;
+            top: 50%;
+            left: 20px;
+            right: 20px;
+            height: 48px;
+            margin-top: -24px;
+            border-radius: 12px;
+            border: 2px solid #fbbf24;
+            background: linear-gradient(90deg, rgba(251, 191, 36, 0.08), rgba(251, 191, 36, 0.15), rgba(251, 191, 36, 0.08));
+            box-shadow: 
+                0 0 25px rgba(251, 191, 36, 0.3),
+                inset 0 0 15px rgba(251, 191, 36, 0.2);
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        /* Drum Ring Container */
+        .rings-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            width: 100%;
+            height: 180px;
+            position: relative;
+            transform-style: preserve-3d;
+        }
+
+        .drum-column {
+            position: relative;
+            flex: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            perspective: 800px;
+            cursor: ns-resize;
+        }
+
+        .drum-label {
+            position: absolute;
+            top: -22px;
+            font-size: 10px;
+            font-family: var(--font-mono, monospace);
+            color: #d97706;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .drum-cylinder {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .drum-notch {
+            position: absolute;
+            left: 6px;
+            right: 6px;
+            height: 44px;
+            top: calc(50% - 22px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-mono, monospace);
+            font-size: 16px;
+            font-weight: 700;
+            color: #94a3b8;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(251, 191, 36, 0.15);
+            border-radius: 8px;
+            backface-visibility: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+            transition: all 0.2s ease;
+        }
+
+        .drum-notch.active {
+            color: #fbbf24;
+            font-size: 19px;
+            border-color: #fbbf24;
+            background: linear-gradient(135deg, rgba(217, 119, 6, 0.3), rgba(15, 23, 42, 0.95));
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.4);
+            text-shadow: 0 0 10px rgba(251, 191, 36, 0.8);
+        }
+
+        /* Result Decrypted Date Footer */
+        .cryptex-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 16px;
+            font-family: var(--font-mono, monospace);
+        }
+
+        .decrypted-value {
+            font-size: 14px;
+            color: #fbbf24;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-confirm {
+            background: linear-gradient(135deg, #d97706, #b45309);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(217, 119, 6, 0.4);
+            transition: all 0.2s ease;
+        }
+
+        .btn-confirm:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.6);
+        }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div id="root"></div>
 
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
+    <div class="cryptex-hud">
+        <div class="hud-badge">
+            <span>🔒</span>
+            <span>Cryptographic Ratchet Mechanism</span>
+        </div>
+    </div>
+
+    <div class="cryptex-chassis">
+        <div class="cryptex-cap left"></div>
+        <div class="cryptex-cap right"></div>
+        <div class="cryptex-lens"></div>
+
+        <div class="rings-row">
+            <!-- Day Ring -->
+            <div class="drum-column" id="col-day">
+                <span class="drum-label">Day</span>
+                <div class="drum-cylinder" id="drum-day"></div>
+            </div>
+
+            <!-- Month Ring -->
+            <div class="drum-column" id="col-month">
+                <span class="drum-label">Month</span>
+                <div class="drum-cylinder" id="drum-month"></div>
+            </div>
+
+            <!-- Year Ring -->
+            <div class="drum-column" id="col-year">
+                <span class="drum-label">Year</span>
+                <div class="drum-cylinder" id="drum-year"></div>
+            </div>
+        </div>
+
+        <div class="cryptex-footer">
+            <div class="decrypted-value">
+                <span>🔐 KEY:</span>
+                <span id="date-readout">24 SEP 2026</span>
+            </div>
+            <button class="btn-confirm" id="confirm-btn">UNLOCK VAULT</button>
+        </div>
+    </div>
 
     <script>
-        const origWarn = console.warn;
-        console.warn = function(...args) {
-            if (args[0] && typeof args[0] === 'string' && (args[0].includes('in-browser Babel transformer') || args[0].includes('cdn.tailwindcss.com should not be used in production'))) return;
-            origWarn.apply(console, args);
-        };
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+        const DAYS = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));
+        const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+        const YEARS = ['2024', '2025', '2026', '2027', '2028', '2029', '2030', '2031'];
 
-    <script type="text/babel" data-type="module">
-        import React, { useState, useRef, useCallback, useEffect } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from 'framer-motion';
+        let selectedDay = 23; // 24
+        let selectedMonth = 8; // SEP
+        let selectedYear = 2; // 2026
 
-        const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+        const RADIUS = 80;
 
-        // CSS-driven 3D drum roller (no WebGL, no garbled text)
-        const DrumRoller = ({ items, activeIndex, onIndexChange, color, label }) => {
-            const containerRef = useRef(null);
-            const isDragging = useRef(false);
-            const startY = useRef(0);
-            const startIndex = useRef(0);
+        function buildCylinder(containerId, items, activeIdx, onSelect) {
+            const container = document.getElementById(containerId);
+            const count = items.length;
+            const angleStep = 360 / count;
 
-            const ITEM_HEIGHT = 44;
-            const VISIBLE = 5; // Number of visible items above + active + below
+            items.forEach((val, idx) => {
+                const angle = idx * angleStep;
+                const notch = document.createElement('div');
+                notch.className = `drum-notch ${idx === activeIdx ? 'active' : ''}`;
+                notch.style.transform = `rotateX(${angle}deg) translateZ(${RADIUS}px)`;
+                notch.textContent = val;
+                notch.addEventListener('click', () => {
+                    onSelect(idx);
+                });
+                container.appendChild(notch);
+            });
 
-            const handlePointerDown = (e) => {
-                isDragging.current = true;
-                startY.current = e.clientY;
-                startIndex.current = activeIndex;
-                e.target.setPointerCapture?.(e.pointerId);
-            };
+            function updateRotation(idx) {
+                const rot = -idx * angleStep;
+                container.style.transform = `rotateX(${rot}deg)`;
+                const notches = container.querySelectorAll('.drum-notch');
+                notches.forEach((n, i) => n.classList.toggle('active', i === idx));
+            }
 
-            const handlePointerMove = (e) => {
-                if (!isDragging.current) return;
-                const delta = startY.current - e.clientY;
-                const indexDelta = Math.round(delta / (ITEM_HEIGHT * 0.6));
-                const newIndex = ((startIndex.current + indexDelta) % items.length + items.length) % items.length;
-                if (newIndex !== activeIndex) onIndexChange(newIndex);
-            };
+            updateRotation(activeIdx);
 
-            const handlePointerUp = () => { isDragging.current = false; };
+            // Drag / Wheel interaction
+            const col = container.parentElement;
+            let startY = 0;
+            let currentIdx = activeIdx;
 
-            // Calculate visible items around the active index
-            const getVisibleItems = () => {
-                const result = [];
-                const half = Math.floor(VISIBLE / 2);
-                for (let offset = -half; offset <= half; offset++) {
-                    const idx = ((activeIndex + offset) % items.length + items.length) % items.length;
-                    result.push({ value: items[idx], offset, index: idx });
+            col.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                if (e.deltaY > 0) {
+                    currentIdx = (currentIdx + 1) % count;
+                } else {
+                    currentIdx = (currentIdx - 1 + count) % count;
                 }
-                return result;
-            };
+                updateRotation(currentIdx);
+                onSelect(currentIdx);
+            }, { passive: false });
 
-            return (
-                <div className="flex flex-col items-center gap-2">
-                    <span className="text-[10px] tracking-[0.2em] uppercase" style={{ color: `${color}99` }}>{label}</span>
-                    <div
-                        ref={containerRef}
-                        className="relative cursor-grab active:cursor-grabbing select-none overflow-hidden rounded-xl"
-                        style={{
-                            width: '90px',
-                            height: `${ITEM_HEIGHT * VISIBLE}px`,
-                            perspective: '400px',
-                            background: 'rgba(255,255,255,0.03)',
-                            border: '1px solid rgba(255,255,255,0.06)',
-                        }}
-                        onPointerDown={handlePointerDown}
-                        onPointerMove={handlePointerMove}
-                        onPointerUp={handlePointerUp}
-                        onPointerLeave={handlePointerUp}
-                    >
-                        {/* Selection indicator line */}
-                        <div 
-                            className="absolute left-2 right-2 rounded-lg pointer-events-none z-10"
-                            style={{
-                                top: `${ITEM_HEIGHT * Math.floor(VISIBLE / 2)}px`,
-                                height: `${ITEM_HEIGHT}px`,
-                                background: `${color}15`,
-                                border: `1px solid ${color}40`,
-                                boxShadow: `0 0 20px ${color}15`,
-                            }}
-                        />
+            return { updateRotation };
+        }
 
-                        {/* Visible items */}
-                        <AnimatePresence mode="popLayout">
-                            {getVisibleItems().map(({ value, offset, index }) => {
-                                const distFromCenter = Math.abs(offset);
-                                const rotateX = offset * 25;
-                                const opacity = 1 - distFromCenter * 0.3;
-                                const scale = 1 - distFromCenter * 0.1;
+        const dateReadout = document.getElementById('date-readout');
 
-                                return (
-                                    <motion.div
-                                        key={`${index}-${offset}`}
-                                        className="flex items-center justify-center font-mono font-bold"
-                                        style={{
-                                            height: `${ITEM_HEIGHT}px`,
-                                            fontSize: offset === 0 ? '20px' : '14px',
-                                            color: offset === 0 ? color : '#475569',
-                                            transformStyle: 'preserve-3d',
-                                            transform: `perspective(400px) rotateX(${rotateX}deg) scale(${scale})`,
-                                            opacity,
-                                            transition: 'all 0.2s ease-out',
-                                            textShadow: offset === 0 ? `0 0 10px ${color}50` : 'none',
-                                        }}
-                                    >
-                                        {value}
-                                    </motion.div>
-                                );
-                            })}
-                        </AnimatePresence>
+        function updateReadout() {
+            dateReadout.textContent = `${DAYS[selectedDay]} ${MONTHS[selectedMonth]} ${YEARS[selectedYear]}`;
+        }
 
-                        {/* Top/bottom fade masks */}
-                        <div className="absolute top-0 left-0 right-0 h-12 pointer-events-none" style={{ background: 'linear-gradient(180deg, #0a0a1a, transparent)' }} />
-                        <div className="absolute bottom-0 left-0 right-0 h-12 pointer-events-none" style={{ background: 'linear-gradient(0deg, #0a0a1a, transparent)' }} />
-                    </div>
+        const dayCtrl = buildCylinder('drum-day', DAYS, selectedDay, (idx) => {
+            selectedDay = idx;
+            updateReadout();
+        });
 
-                    {/* Up/down buttons */}
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => onIndexChange(((activeIndex - 1) % items.length + items.length) % items.length)}
-                            className="w-8 h-8 rounded-lg flex items-center justify-center text-xs cursor-pointer transition-all hover:scale-110 active:scale-90"
-                            style={{ background: `${color}15`, border: `1px solid ${color}30`, color }}
-                        >▲</button>
-                        <button
-                            onClick={() => onIndexChange((activeIndex + 1) % items.length)}
-                            className="w-8 h-8 rounded-lg flex items-center justify-center text-xs cursor-pointer transition-all hover:scale-110 active:scale-90"
-                            style={{ background: `${color}15`, border: `1px solid ${color}30`, color }}
-                        >▼</button>
-                    </div>
-                </div>
-            );
-        };
+        const monthCtrl = buildCylinder('drum-month', MONTHS, selectedMonth, (idx) => {
+            selectedMonth = idx;
+            updateReadout();
+        });
 
-        const App = () => {
-            const [day, setDay] = useState(14);
-            const [month, setMonth] = useState(2);
-            const [year, setYear] = useState(5);
+        const yearCtrl = buildCylinder('drum-year', YEARS, selectedYear, (idx) => {
+            selectedYear = idx;
+            updateReadout();
+        });
 
-            const days = Array.from({length: 31}, (_, i) => String(i + 1).padStart(2, '0'));
-            const years = Array.from({length: 12}, (_, i) => String(2020 + i));
-
-            return (
-                <div className="flex flex-col items-center gap-8">
-                    <div className="text-center">
-                        <p className="text-xs uppercase tracking-[0.3em] text-slate-500 mb-1">Drag or Click Arrows</p>
-                        <h2 className="text-2xl font-bold text-white">Cryptex Date Roller</h2>
-                    </div>
-
-                    {/* Three rollers side-by-side */}
-                    <div className="flex items-start gap-4">
-                        <DrumRoller items={days} activeIndex={day} onIndexChange={setDay} color="#8b5cf6" label="DAY" />
-                        
-                        <div className="flex items-center h-56 pt-8">
-                            <span className="text-slate-600 text-2xl font-light">/</span>
-                        </div>
-
-                        <DrumRoller items={MONTHS} activeIndex={month} onIndexChange={setMonth} color="#06b6d4" label="MONTH" />
-
-                        <div className="flex items-center h-56 pt-8">
-                            <span className="text-slate-600 text-2xl font-light">/</span>
-                        </div>
-
-                        <DrumRoller items={years} activeIndex={year} onIndexChange={setYear} color="#f59e0b" label="YEAR" />
-                    </div>
-
-                    {/* Selected Date Display */}
-                    <div
-                        className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl"
-                        style={{
-                            background: 'rgba(255,255,255,0.04)',
-                            border: '1px solid rgba(255,255,255,0.08)',
-                            boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-                        }}
-                    >
-                        <span className="text-violet-400 font-bold text-lg font-mono">{days[day]}</span>
-                        <span className="text-slate-600">/</span>
-                        <span className="text-cyan-400 font-bold text-lg font-mono">{MONTHS[month]}</span>
-                        <span className="text-slate-600">/</span>
-                        <span className="text-amber-400 font-bold text-lg font-mono">{years[year]}</span>
-                    </div>
-                </div>
-            );
-        };
-
-        const root = createRoot(document.getElementById('root'));
-        root.render(<App />);
+        document.getElementById('confirm-btn').addEventListener('click', () => {
+            dateReadout.style.color = '#34d399';
+            dateReadout.textContent = `DECRYPTED: ${DAYS[selectedDay]}-${MONTHS[selectedMonth]}-${YEARS[selectedYear]}`;
+            setTimeout(() => {
+                dateReadout.style.color = '#fbbf24';
+                updateReadout();
+            }, 1800);
+        });
     </script>
 </body>
 </html>

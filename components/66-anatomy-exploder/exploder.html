@@ -8,147 +8,109 @@
     <style>
         body { margin: 0; background: #fafafa; min-height: 100vh; display: flex; align-items: center; justify-content: center; font-family: 'Inter', sans-serif; overflow: hidden; }
         .preserve-3d { transform-style: preserve-3d; perspective: 1200px; }
+        
+        .exploder-container {
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform: rotateX(0deg) rotateZ(0deg) scale(1);
+        }
+        
+        .exploder-container:hover {
+            transform: rotateX(60deg) rotateZ(-30deg) scale(0.9);
+        }
+
+        .layer {
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .exploder-container:hover .layer-1 { transform: translateZ(-80px); }
+        .exploder-container:hover .layer-shadow { transform: translateZ(-50px); opacity: 0.2; }
+        .exploder-container:hover .layer-2 { transform: translateZ(40px); }
+        .exploder-container:hover .layer-3 { transform: translateZ(120px); }
+        .exploder-container:hover .layer-4 { transform: translateZ(200px); }
+
+        .layer-1 { transform: translateZ(0px); }
+        .layer-shadow { transform: translateZ(-10px); opacity: 0.5; }
+        .layer-2 { transform: translateZ(1px); }
+        .layer-3 { transform: translateZ(2px); }
+        .layer-4 { transform: translateZ(3px); }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-    <div id="root"></div>
-
-    <script type="text/babel" data-type="module">
-        import React, { useState } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion } from 'framer-motion';
-
-        // Abstract visual representations of watch anatomy using React/CSS overlays.
-        // In a real scenario, these would just be <img src="layer1.png" />
+    <div class="flex w-full h-full items-center justify-center p-8">
         
-        const WatchBackCasing = () => (
-            <div className="w-48 h-48 rounded-full bg-slate-800 shadow-[0_20px_40px_rgba(0,0,0,0.5)] border-4 border-slate-700 flex items-center justify-center">
-                <div className="w-32 h-32 rounded-full border-2 border-slate-600/50"></div>
-            </div>
-        );
+        <div class="text-left max-w-sm mr-24 relative z-10">
+            <h1 class="text-5xl font-black text-slate-800 tracking-tighter mb-4">Chronos Series</h1>
+            <p class="text-slate-500 mb-8 font-medium leading-relaxed">Hover over the watch assembly to trigger an exploded spatial view detailing the precision-engineered inner mechanics.</p>
+            <ul class="text-sm font-bold text-slate-400 uppercase tracking-widest space-y-2">
+                <li class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-sky-400"></div> Sapphire Glass</li>
+                <li class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-slate-800"></div> Jet Black Dial</li>
+                <li class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-amber-500"></div> Dual-Tourbillon</li>
+                <li class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-slate-700"></div> Titanium Chassis</li>
+            </ul>
+        </div>
 
-        const WatchGears = () => (
-            <div className="w-44 h-44 rounded-full bg-amber-600/20 backdrop-blur-md flex items-center justify-center relative overflow-hidden ring-4 ring-amber-500/20">
-                {/* Fake repeating golden gear texture via CSS */}
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,#b45309_70%)] opacity-40"></div>
-                <svg viewBox="0 0 100 100" fill="none" stroke="#fbbf24" strokeWidth="2" className="w-full h-full opacity-60 relative z-10 animate-[spin_10s_linear_infinite]">
-                    {Array.from({ length: 12 }).map((_, i) => (
-                        <circle key={i} cx="50" cy="50" r="30" strokeDasharray="4 4" transform={`rotate(${i * 30} 50 50)`} />
-                    ))}
-                    <circle cx="50" cy="50" r="10" fill="#fbbf24" />
-                </svg>
-            </div>
-        );
-
-        const WatchDial = () => (
-            <div className="w-48 h-48 rounded-full bg-slate-900 border-[6px] border-slate-300 shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] relative flex justify-center">
-                {/* Notch marks */}
-                {Array.from({ length: 12 }).map((_, i) => (
-                    <div key={i} className="absolute w-1 h-3 bg-white/80 top-2 origin-[50%_90px]" style={{ transform: `rotate(${i * 30}deg)` }}></div>
-                ))}
-                {/* Hands */}
-                <div className="absolute top-1/2 left-1/2 w-1.5 h-16 bg-white origin-bottom -translate-x-1/2 -translate-y-full rounded-full"></div>
-                <div className="absolute top-1/2 left-1/2 w-1 h-20 bg-sky-400 origin-bottom -translate-x-1/2 -translate-y-full rounded-full rotate-45"></div>
-                {/* Center pin */}
-                <div className="absolute top-1/2 left-1/2 w-4 h-4 bg-sky-400 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-slate-900"></div>
-            </div>
-        );
-
-        const WatchGlass = () => (
-            <div className="w-48 h-48 rounded-full bg-gradient-to-tr from-white/10 to-white/30 backdrop-blur-[2px] shadow-[inset_0_2px_4px_rgba(255,255,255,0.4)] relative border border-white/20">
-                {/* Glare specular highlight */}
-                <div className="absolute top-2 left-6 w-24 h-12 bg-white/30 rounded-full blur-md -rotate-12"></div>
-            </div>
-        );
-
-        const App = () => {
-            const [isExploded, setIsExploded] = useState(false);
-
-            return (
-                <div className="flex w-full h-full items-center justify-center p-8">
-                    
-                    <div className="text-left max-w-sm mr-24">
-                        <h1 className="text-5xl font-black text-slate-800 tracking-tighter mb-4">Chronos Series</h1>
-                        <p className="text-slate-500 mb-8 font-medium leading-relaxed">Hover over the watch assembly to trigger an exploded spatial view detailing the precision-engineered inner mechanics.</p>
-                        <ul className="text-sm font-bold text-slate-400 uppercase tracking-widest space-y-2">
-                            <li className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-sky-400"></div> Sapphire Glass</li>
-                            <li className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-slate-800"></div> Jet Black Dial</li>
-                            <li className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-amber-500"></div> Dual-Tourbillon</li>
-                            <li className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-slate-700"></div> Titanium Chassis</li>
-                        </ul>
-                    </div>
-
-                    {/* Exploder Container */}
-                    <motion.div 
-                        className="preserve-3d relative w-64 h-64 flex items-center justify-center cursor-crosshair"
-                        onMouseEnter={() => setIsExploded(true)}
-                        onMouseLeave={() => setIsExploded(false)}
-                        animate={{ 
-                            rotateX: isExploded ? 60 : 0, 
-                            rotateZ: isExploded ? -30 : 0,
-                            scale: isExploded ? 0.9 : 1
-                        }}
-                        transition={{ type: "spring", stiffness: 100, damping: 20 }}
-                    >
-                        {/* Layer 1: Titanium Back Chassis */}
-                        <motion.div 
-                            className="absolute preserve-3d flex items-center justify-center pointer-events-none"
-                            animate={{ z: isExploded ? -80 : 0 }}
-                            transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                        >
-                            <WatchBackCasing />
-                            {/* Physical floor shadow disconnected when hovering */}
-                            <motion.div 
-                                className="absolute w-40 h-40 bg-black rounded-full blur-[20px]"
-                                animate={{ z: isExploded ? -50 : -10, opacity: isExploded ? 0.2 : 0.5 }}
-                                transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                            />
-                        </motion.div>
-
-                        {/* Layer 2: Tourbillon Gears */}
-                        <motion.div 
-                            className="absolute preserve-3d flex items-center justify-center pointer-events-none"
-                            animate={{ z: isExploded ? 40 : 1 }}
-                            transition={{ type: "spring", stiffness: 250, damping: 20 }}
-                        >
-                            <WatchGears />
-                        </motion.div>
-
-                        {/* Layer 3: Main Dial */}
-                        <motion.div 
-                            className="absolute preserve-3d flex items-center justify-center pointer-events-none"
-                            animate={{ z: isExploded ? 120 : 2 }}
-                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                        >
-                            <WatchDial />
-                        </motion.div>
-
-                        {/* Layer 4: Sapphire Crystal Glass */}
-                        <motion.div 
-                            className="absolute preserve-3d flex items-center justify-center pointer-events-none"
-                            animate={{ z: isExploded ? 200 : 3 }}
-                            transition={{ type: "spring", stiffness: 350, damping: 20 }}
-                        >
-                            <WatchGlass />
-                        </motion.div>
-
-                    </motion.div>
+        <div class="preserve-3d relative w-64 h-64 flex items-center justify-center cursor-crosshair exploder-container">
+            <!-- Layer 1: Titanium Back Chassis -->
+            <div class="absolute preserve-3d flex items-center justify-center pointer-events-none layer layer-1">
+                <div class="w-48 h-48 rounded-full bg-slate-800 shadow-[0_20px_40px_rgba(0,0,0,0.5)] border-4 border-slate-700 flex items-center justify-center">
+                    <div class="w-32 h-32 rounded-full border-2 border-slate-600/50"></div>
                 </div>
-            );
-        };
+            </div>
+            
+            <div class="absolute w-40 h-40 bg-black rounded-full blur-[20px] layer layer-shadow"></div>
 
-        createRoot(document.getElementById('root')).render(<App />);
-    </script>
+            <!-- Layer 2: Tourbillon Gears -->
+            <div class="absolute preserve-3d flex items-center justify-center pointer-events-none layer layer-2">
+                <div class="w-44 h-44 rounded-full bg-amber-600/20 backdrop-blur-md flex items-center justify-center relative overflow-hidden ring-4 ring-amber-500/20">
+                    <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,#b45309_70%)] opacity-40"></div>
+                    <svg viewBox="0 0 100 100" fill="none" stroke="#fbbf24" stroke-width="2" class="w-full h-full opacity-60 relative z-10 animate-[spin_10s_linear_infinite]">
+                        <circle cx="50" cy="50" r="30" stroke-dasharray="4 4" transform="rotate(0 50 50)" />
+                        <circle cx="50" cy="50" r="30" stroke-dasharray="4 4" transform="rotate(30 50 50)" />
+                        <circle cx="50" cy="50" r="30" stroke-dasharray="4 4" transform="rotate(60 50 50)" />
+                        <circle cx="50" cy="50" r="30" stroke-dasharray="4 4" transform="rotate(90 50 50)" />
+                        <circle cx="50" cy="50" r="30" stroke-dasharray="4 4" transform="rotate(120 50 50)" />
+                        <circle cx="50" cy="50" r="30" stroke-dasharray="4 4" transform="rotate(150 50 50)" />
+                        <circle cx="50" cy="50" r="30" stroke-dasharray="4 4" transform="rotate(180 50 50)" />
+                        <circle cx="50" cy="50" r="30" stroke-dasharray="4 4" transform="rotate(210 50 50)" />
+                        <circle cx="50" cy="50" r="30" stroke-dasharray="4 4" transform="rotate(240 50 50)" />
+                        <circle cx="50" cy="50" r="30" stroke-dasharray="4 4" transform="rotate(270 50 50)" />
+                        <circle cx="50" cy="50" r="30" stroke-dasharray="4 4" transform="rotate(300 50 50)" />
+                        <circle cx="50" cy="50" r="30" stroke-dasharray="4 4" transform="rotate(330 50 50)" />
+                        <circle cx="50" cy="50" r="10" fill="#fbbf24" />
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Layer 3: Main Dial -->
+            <div class="absolute preserve-3d flex items-center justify-center pointer-events-none layer layer-3">
+                <div class="w-48 h-48 rounded-full bg-slate-900 border-[6px] border-slate-300 shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] relative flex justify-center">
+                    <div class="absolute w-1 h-3 bg-white/80 top-2 origin-[50%_90px]" style="transform: rotate(0deg)"></div>
+                    <div class="absolute w-1 h-3 bg-white/80 top-2 origin-[50%_90px]" style="transform: rotate(30deg)"></div>
+                    <div class="absolute w-1 h-3 bg-white/80 top-2 origin-[50%_90px]" style="transform: rotate(60deg)"></div>
+                    <div class="absolute w-1 h-3 bg-white/80 top-2 origin-[50%_90px]" style="transform: rotate(90deg)"></div>
+                    <div class="absolute w-1 h-3 bg-white/80 top-2 origin-[50%_90px]" style="transform: rotate(120deg)"></div>
+                    <div class="absolute w-1 h-3 bg-white/80 top-2 origin-[50%_90px]" style="transform: rotate(150deg)"></div>
+                    <div class="absolute w-1 h-3 bg-white/80 top-2 origin-[50%_90px]" style="transform: rotate(180deg)"></div>
+                    <div class="absolute w-1 h-3 bg-white/80 top-2 origin-[50%_90px]" style="transform: rotate(210deg)"></div>
+                    <div class="absolute w-1 h-3 bg-white/80 top-2 origin-[50%_90px]" style="transform: rotate(240deg)"></div>
+                    <div class="absolute w-1 h-3 bg-white/80 top-2 origin-[50%_90px]" style="transform: rotate(270deg)"></div>
+                    <div class="absolute w-1 h-3 bg-white/80 top-2 origin-[50%_90px]" style="transform: rotate(300deg)"></div>
+                    <div class="absolute w-1 h-3 bg-white/80 top-2 origin-[50%_90px]" style="transform: rotate(330deg)"></div>
+                    <div class="absolute top-1/2 left-1/2 w-1.5 h-16 bg-white origin-bottom -translate-x-1/2 -translate-y-full rounded-full"></div>
+                    <div class="absolute top-1/2 left-1/2 w-1 h-20 bg-sky-400 origin-bottom -translate-x-1/2 -translate-y-full rounded-full rotate-45"></div>
+                    <div class="absolute top-1/2 left-1/2 w-4 h-4 bg-sky-400 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-slate-900"></div>
+                </div>
+            </div>
+
+            <!-- Layer 4: Sapphire Crystal Glass -->
+            <div class="absolute preserve-3d flex items-center justify-center pointer-events-none layer layer-4">
+                <div class="w-48 h-48 rounded-full bg-gradient-to-tr from-white/10 to-white/30 backdrop-blur-[2px] shadow-[inset_0_2px_4px_rgba(255,255,255,0.4)] relative border border-white/20">
+                    <div class="absolute top-2 left-6 w-24 h-12 bg-white/30 rounded-full blur-md -rotate-12"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
 </body>
 </html>

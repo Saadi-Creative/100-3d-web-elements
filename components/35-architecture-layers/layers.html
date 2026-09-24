@@ -4,310 +4,566 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Isometric Architecture Layers</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../../styles/shared.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background: #08080c;
+            background: radial-gradient(circle at center, #0e121a 0%, #05070a 100%);
             min-height: 100vh;
-            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            user-select: none;
+            perspective: 1400px;
+        }
+
+        .hud-header {
+            position: absolute;
+            top: 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            z-index: 50;
+        }
+
+        .hud-badge {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            padding: 6px 14px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-family: var(--font-mono, monospace);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .hud-pulse {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 10px #10b981;
+            animation: pulse 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; transform: scale(0.9); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .controls-panel {
+            position: absolute;
+            bottom: 24px;
+            display: flex;
+            gap: 10px;
+            z-index: 50;
+        }
+
+        .ctrl-btn {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            color: #cbd5e1;
+            font-size: 12px;
+            font-family: var(--font-mono, monospace);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .ctrl-btn:hover {
+            background: rgba(56, 189, 248, 0.15);
+            border-color: rgba(56, 189, 248, 0.4);
+            color: #38bdf8;
+            transform: translateY(-1px);
+        }
+
+        .ctrl-btn.active {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: #38bdf8;
+            color: #fff;
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
+        }
+
+        /* 3D Scene Root */
+        .iso-stage {
+            position: relative;
+            width: 380px;
+            height: 380px;
+            transform-style: preserve-3d;
+            transform: rotateX(56deg) rotateZ(-42deg);
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .iso-grid {
+            position: absolute;
+            inset: -80px;
+            background-image: 
+                linear-gradient(rgba(56, 189, 248, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56, 189, 248, 0.05) 1px, transparent 1px);
+            background-size: 32px 32px;
+            transform: translateZ(-60px);
+            border-radius: 24px;
+            pointer-events: none;
+        }
+
+        /* Architecture Stack */
+        .stack-container {
+            position: absolute;
+            inset: 0;
+            transform-style: preserve-3d;
+        }
+
+        .layer-slab {
+            position: absolute;
+            inset: 0;
+            border-radius: 20px;
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.95));
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            transform-style: preserve-3d;
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                        box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                        border-color 0.3s ease;
+            cursor: pointer;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .layer-slab::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 20px;
+            background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), var(--layer-accent-glow, rgba(56,189,248,0.25)) 0%, transparent 60%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .layer-slab:hover::after,
+        .layer-slab.selected::after {
+            opacity: 1;
+        }
+
+        /* 3D Slab Thickness Rim */
+        .layer-slab::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 20px;
+            border: 2px solid var(--layer-accent, #38bdf8);
+            transform: translateZ(-8px);
+            opacity: 0.2;
+            transition: all 0.3s ease;
+        }
+
+        .layer-slab:hover::before,
+        .layer-slab.selected::before {
+            opacity: 0.8;
+            transform: translateZ(-12px);
+            box-shadow: 0 0 20px var(--layer-accent, #38bdf8);
+        }
+
+        /* Layer Specific Accents */
+        .layer-slab[data-tier="3"] {
+            --layer-accent: #818cf8;
+            --layer-accent-glow: rgba(129, 140, 248, 0.3);
+            transform: translateZ(160px);
+        }
+        .layer-slab[data-tier="2"] {
+            --layer-accent: #34d399;
+            --layer-accent-glow: rgba(52, 211, 153, 0.3);
+            transform: translateZ(100px);
+        }
+        .layer-slab[data-tier="1"] {
+            --layer-accent: #fbbf24;
+            --layer-accent-glow: rgba(251, 191, 36, 0.3);
+            transform: translateZ(40px);
+        }
+        .layer-slab[data-tier="0"] {
+            --layer-accent: #f472b6;
+            --layer-accent-glow: rgba(244, 114, 182, 0.3);
+            transform: translateZ(-20px);
+        }
+
+        /* Exploded State */
+        .iso-stage.exploded .layer-slab[data-tier="3"] { transform: translateZ(260px); }
+        .iso-stage.exploded .layer-slab[data-tier="2"] { transform: translateZ(170px); }
+        .iso-stage.exploded .layer-slab[data-tier="1"] { transform: translateZ(80px); }
+        .iso-stage.exploded .layer-slab[data-tier="0"] { transform: translateZ(-10px); }
+
+        /* Highlight Hover Displacement */
+        .layer-slab:hover {
+            border-color: var(--layer-accent);
+            box-shadow: 
+                0 30px 60px rgba(0, 0, 0, 0.8),
+                0 0 30px var(--layer-accent-glow);
+        }
+        .iso-stage:not(.exploded) .layer-slab[data-tier="3"]:hover { transform: translateZ(190px); }
+        .iso-stage:not(.exploded) .layer-slab[data-tier="2"]:hover { transform: translateZ(130px); }
+        .iso-stage:not(.exploded) .layer-slab[data-tier="1"]:hover { transform: translateZ(70px); }
+        .iso-stage:not(.exploded) .layer-slab[data-tier="0"]:hover { transform: translateZ(10px); }
+
+        /* Slab Content */
+        .slab-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .slab-title-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .slab-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            overflow: hidden;
+            font-size: 16px;
+            color: var(--layer-accent);
         }
-        #root { width: 100%; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+
+        .slab-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: #f8fafc;
+            letter-spacing: -0.01em;
+        }
+
+        .slab-sub {
+            font-size: 11px;
+            color: #94a3b8;
+            font-family: var(--font-mono, monospace);
+        }
+
+        .slab-status {
+            font-size: 10px;
+            font-family: var(--font-mono, monospace);
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--layer-accent);
+        }
+
+        .slab-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 14px;
+        }
+
+        .slab-tag {
+            font-size: 10px;
+            font-family: var(--font-mono, monospace);
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 3px 8px;
+            border-radius: 4px;
+            color: #cbd5e1;
+        }
+
+        .slab-metrics {
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 12px;
+            margin-top: 12px;
+        }
+
+        .metric-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .metric-label {
+            font-size: 9px;
+            font-family: var(--font-mono, monospace);
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        .metric-val {
+            font-size: 12px;
+            font-family: var(--font-mono, monospace);
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        /* Live Bus Cables */
+        .bus-pillars {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            transform-style: preserve-3d;
+        }
+
+        .pillar {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: #38bdf8;
+            box-shadow: 0 0 10px #38bdf8;
+            border-radius: 50%;
+        }
     </style>
 </head>
 <body>
-    <div id="root"></div>
 
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@11.0.8?external=react,react-dom"
-        }
-    }
-    </script>
+    <div class="hud-header">
+        <div class="hud-badge">
+            <span class="hud-pulse"></span>
+            <span>Cluster Mesh: Active</span>
+        </div>
+        <div class="hud-badge" id="telemetry-ping">
+            Latency: 4.2ms
+        </div>
+    </div>
 
-    <script>
-        const origWarn = console.warn;
-        console.warn = function(...args) {
-            if (args[0] && typeof args[0] === 'string' && (args[0].includes('in-browser Babel transformer') || args[0].includes('cdn.tailwindcss.com should not be used in production'))) return;
-            origWarn.apply(console, args);
-        };
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <div class="iso-stage" id="stage">
+        <div class="iso-grid"></div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useState, useRef, useEffect } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, useInView } from 'framer-motion';
-
-        const layers = [
-            {
-                id: 0,
-                name: 'Client Application',
-                subtitle: 'React · Next.js · TypeScript',
-                icon: '🖥️',
-                color: '#818cf8',
-                gradient: 'linear-gradient(135deg, #312e81, #1e1b4b)',
-                features: ['SSR / SSG', 'Component Library', 'State Management'],
-                connections: '↕ REST + GraphQL',
-            },
-            {
-                id: 1,
-                name: 'API Gateway',
-                subtitle: 'Node.js · Express · Auth',
-                icon: '🔀',
-                color: '#34d399',
-                gradient: 'linear-gradient(135deg, #064e3b, #022c22)',
-                features: ['Rate Limiting', 'JWT Auth', 'Load Balancer'],
-                connections: '↕ TCP / gRPC',
-            },
-            {
-                id: 2,
-                name: 'Microservices',
-                subtitle: 'Go · Rust · Python',
-                icon: '⚙️',
-                color: '#fbbf24',
-                gradient: 'linear-gradient(135deg, #78350f, #451a03)',
-                features: ['Event Sourcing', 'CQRS', 'Message Queue'],
-                connections: '↕ ORM / Query',
-            },
-            {
-                id: 3,
-                name: 'Database Layer',
-                subtitle: 'PostgreSQL · Redis · S3',
-                icon: '🗄️',
-                color: '#f472b6',
-                gradient: 'linear-gradient(135deg, #831843, #500724)',
-                features: ['Replication', 'Sharding', 'Backup'],
-                connections: null,
-            },
-        ];
-
-        /* ── Single Layer Card ── */
-        const LayerCard = ({ layer, index, hoveredLayer, setHoveredLayer, isInView }) => {
-            const isHovered = hoveredLayer === index;
-            const isDimmed = hoveredLayer !== null && hoveredLayer !== index;
-
-            return (
-                <motion.div
-                    onMouseEnter={() => setHoveredLayer(index)}
-                    onMouseLeave={() => setHoveredLayer(null)}
-                    initial={{ 
-                        translateY: 0,
-                        opacity: 0,
-                    }}
-                    animate={{
-                        translateY: isInView ? -(index * 30) : 0,
-                        translateZ: isHovered ? 40 : 0,
-                        opacity: isInView ? (isDimmed ? 0.4 : 1) : 0,
-                        scale: isHovered ? 1.03 : 1,
-                    }}
-                    transition={{
-                        type: 'spring',
-                        stiffness: 180,
-                        damping: 22,
-                        delay: isInView ? index * 0.12 : 0,
-                    }}
-                    style={{
-                        transformPerspective: 1000,
-                        rotateX: 58,
-                        rotateZ: -45,
-                        transformStyle: 'preserve-3d',
-                        zIndex: layers.length - index,
-                        cursor: 'pointer',
-                    }}
-                    className="relative"
-                >
-                    {/* Card Surface */}
-                    <div
-                        className="relative rounded-2xl overflow-hidden border p-6"
-                        style={{
-                            width: '360px',
-                            minHeight: '140px',
-                            background: layer.gradient,
-                            borderColor: isHovered ? `${layer.color}60` : 'rgba(255,255,255,0.06)',
-                            boxShadow: isHovered
-                                ? `0 30px 60px rgba(0,0,0,0.6), 0 0 40px ${layer.color}15, inset 0 1px 0 rgba(255,255,255,0.1)`
-                                : '0 20px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
-                            transition: 'box-shadow 0.3s ease, border-color 0.3s ease',
-                        }}
-                    >
-                        {/* Glossy shine */}
-                        <div
-                            className="absolute inset-0 pointer-events-none"
-                            style={{
-                                background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 50%, transparent 100%)',
-                            }}
-                        />
-
-                        {/* Glow line */}
-                        <div
-                            className="absolute top-0 left-0 right-0 h-[2px]"
-                            style={{
-                                background: `linear-gradient(90deg, transparent, ${layer.color}60, transparent)`,
-                                opacity: isHovered ? 1 : 0.3,
-                                transition: 'opacity 0.3s ease',
-                            }}
-                        />
-
-                        {/* Content */}
-                        <div className="relative z-10 flex items-start gap-4">
-                            <div
-                                className="w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-                                style={{ background: `${layer.color}15`, border: `1px solid ${layer.color}25` }}
-                            >
-                                {layer.icon}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <h3
-                                    className="text-[15px] font-bold mb-0.5"
-                                    style={{ color: layer.color }}
-                                >
-                                    {layer.name}
-                                </h3>
-                                <p className="text-[11px] text-white/30 font-medium" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                                    {layer.subtitle}
-                                </p>
-
-                                {/* Feature tags */}
-                                <div className="flex flex-wrap gap-1.5 mt-3">
-                                    {layer.features.map((f, i) => (
-                                        <span
-                                            key={i}
-                                            className="px-2 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider"
-                                            style={{
-                                                background: `${layer.color}10`,
-                                                color: `${layer.color}90`,
-                                                border: `1px solid ${layer.color}15`,
-                                            }}
-                                        >
-                                            {f}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
+        <div class="stack-container" id="stack">
+            <!-- Tier 3: Client -->
+            <div class="layer-slab" data-tier="3" style="--mouse-x:50%; --mouse-y:50%;">
+                <div class="slab-top">
+                    <div class="slab-title-group">
+                        <div class="slab-icon">⚡</div>
+                        <div>
+                            <div class="slab-name">Edge Frontend Surface</div>
+                            <div class="slab-sub">React 19 · Next.js · WASM</div>
                         </div>
-
-                        {/* Connection arrow */}
-                        {layer.connections && (
-                            <div
-                                className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-mono font-semibold z-20"
-                                style={{ color: `${layer.color}40` }}
-                            >
-                                {layer.connections}
-                            </div>
-                        )}
                     </div>
-
-                    {/* Physical depth shadow (right face) */}
-                    <div
-                        className="absolute top-2 -right-2 bottom-0 w-3 rounded-r-lg"
-                        style={{
-                            background: 'rgba(0,0,0,0.4)',
-                            transform: 'skewY(-45deg)',
-                            transformOrigin: 'top left',
-                        }}
-                    />
-                    {/* Physical depth shadow (bottom face) */}
-                    <div
-                        className="absolute -bottom-2 left-2 right-0 h-3 rounded-b-lg"
-                        style={{
-                            background: 'rgba(0,0,0,0.3)',
-                            transform: 'skewX(-45deg)',
-                            transformOrigin: 'top left',
-                        }}
-                    />
-                </motion.div>
-            );
-        };
-
-        /* ── App ── */
-        const App = () => {
-            const [hoveredLayer, setHoveredLayer] = useState(null);
-            const containerRef = useRef(null);
-            const isInView = useInView(containerRef, { once: true, margin: '-100px' });
-
-            return (
-                <div className="flex flex-col lg:flex-row items-center gap-16 px-8">
-                    {/* Left Text */}
-                    <motion.div
-                        initial={{ opacity: 0, x: -40 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.7, delay: 0.2 }}
-                        className="max-w-sm"
-                    >
-                        <span
-                            className="inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-[3px] mb-5"
-                            style={{ background: 'rgba(129,140,248,0.1)', color: '#818cf8', border: '1px solid rgba(129,140,248,0.2)' }}
-                        >
-                            Architecture
-                        </span>
-                        <h1
-                            className="text-3xl md:text-4xl font-black tracking-tight mb-4 leading-tight"
-                            style={{ background: 'linear-gradient(135deg, #fff, rgba(255,255,255,0.5))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
-                        >
-                            Modern Stack,<br />Isometric View
-                        </h1>
-                        <p className="text-sm text-white/25 leading-relaxed mb-6">
-                            Explore each layer of our production infrastructure. Hover over any tier to highlight its role in the system architecture.
-                        </p>
-
-                        {/* Active layer detail */}
-                        {hoveredLayer !== null && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="p-4 rounded-xl border"
-                                style={{
-                                    background: `${layers[hoveredLayer].color}08`,
-                                    borderColor: `${layers[hoveredLayer].color}20`,
-                                }}
-                            >
-                                <div className="flex items-center gap-2 mb-2">
-                                    <span className="text-lg">{layers[hoveredLayer].icon}</span>
-                                    <span className="text-sm font-bold" style={{ color: layers[hoveredLayer].color }}>
-                                        {layers[hoveredLayer].name}
-                                    </span>
-                                </div>
-                                <p className="text-xs text-white/30 font-mono">{layers[hoveredLayer].subtitle}</p>
-                            </motion.div>
-                        )}
-
-                        <p className="text-[10px] text-white/10 uppercase tracking-[3px] mt-8">
-                            ✦ Pure CSS 3D · No WebGL ✦
-                        </p>
-                    </motion.div>
-
-                    {/* Right: Isometric Stack */}
-                    <div ref={containerRef} className="relative" style={{ paddingTop: '60px', paddingBottom: '60px' }}>
-                        <div className="flex flex-col" style={{ gap: '16px' }}>
-                            {layers.map((layer, i) => (
-                                <LayerCard
-                                    key={layer.id}
-                                    layer={layer}
-                                    index={i}
-                                    hoveredLayer={hoveredLayer}
-                                    setHoveredLayer={setHoveredLayer}
-                                    isInView={isInView}
-                                />
-                            ))}
-                        </div>
+                    <div class="slab-status">99.99% OK</div>
+                </div>
+                <div class="slab-tags">
+                    <span class="slab-tag">SSR & Edge Render</span>
+                    <span class="slab-tag">Zero-Bundle CSS</span>
+                    <span class="slab-tag">PWA Cache</span>
+                </div>
+                <div class="slab-metrics">
+                    <div class="metric-item">
+                        <span class="metric-label">TTFB</span>
+                        <span class="metric-val">18ms</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Edge Nodes</span>
+                        <span class="metric-val">340 PoPs</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Load</span>
+                        <span class="metric-val">14.8k req/s</span>
                     </div>
                 </div>
-            );
-        };
+            </div>
 
-        const root = createRoot(document.getElementById('root'));
-        root.render(<App />);
+            <!-- Tier 2: API Gateway -->
+            <div class="layer-slab" data-tier="2" style="--mouse-x:50%; --mouse-y:50%;">
+                <div class="slab-top">
+                    <div class="slab-title-group">
+                        <div class="slab-icon">🔀</div>
+                        <div>
+                            <div class="slab-name">API Gateway & Mesh</div>
+                            <div class="slab-sub">Envoy · GraphQL · mTLS</div>
+                        </div>
+                    </div>
+                    <div class="slab-status">SECURED</div>
+                </div>
+                <div class="slab-tags">
+                    <span class="slab-tag">Rate Limiting</span>
+                    <span class="slab-tag">JWT Token Verification</span>
+                    <span class="slab-tag">Circuit Breaking</span>
+                </div>
+                <div class="slab-metrics">
+                    <div class="metric-item">
+                        <span class="metric-label">Throughput</span>
+                        <span class="metric-val">98.2k rps</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">SSL Han'shake</span>
+                        <span class="metric-val">1.1ms</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Auth Drop</span>
+                        <span class="metric-val">0.001%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tier 1: Microservices Core -->
+            <div class="layer-slab" data-tier="1" style="--mouse-x:50%; --mouse-y:50%;">
+                <div class="slab-top">
+                    <div class="slab-title-group">
+                        <div class="slab-icon">⚙️</div>
+                        <div>
+                            <div class="slab-name">Distributed Logic Core</div>
+                            <div class="slab-sub">Rust · Go · Kafka Workers</div>
+                        </div>
+                    </div>
+                    <div class="slab-status">64 PODS</div>
+                </div>
+                <div class="slab-tags">
+                    <span class="slab-tag">Event-Driven CQRS</span>
+                    <span class="slab-tag">gRPC RPC Streams</span>
+                    <span class="slab-tag">Auto-scaling</span>
+                </div>
+                <div class="slab-metrics">
+                    <div class="metric-item">
+                        <span class="metric-label">Worker CPU</span>
+                        <span class="metric-val">28.4%</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Queue Depth</span>
+                        <span class="metric-val">12 msg</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Failover</span>
+                        <span class="metric-val">0.0s SLA</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tier 0: Persistence & Vault -->
+            <div class="layer-slab" data-tier="0" style="--mouse-x:50%; --mouse-y:50%;">
+                <div class="slab-top">
+                    <div class="slab-title-group">
+                        <div class="slab-icon">🗄️</div>
+                        <div>
+                            <div class="slab-name">Spatial Persistence Layer</div>
+                            <div class="slab-sub">PostgreSQL · Redis · NVMe S3</div>
+                        </div>
+                    </div>
+                    <div class="slab-status">SYNCED</div>
+                </div>
+                <div class="slab-tags">
+                    <span class="slab-tag">Multi-Region Master</span>
+                    <span class="slab-tag">In-Memory Redis L1</span>
+                    <span class="slab-tag">Continuous Snapshot</span>
+                </div>
+                <div class="slab-metrics">
+                    <div class="metric-item">
+                        <span class="metric-label">Cache Hit</span>
+                        <span class="metric-val">99.4%</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">IOPS</span>
+                        <span class="metric-val">420,000</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Storage</span>
+                        <span class="metric-val">18.4 TB</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls-panel">
+        <button class="ctrl-btn" id="explode-btn">
+            <span>💥</span> Explode Stack
+        </button>
+        <button class="ctrl-btn" id="rotate-btn">
+            <span>🔄</span> Auto Orbit
+        </button>
+        <button class="ctrl-btn" id="reset-btn">
+            <span>⌖</span> Center View
+        </button>
+    </div>
+
+    <script>
+        const stage = document.getElementById('stage');
+        const explodeBtn = document.getElementById('explode-btn');
+        const rotateBtn = document.getElementById('rotate-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const telemetryPing = document.getElementById('telemetry-ping');
+        const slabs = document.querySelectorAll('.layer-slab');
+
+        let isExploded = false;
+        let isOrbiting = false;
+        let orbitAngle = -42;
+        let orbitInterval = null;
+
+        // Explode toggle
+        explodeBtn.addEventListener('click', () => {
+            isExploded = !isExploded;
+            stage.classList.toggle('exploded', isExploded);
+            explodeBtn.classList.toggle('active', isExploded);
+            explodeBtn.innerHTML = isExploded ? '<span>📦</span> Collapse Stack' : '<span>💥</span> Explode Stack';
+        });
+
+        // Orbit toggle
+        rotateBtn.addEventListener('click', () => {
+            isOrbiting = !isOrbiting;
+            rotateBtn.classList.toggle('active', isOrbiting);
+            if (isOrbiting) {
+                orbitInterval = setInterval(() => {
+                    orbitAngle = (orbitAngle + 0.5) % 360;
+                    stage.style.transform = `rotateX(56deg) rotateZ(${orbitAngle}deg)`;
+                }, 16);
+            } else {
+                clearInterval(orbitInterval);
+            }
+        });
+
+        // Reset
+        resetBtn.addEventListener('click', () => {
+            if (isOrbiting) {
+                isOrbiting = false;
+                rotateBtn.classList.remove('active');
+                clearInterval(orbitInterval);
+            }
+            orbitAngle = -42;
+            stage.style.transform = `rotateX(56deg) rotateZ(-42deg)`;
+        });
+
+        // Interactive mouse illumination & tilt
+        document.addEventListener('mousemove', (e) => {
+            if (isOrbiting) return;
+            const cx = window.innerWidth / 2;
+            const cy = window.innerHeight / 2;
+            const dx = (e.clientX - cx) / cx;
+            const dy = (e.clientY - cy) / cy;
+
+            const tiltX = 56 - dy * 12;
+            const tiltZ = -42 + dx * 16;
+            stage.style.transform = `rotateX(${tiltX}deg) rotateZ(${tiltZ}deg)`;
+
+            slabs.forEach(slab => {
+                const rect = slab.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                slab.style.setProperty('--mouse-x', `${x}%`);
+                slab.style.setProperty('--mouse-y', `${y}%`);
+            });
+        });
+
+        // Simulated telemetry live fluctuation
+        setInterval(() => {
+            const ping = (3.8 + Math.random() * 1.2).toFixed(1);
+            telemetryPing.textContent = `Latency: ${ping}ms`;
+        }, 2000);
     </script>
 </body>
 </html>

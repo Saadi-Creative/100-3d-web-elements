@@ -6,111 +6,85 @@
     <title>Smooth Scroll Wrapper</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* CRITICAL FIX: DO NOT use overflow: hidden on the body. Let native scrollbars work to generate the scroll events! */
         body, html { margin: 0; padding: 0; background: #0f172a; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        .will-change-transform { will-change: transform; }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root">
+        <!-- Invisible Native Scrollbar Generator -->
+        <div id="scroll-proxy" class="w-full relative pointer-events-none"></div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useRef, useState, useEffect } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, useScroll, useSpring, useTransform } from 'framer-motion';
-
-        const SmoothScrollProvider = ({ children }) => {
-            const contentRef = useRef(null);
-            const [contentHeight, setContentHeight] = useState(0);
-
-            // Hook into the native scrollbar
-            const { scrollY } = useScroll();
-
-            // Run native scrollY through a physics dampener
-            const smoothY = useSpring(scrollY, { damping: 30, stiffness: 100, mass: 0.5 });
+        <!-- Visual Content Container -->
+        <div id="scroll-content" class="fixed top-0 left-0 w-full will-change-transform flex flex-col items-center">
             
-            // Invert the Y value so as we scroll native DOWN (+), the visual container moves UP (-)
-            const yTransform = useTransform(smoothY, value => -value);
-
-            useEffect(() => {
-                // Ensure the invisible native body matches the height of our fixed physical content
-                const handleResize = () => {
-                    if (contentRef.current) {
-                        setContentHeight(contentRef.current.scrollHeight);
-                    }
-                };
+            <div class="w-full max-w-4xl mx-auto py-32 px-8 text-center flex flex-col items-center z-10 relative">
+                <h1 class="text-6xl md:text-8xl font-black text-white tracking-tighter mb-6 mt-20">Kinetic Flow.</h1>
+                <p class="text-slate-400 text-lg font-medium max-w-2xl text-center mb-32">
+                    The native scrollbar is still physically running on the right side of the screen. However, the DOM visually rendering the website has been completely detached. A custom Vanilla JS loop intercepts the native scroll ticks, pipes them through a lerp damper, and smoothly transforms the container across the Y-axis.
+                </p>
                 
-                handleResize(); // Initial check
-                window.addEventListener('resize', handleResize);
-                // Setup an interval as a foolproof fallback for dynamic image loads expanding height
-                const timer = setInterval(handleResize, 1000); 
-                
-                return () => {
-                    window.removeEventListener('resize', handleResize);
-                    clearInterval(timer);
-                }
-            }, [children]);
+                <div id="mass-components-container" class="w-full flex flex-col items-center"></div>
 
-            return (
-                <>
-                    {/* The INVISIBLE NATIVE SCROLLBAR GENERATOR
-                        It has no visual styling, it purely exists to force the browser to let the user scroll smoothly
-                        to the exact mathematical pixel depth of our visual content. */}
-                    <div style={{ height: contentHeight }} className="w-full relative pointer-events-none" />
+                <div class="py-40">
+                    <h2 class="text-5xl font-black text-slate-700 tracking-widest uppercase">Floor Reached</h2>
+                </div>
+            </div>
 
-                    {/* THE VISUAL CONTENT CONTAINER
-                        Permanently fixed to the screen, sliding up and down via hardware-accelerated transforms based on the native scrollbar above. */}
-                    <motion.div
-                        ref={contentRef}
-                        className="fixed top-0 left-0 w-full will-change-transform flex flex-col items-center"
-                        style={{ y: yTransform }}
-                    >
-                        {children}
-                    </motion.div>
-                </>
-            );
-        };
+        </div>
+    </div>
 
-        const App = () => {
-            return (
-                <SmoothScrollProvider>
-                    <div className="w-full max-w-4xl mx-auto py-32 px-8 text-center flex flex-col items-center z-10 relative">
-                        <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter mb-6 mt-20">Kinetic Flow.</h1>
-                        <p className="text-slate-400 text-lg font-medium max-w-2xl text-center mb-32">
-                            The native scrollbar is still physically running on the right side of the screen. However, the DOM visually rendering the website has been completely detached. Framer Motion intercepts the native scroll ticks, pipes them through a <code className="bg-slate-800 text-sky-400 px-1 rounded">useSpring()</code> damper, and smoothly transforms the container across the Y-axis.
-                        </p>
-                        
-                        {Array.from({ length: 12 }).map((_, i) => (
-                            <div key={i} className="w-full flex flex-col md:flex-row items-center gap-12 text-left mb-24 bg-slate-800/50 p-8 rounded-[40px] border border-slate-700">
-                                <div className={`w-full md:w-1/3 h-48 rounded-3xl overflow-hidden flex items-center justify-center font-black text-6xl shadow-inner border border-slate-600 ${i % 2 === 0 ? 'bg-indigo-600/20 text-indigo-500' : 'bg-rose-600/20 text-rose-500'}`}>
-                                    {i+1}
-                                </div>
-                                <div className="w-full md:w-2/3">
-                                    <h3 className="text-3xl font-bold text-white mb-4 tracking-tight">Mass Component {i+1}</h3>
-                                    <p className="text-slate-400 leading-relaxed font-medium">Flick your scroll wheel violently. In a standard browser, the page instantly teleports downwards in rigid 100px increments. Here, the container carries simulated mass, absorbing the input and physically decelerating to a stop. Heavy, glassy, premium.</p>
-                                </div>
-                            </div>
-                        ))}
-
-                        <div className="py-40">
-                            <h2 className="text-5xl font-black text-slate-700 tracking-widest uppercase">Floor Reached</h2>
-                        </div>
+    <script>
+        // Generate mass components
+        const container = document.getElementById('mass-components-container');
+        for (let i = 0; i < 12; i++) {
+            const isEven = i % 2 === 0;
+            const colorClass = isEven ? 'bg-indigo-600/20 text-indigo-500' : 'bg-rose-600/20 text-rose-500';
+            const html = `
+                <div class="w-full flex flex-col md:flex-row items-center gap-12 text-left mb-24 bg-slate-800/50 p-8 rounded-[40px] border border-slate-700">
+                    <div class="w-full md:w-1/3 h-48 rounded-3xl overflow-hidden flex items-center justify-center font-black text-6xl shadow-inner border border-slate-600 ${colorClass}">
+                        ${i + 1}
                     </div>
-                </SmoothScrollProvider>
-            );
-        };
+                    <div class="w-full md:w-2/3">
+                        <h3 class="text-3xl font-bold text-white mb-4 tracking-tight">Mass Component ${i + 1}</h3>
+                        <p class="text-slate-400 leading-relaxed font-medium">Flick your scroll wheel violently. In a standard browser, the page instantly teleports downwards in rigid 100px increments. Here, the container carries simulated mass, absorbing the input and physically decelerating to a stop. Heavy, glassy, premium.</p>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+        }
 
-        createRoot(document.getElementById('root')).render(<App />);
+        const scrollProxy = document.getElementById('scroll-proxy');
+        const scrollContent = document.getElementById('scroll-content');
+        
+        let targetY = 0;
+        let currentY = 0;
+
+        function updateHeight() {
+            const h = scrollContent.getBoundingClientRect().height;
+            scrollProxy.style.height = `${h}px`;
+        }
+        
+        window.addEventListener('resize', updateHeight);
+        setInterval(updateHeight, 1000);
+        updateHeight(); // init
+
+        // Smooth scroll loop
+        function render() {
+            targetY = window.scrollY;
+            currentY += (targetY - currentY) * 0.08; // Lerp factor
+            
+            // Avoid micro-jitter
+            if (Math.abs(targetY - currentY) < 0.1) {
+                currentY = targetY;
+            }
+
+            scrollContent.style.transform = `translateY(-${currentY}px)`;
+            requestAnimationFrame(render);
+        }
+
+        render();
     </script>
 </body>
 </html>

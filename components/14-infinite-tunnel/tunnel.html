@@ -3,288 +3,238 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Infinite Tunnel Scroll</title>
+  <title>14 - Hyperspace Velocity Warp Corridor</title>
+  <link rel="stylesheet" href="../../styles/shared.css" />
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body {
-      background: #000;
-      font-family: 'Courier New', monospace;
-      overflow-x: hidden;
-    }
-    /* Scrollable content sections */
-    .scroll-wrapper {
-      height: 400vh;
+    .demo-container {
       position: relative;
-    }
-    .tunnel-sticky {
-      position: sticky;
-      top: 0;
-      height: 100vh;
       width: 100%;
+      height: 100vh;
       overflow: hidden;
+      background: #020617;
+      font-family: var(--font-sans);
     }
+
     #tunnel-canvas {
       position: absolute;
       inset: 0;
+      z-index: 1;
     }
-    /* Overlay content */
-    .overlay {
+
+    /* Spatial Telemetry HUD */
+    .warp-hud {
       position: absolute;
-      inset: 0;
+      top: var(--space-6);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      z-index: 10;
       pointer-events: none;
-    }
-    .overlay-tag {
-      font-size: 9px;
-      letter-spacing: 5px;
-      color: rgba(0,255,170,0.4);
-      text-transform: uppercase;
-      margin-bottom: 12px;
-    }
-    .overlay-title {
-      font-size: clamp(1.8rem, 5vw, 3rem);
-      font-weight: 900;
-      letter-spacing: -2px;
-      color: white;
-      text-shadow: 0 0 20px rgba(0,255,170,0.4), 0 0 60px rgba(0,255,170,0.1);
-      margin-bottom: 8px;
       text-align: center;
     }
-    .overlay-title .accent {
-      color: #00ffaa;
-      text-shadow: 0 0 20px rgba(0,255,170,0.8), 0 0 60px rgba(0,255,170,0.3);
-    }
-    .overlay-sub {
-      font-size: 11px;
-      letter-spacing: 3px;
-      color: rgba(255,255,255,0.25);
+
+    .warp-tag {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: var(--tracking-widest);
       text-transform: uppercase;
+      color: var(--accent-base);
+      margin-bottom: var(--space-2);
     }
-    .scroll-indicator {
+
+    .warp-title {
+      font-size: var(--text-2xl);
+      font-weight: 800;
+      color: var(--text-heading);
+      letter-spacing: var(--tracking-tight);
+    }
+
+    .warp-speed-badge {
+      margin-top: var(--space-3);
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius-full);
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      color: var(--text-muted);
+      backdrop-filter: blur(16px);
+      pointer-events: auto;
+    }
+
+    .speed-val {
+      color: var(--accent-base);
+      font-weight: 700;
+    }
+
+    /* Speed Mode Toolbar */
+    .warp-toolbar {
       position: absolute;
-      bottom: 30px;
+      bottom: var(--space-6);
       left: 50%;
       transform: translateX(-50%);
-      font-size: 9px;
-      letter-spacing: 3px;
-      color: rgba(0,255,170,0.35);
-      text-transform: uppercase;
-      animation: bounce 2s ease-in-out infinite;
-      pointer-events: none;
+      z-index: 10;
+      display: flex;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-full);
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      backdrop-filter: blur(16px);
     }
-    @keyframes bounce {
-      0%, 100% { transform: translateX(-50%) translateY(0); }
-      50% { transform: translateX(-50%) translateY(-8px); }
+
+    .speed-btn {
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius-full);
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
     }
-    .vignette {
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.85) 100%);
-      pointer-events: none;
-      z-index: 5;
-    }
-    .scanline {
-      position: absolute;
-      inset: 0;
-      background-image: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0,0,0,0.03) 2px,
-        rgba(0,0,0,0.03) 4px
-      );
-      pointer-events: none;
-      z-index: 6;
+
+    .speed-btn.is-active {
+      background: var(--surface-overlay);
+      border-color: var(--border-subtle);
+      color: var(--accent-base);
+      box-shadow: 0 0 12px var(--accent-glow);
     }
   </style>
 </head>
 <body>
+  <div class="demo-container">
+    <div class="warp-hud">
+      <span class="warp-tag">PROCEDURAL CORRIDOR</span>
+      <h1 class="warp-title">Hyperspace Velocity Warp</h1>
+      <div class="warp-speed-badge">Current Velocity: <span class="speed-val" id="speedReadout">1.0 MACH</span></div>
+    </div>
 
-<div class="scroll-wrapper">
-  <div class="tunnel-sticky">
     <div id="tunnel-canvas"></div>
 
-    <div class="overlay">
-      <div class="overlay-tag">scroll to enter</div>
-      <h1 class="overlay-title">Into The <span class="accent">Void</span></h1>
-      <p class="overlay-sub">Retro-Wave Tunnel Experience</p>
-    </div>
-
-    <div class="vignette"></div>
-    <div class="scanline"></div>
-    <div class="scroll-indicator">↓ scroll ↓</div>
-  </div>
-
-  <!-- Content after tunnel -->
-  <div style="background:#000; display:flex; align-items:center; justify-content:center; height:100vh; padding:40px;">
-    <div style="text-align:center; max-width:500px;">
-      <div style="font-size:11px; letter-spacing:4px; color:rgba(0,255,170,0.5); text-transform:uppercase; margin-bottom:16px;">You made it through</div>
-      <h2 style="font-size:2.5rem; font-weight:800; color:white; letter-spacing:-1px; margin-bottom:12px;">Beyond the Horizon</h2>
-      <p style="font-size:14px; color:rgba(255,255,255,0.3); line-height:1.7;">The tunnel is behind you. The future is ahead. Built with a single static CylinderGeometry — infinite motion, near-zero GPU cost.</p>
+    <div class="warp-toolbar" role="toolbar" aria-label="Warp speed settings">
+      <button class="speed-btn is-active" data-speed="1.0" data-mach="1.0 MACH">Sub-Light Cruise</button>
+      <button class="speed-btn" data-speed="2.5" data-mach="4.5 MACH">Warp Velocity</button>
+      <button class="speed-btn" data-speed="5.0" data-mach="9.9 MACH">Hyperspace Boost</button>
     </div>
   </div>
-</div>
 
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+    }
   }
-}
-</script>
+  </script>
 
-<script type="module">
-import * as THREE from 'three';
+  <script type="module">
+    import * as THREE from 'three';
 
-const container = document.getElementById('tunnel-canvas');
-const W = container.clientWidth || window.innerWidth;
-const H = container.clientHeight || window.innerHeight;
+    const container = document.getElementById('tunnel-canvas');
+    const W = container.clientWidth, H = container.clientHeight;
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-renderer.setSize(W, H);
-renderer.setClearColor(0x000000);
-container.appendChild(renderer.domElement);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.setSize(W, H);
+    container.appendChild(renderer.domElement);
 
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(80, W / H, 0.1, 200);
-camera.position.z = 0;
-camera.lookAt(0, 0, -10);
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(80, W / H, 0.1, 200);
+    camera.position.z = 0;
+    camera.lookAt(0, 0, -10);
 
-// Create neon grid texture programmatically
-function createGridTexture() {
-  const size = 512;
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext('2d');
+    // Procedural Neon Grid Canvas Texture
+    function createGridTexture() {
+      const size = 512;
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = size;
+      const ctx = canvas.getContext('2d');
 
-  // Black background
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, size, size);
+      ctx.fillStyle = '#020617';
+      ctx.fillRect(0, 0, size, size);
 
-  // Grid lines — neon green/cyan retrowave
-  ctx.strokeStyle = '#00ff88';
-  ctx.lineWidth = 1.5;
-  ctx.shadowColor = '#00ff88';
-  ctx.shadowBlur = 6;
+      ctx.strokeStyle = '#6366f1';
+      ctx.lineWidth = 2;
+      ctx.shadowColor = '#6366f1';
+      ctx.shadowBlur = 8;
 
-  const cols = 6, rows = 10;
-  // Vertical lines
-  for (let i = 0; i <= cols; i++) {
-    const x = (i / cols) * size;
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, size);
-    ctx.stroke();
-  }
-  // Horizontal lines
-  for (let j = 0; j <= rows; j++) {
-    const y = (j / rows) * size;
-    // Vary intensity based on position
-    const intensity = 0.4 + Math.abs(j / rows - 0.5) * 0.6;
-    ctx.globalAlpha = intensity;
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(size, y);
-    ctx.stroke();
-  }
-  ctx.globalAlpha = 1;
+      const cols = 8, rows = 12;
+      for (let i = 0; i <= cols; i++) {
+        const x = (i / cols) * size;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, size);
+        ctx.stroke();
+      }
+      for (let j = 0; j <= rows; j++) {
+        const y = (j / rows) * size;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(size, y);
+        ctx.stroke();
+      }
 
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(3, 8);
-  return tex;
-}
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(4, 10);
+      return tex;
+    }
 
-const gridTexture = createGridTexture();
+    const gridTexture = createGridTexture();
+    const cylGeo = new THREE.CylinderGeometry(4, 4, 60, 32, 1, true);
+    const cylMat = new THREE.MeshBasicMaterial({
+      map: gridTexture,
+      side: THREE.BackSide,
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending
+    });
 
-// Single static CylinderGeometry — the core optimization
-const cylGeo = new THREE.CylinderGeometry(4, 4, 60, 32, 1, true);
+    const cylinder = new THREE.Mesh(cylGeo, cylMat);
+    cylinder.rotation.x = Math.PI / 2;
+    scene.add(cylinder);
 
-// Render inside face
-const cylMat = new THREE.MeshBasicMaterial({
-  map: gridTexture,
-  side: THREE.BackSide, // render inside
-  color: 0x00ff88,
-  transparent: true,
-  opacity: 0.85,
-  blending: THREE.AdditiveBlending,
-  depthWrite: false,
-});
+    let speedMultiplier = 1.0;
+    const clock = new THREE.Clock();
 
-const cylinder = new THREE.Mesh(cylGeo, cylMat);
-cylinder.rotation.x = Math.PI / 2; // align with camera Z axis
-scene.add(cylinder);
+    function animate() {
+      requestAnimationFrame(animate);
+      const t = clock.getElapsedTime();
 
-// Second dim cylinder for depth
-const cylMat2 = new THREE.MeshBasicMaterial({
-  map: gridTexture,
-  side: THREE.BackSide,
-  color: 0x0040ff,
-  transparent: true,
-  opacity: 0.2,
-  blending: THREE.AdditiveBlending,
-  depthWrite: false,
-});
-gridTexture.repeat.set(3, 8);
-const cylinder2 = new THREE.Mesh(new THREE.CylinderGeometry(3.8, 3.8, 60, 32, 1, true), cylMat2);
-cylinder2.rotation.x = Math.PI / 2;
-scene.add(cylinder2);
+      gridTexture.offset.y = t * 0.15 * speedMultiplier;
+      cylinder.rotation.z = t * 0.05;
 
-// Scroll → texture offset (the key optimization: no mesh movement needed)
-let scrollProgress = 0;
-let rafId;
+      camera.fov = 80 + speedMultiplier * 4;
+      camera.updateProjectionMatrix();
 
-function getScrollProgress() {
-  const el = document.querySelector('.scroll-wrapper');
-  if (!el) return 0;
-  const maxScroll = el.offsetHeight - window.innerHeight;
-  return Math.min(Math.max(window.scrollY / maxScroll, 0), 1);
-}
+      renderer.render(scene, camera);
+    }
+    animate();
 
-window.addEventListener('scroll', () => {
-  scrollProgress = getScrollProgress();
-}, { passive: true });
+    window.addEventListener('resize', () => {
+      const W2 = container.clientWidth, H2 = container.clientHeight;
+      camera.aspect = W2 / H2;
+      camera.updateProjectionMatrix();
+      renderer.setSize(W2, H2);
+    });
 
-const clock = new THREE.Clock();
+    // Speed Selector Buttons
+    const speedBtns = document.querySelectorAll('.speed-btn');
+    const speedReadout = document.getElementById('speedReadout');
 
-function animate() {
-  rafId = requestAnimationFrame(animate);
-  const t = clock.getElapsedTime();
+    speedBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        speedBtns.forEach((b) => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
 
-  // Map scroll to texture.offset.y — creates illusion of infinite movement
-  gridTexture.offset.y = scrollProgress * 4 + t * 0.02;
-
-  // Subtle camera sway
-  camera.position.x = Math.sin(t * 0.15) * 0.08;
-  camera.position.y = Math.cos(t * 0.1) * 0.06;
-
-  // FOV change with scroll for "acceleration" feel
-  camera.fov = 80 + scrollProgress * 25;
-  camera.updateProjectionMatrix();
-
-  // Slight rotation for psychedelic tunnel twist
-  cylinder.rotation.z = t * 0.04 + scrollProgress * 0.5;
-  cylinder2.rotation.z = -t * 0.03 + scrollProgress * 0.3;
-
-  renderer.render(scene, camera);
-}
-
-animate();
-
-window.addEventListener('resize', () => {
-  const W2 = window.innerWidth, H2 = window.innerHeight;
-  camera.aspect = W2 / H2;
-  camera.updateProjectionMatrix();
-  renderer.setSize(W2, H2);
-});
-</script>
+        speedMultiplier = parseFloat(btn.dataset.speed);
+        speedReadout.textContent = btn.dataset.mach;
+      });
+    });
+  </script>
 </body>
 </html>

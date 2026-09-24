@@ -24,315 +24,304 @@
         .dropzone-container {
             background: linear-gradient(135deg, rgba(30,41,59,0.5) 0%, rgba(15,23,42,0.8) 100%);
             backdrop-filter: blur(24px);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+        
+        .dropzone-container.dragging {
+            transform: scale(0.95) !important;
+            box-shadow: 0 0 100px -20px rgba(56, 189, 248, 0.5), inset 0 0 60px rgba(0,0,0,0.8);
+            border-color: rgba(56, 189, 248, 0.5);
+        }
+        
+        .dropzone-container.hovered:not(.dragging) {
+            box-shadow: 0 40px 80px -20px rgba(0,0,0,0.8), inset 0 0 20px rgba(255,255,255,0.02);
+            border-color: rgba(51, 65, 85, 0.5);
+        }
+        
+        .dropzone-container:not(.dragging):not(.hovered) {
+            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.02);
+            border-color: rgba(51, 65, 85, 0.5);
+        }
+
+        .spotlight {
+            background: radial-gradient(circle 400px at 50% 50%, rgba(255,255,255,1), transparent);
+        }
+        
+        .neon-border {
+            transition: box-shadow 0.3s ease;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+        }
+        
+        .dropzone-container.dragging .neon-border {
+            box-shadow: inset 0 0 0 4px rgba(56, 189, 248, 0.8), 0 0 100px rgba(56, 189, 248, 0.4);
+        }
+        
+        .dropzone-container.hovered:not(.dragging) .neon-border {
+            box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.3);
+        }
+        
+        .center-content {
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform: translateZ(0) scale(1);
+        }
+        
+        .dropzone-container.dragging .center-content {
+            transform: translateZ(150px) scale(1.2);
+        }
+        
+        .dropzone-container.hovered:not(.dragging) .center-content {
+            transform: translateZ(60px) scale(1);
+        }
+        
+        .cloud-icon {
+            transition: color 0.3s, transform 0.3s;
+            color: #94a3b8;
+        }
+        .dropzone-container.dragging .cloud-icon {
+            color: #38bdf8;
+            transform: translateY(-15px);
+        }
+        .dropzone-container.hovered:not(.dragging) .cloud-icon {
+            color: #fff;
+        }
+        
+        @keyframes bounce-up-down {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+        
+        .dropzone-container.dragging .icon-anim, .dropzone-container.hovered .icon-anim {
+            animation: bounce-up-down 1.2s infinite ease-in-out;
+        }
+        
+        .text-title {
+            transition: transform 0.3s, color 0.3s;
+            color: #f1f5f9;
+        }
+        .dropzone-container.dragging .text-title {
+            transform: scale(1.1);
+            color: #38bdf8;
+        }
+        
+        .badge {
+            transition: transform 0.3s, opacity 0.3s;
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+        .dropzone-container.dragging .badge {
+            opacity: 0;
+            transform: translateY(-20px) scale(0.8);
+        }
+        
+        .grid-floor {
+            background-image: 
+                linear-gradient(to top, rgba(56, 189, 248, 0.2) 0%, transparent 100%),
+                linear-gradient(to right, rgba(255,255,255,0.08) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.08) 1px, transparent 1px);
+            background-size: 100% 100%, 30px 30px, 30px 30px;
+            transform: rotateX(70deg) translateZ(-80px);
+            transform-origin: bottom;
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+        .dropzone-container.dragging .grid-floor {
+            opacity: 1;
+        }
+
+        .pulse-ring {
+            position: absolute;
+            inset: 0;
+            border-radius: 40px;
+            border: 2px solid #38bdf8;
+            pointer-events: none;
+            z-index: -10;
+            opacity: 0;
+            transform: scale(0.9);
+        }
+
+        @keyframes pulse-anim {
+            0% { transform: scale(0.9); opacity: 0; }
+            30% { opacity: 0.5; }
+            100% { transform: scale(1.8); opacity: 0; }
+        }
+        
+        .dropzone-container.dragging .pulse-ring.r1 { animation: pulse-anim 1.5s infinite ease-out 0s; }
+        .dropzone-container.dragging .pulse-ring.r2 { animation: pulse-anim 1.5s infinite ease-out 0.5s; }
+        .dropzone-container.dragging .pulse-ring.r3 { animation: pulse-anim 1.5s infinite ease-out 1s; }
+        
+        @keyframes glow-pulse {
+            0%, 100% { opacity: 0.6; transform: scale(2); }
+            50% { opacity: 0.3; transform: scale(1.5); }
+        }
+        .icon-glow {
+            display: none;
+        }
+        .dropzone-container.dragging .icon-glow {
+            display: block;
+            animation: glow-pulse 0.8s infinite alternate;
         }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body class="bg-grid-pattern">
-    <div id="root"></div>
+    <div id="root">
+        <div class="w-full h-full flex flex-col items-center justify-center p-8 preserve-3d relative">
+            <div class="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-sky-500/10 rounded-full blur-[120px] pointer-events-none"></div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useState, useRef, useEffect } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from 'framer-motion';
+            <h1 class="text-5xl font-black mb-16 text-transparent bg-clip-text bg-gradient-to-r from-slate-100 to-slate-400 tracking-tighter drop-shadow-2xl z-20">Quantum Dropzone</h1>
+            
+            <input type="file" id="fileInput" class="hidden" multiple />
 
-        const App = () => {
-            const [isDragging, setIsDragging] = useState(false);
-            const [isHovered, setIsHovered] = useState(false);
-            const counter = useRef(0);
-            const fileInputRef = useRef(null);
-            const containerRef = useRef(null);
-
-            // Mouse tracking values for 3D tilt
-            const mouseX = useMotionValue(0.5);
-            const mouseY = useMotionValue(0.5);
-
-            // Smooth the mouse values
-            const smoothMouseX = useSpring(mouseX, { damping: 30, stiffness: 200 });
-            const smoothMouseY = useSpring(mouseY, { damping: 30, stiffness: 200 });
-
-            // Map smoothed mouse values to rotation degrees
-            const rotateX = useTransform(smoothMouseY, [0, 1], [15, -15]);
-            const rotateY = useTransform(smoothMouseX, [0, 1], [-15, 15]);
-
-            // Spotlight effect mapping directly
-            const spotlightX = useTransform(smoothMouseX, [0, 1], ["0%", "100%"]);
-            const spotlightY = useTransform(smoothMouseY, [0, 1], ["0%", "100%"]);
-
-            useEffect(() => {
-                const preventDefault = (e) => e.preventDefault();
-                window.addEventListener('dragover', preventDefault);
-                window.addEventListener('drop', preventDefault);
-                return () => {
-                    window.removeEventListener('dragover', preventDefault);
-                    window.removeEventListener('drop', preventDefault);
-                };
-            }, []);
-
-            const updateMousePosition = (clientX, clientY) => {
-                if (!containerRef.current) return;
-                const rect = containerRef.current.getBoundingClientRect();
-                const x = (clientX - rect.left) / rect.width;
-                const y = (clientY - rect.top) / rect.height;
-                mouseX.set(x);
-                mouseY.set(y);
-            };
-
-            const handleDragEnter = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                counter.current += 1;
-                setIsDragging(true);
-            };
-
-            const handleDragLeave = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                counter.current -= 1;
-                if (counter.current <= 0) {
-                    setIsDragging(false);
-                    counter.current = 0;
-                }
-            };
-
-            const handleDragOver = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                updateMousePosition(e.clientX, e.clientY);
-            };
-
-            const handleMouseMove = (e) => {
-                updateMousePosition(e.clientX, e.clientY);
-            };
-
-            const handleDrop = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                counter.current = 0;
-                setIsDragging(false);
-                setIsHovered(false);
-                mouseX.set(0.5);
-                mouseY.set(0.5);
+            <div id="dropzone" class="relative w-full max-w-3xl h-[450px] rounded-[40px] flex items-center justify-center preserve-3d cursor-pointer dropzone-container border border-slate-700/50">
                 
-                const files = e.dataTransfer.files;
-                if(files.length > 0) {
-                    triggerSuccess(files.length);
-                }
-            };
+                <div id="spotlight" class="absolute inset-0 rounded-[40px] pointer-events-none opacity-40 mix-blend-overlay spotlight"></div>
+                <div class="absolute inset-0 rounded-[40px] pointer-events-none neon-border"></div>
+                
+                <div class="pulse-ring r1"></div>
+                <div class="pulse-ring r2"></div>
+                <div class="pulse-ring r3"></div>
 
-            const handleFileSelect = (e) => {
-                const files = e.target.files;
-                if(files.length > 0) {
-                    triggerSuccess(files.length);
-                }
-            };
-
-            const triggerSuccess = (count) => {
-                alert(`Successfully processing ${count} file(s) in the spatial engine!`);
-            };
-
-            const handleDropzoneClick = () => {
-                fileInputRef.current?.click();
-            };
-
-            const isActive = isDragging || isHovered;
-
-            return (
-                <div className="w-full h-full flex flex-col items-center justify-center p-8 preserve-3d relative">
-                    {/* Ambient glow from top */}
-                    <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-sky-500/10 rounded-full blur-[120px] pointer-events-none"></div>
-
-                    <h1 className="text-5xl font-black mb-16 text-transparent bg-clip-text bg-gradient-to-r from-slate-100 to-slate-400 tracking-tighter drop-shadow-2xl z-20">Quantum Dropzone</h1>
+                <div class="flex flex-col items-center preserve-3d pointer-events-none z-20 center-content">
+                    <div class="mb-8 relative cloud-icon">
+                        <div class="absolute inset-0 bg-sky-400 blur-[40px] rounded-full icon-glow"></div>
+                        <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="relative z-10 drop-shadow-[0_15px_15px_rgba(0,0,0,0.6)]">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8" class="icon-anim"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15" class="icon-anim"></line>
+                        </svg>
+                    </div>
                     
-                    <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        onChange={handleFileSelect} 
-                        className="hidden" 
-                        multiple 
-                    />
-
-                    <motion.div
-                        ref={containerRef}
-                        onClick={handleDropzoneClick}
-                        onDragEnter={handleDragEnter}
-                        onDragLeave={handleDragLeave}
-                        onDragOver={handleDragOver}
-                        onDrop={handleDrop}
-                        onMouseEnter={() => setIsHovered(true)}
-                        onMouseLeave={() => { setIsHovered(false); mouseX.set(0.5); mouseY.set(0.5); }}
-                        onMouseMove={handleMouseMove}
-                        className="relative w-full max-w-3xl h-[450px] rounded-[40px] flex items-center justify-center preserve-3d cursor-pointer dropzone-container border border-slate-700/50"
-                        style={{
-                            rotateX,
-                            rotateY,
-                        }}
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ 
-                            scale: isDragging ? 0.95 : 1,
-                            opacity: 1,
-                            boxShadow: isDragging 
-                                ? "0 0 100px -20px rgba(56, 189, 248, 0.5), inset 0 0 60px rgba(0,0,0,0.8)" 
-                                : isHovered
-                                    ? "0 40px 80px -20px rgba(0,0,0,0.8), inset 0 0 20px rgba(255,255,255,0.02)"
-                                    : "0 20px 40px -10px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.02)",
-                            borderColor: isDragging ? "rgba(56, 189, 248, 0.5)" : "rgba(51, 65, 85, 0.5)"
-                        }}
-                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    >
-                        {/* Dynamic Interactive Spotlight using functional template literal on the style object */}
-                        <motion.div 
-                            className="absolute inset-0 rounded-[40px] pointer-events-none opacity-40 mix-blend-overlay"
-                            style={{
-                                background: useTransform(
-                                    [spotlightX, spotlightY],
-                                    ([x, y]) => `radial-gradient(circle 400px at ${x} ${y}, rgba(255,255,255,1), transparent)`
-                                )
-                            }}
-                        />
-
-                        {/* Animated Neon Border */}
-                        <motion.div 
-                            className="absolute inset-0 rounded-[40px] pointer-events-none"
-                            animate={{
-                                boxShadow: isDragging 
-                                    ? "inset 0 0 0 4px rgba(56, 189, 248, 0.8), 0 0 100px rgba(56, 189, 248, 0.4)" 
-                                    : isHovered
-                                        ? "inset 0 0 0 2px rgba(255, 255, 255, 0.3)"
-                                        : "inset 0 0 0 1px rgba(255, 255, 255, 0.05)"
-                            }}
-                            transition={{ duration: 0.3 }}
-                        />
-
-                        {/* Concentric Pulsing Rings (Only visible when dragging) */}
-                        <AnimatePresence>
-                            {isDragging && (
-                                <>
-                                    {[1, 2, 3].map((ring) => (
-                                        <motion.div
-                                            key={ring}
-                                            className="absolute inset-0 rounded-[40px] border-2 border-sky-400 pointer-events-none"
-                                            initial={{ scale: 0.9, opacity: 0 }}
-                                            animate={{ 
-                                                scale: [0.9, 1.3, 1.8], 
-                                                opacity: [0, 0.5, 0] 
-                                            }}
-                                            transition={{ 
-                                                duration: 1.5, 
-                                                repeat: Infinity, 
-                                                delay: ring * 0.5,
-                                                ease: "easeOut"
-                                            }}
-                                            style={{ zIndex: -10 }} 
-                                        />
-                                    ))}
-                                </>
-                            )}
-                        </AnimatePresence>
-
-                        {/* Floating Center Content */}
-                        <motion.div 
-                            className="flex flex-col items-center preserve-3d pointer-events-none z-20"
-                            animate={{
-                                z: isDragging ? 150 : isHovered ? 60 : 0, 
-                                scale: isDragging ? 1.2 : 1
-                            }}
-                            transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                        >
-                            {/* Animated SVG Cloud/Document Icon */}
-                            <motion.div 
-                                className="mb-8 relative"
-                                animate={{ 
-                                    color: isDragging ? "#38bdf8" : isHovered ? "#fff" : "#94a3b8",
-                                    y: isDragging ? -15 : 0 
-                                }}
-                            >
-                                {/* Glow behind icon */}
-                                {isDragging && (
-                                    <motion.div 
-                                        className="absolute inset-0 bg-sky-400 blur-[40px] rounded-full"
-                                        initial={{ opacity: 0, scale: 0.5 }}
-                                        animate={{ opacity: 0.6, scale: 2 }}
-                                        transition={{ yoyo: Infinity, duration: 0.8 }}
-                                    ></motion.div>
-                                )}
-                                <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 drop-shadow-[0_15px_15px_rgba(0,0,0,0.6)]">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                    <motion.polyline 
-                                        points="17 8 12 3 7 8" 
-                                        animate={{ y: isActive ? [0, -15, 0] : 0 }} 
-                                        transition={{ repeat: Infinity, duration: 1.2, ease: "easeInOut" }}
-                                    ></motion.polyline>
-                                    <motion.line 
-                                        x1="12" y1="3" x2="12" y2="15"
-                                        animate={{ y: isActive ? [0, -15, 0] : 0 }} 
-                                        transition={{ repeat: Infinity, duration: 1.2, ease: "easeInOut" }}
-                                    ></motion.line>
-                                </svg>
-                            </motion.div>
-                            
-                            <motion.h3 
-                                className="text-4xl font-black text-slate-100 tracking-wide drop-shadow-2xl mb-4"
-                                animate={{ scale: isDragging ? 1.1 : 1, color: isDragging ? "#38bdf8" : "#f1f5f9" }}
-                            >
-                                {isDragging ? "Release to Core!" : "Summon Assets"}
-                            </motion.h3>
-                            <p className="text-slate-400 font-medium text-xl tracking-wide">
-                                Drag files or click to inject
-                            </p>
-                            
-                            {/* Little badge indicators */}
-                            <div className="flex gap-4 mt-10">
-                                {["HD", "4K", "RAW", "OBJ"].map((badge, i) => (
-                                    <motion.span 
-                                        key={badge}
-                                        className="px-4 py-1.5 rounded-full border border-slate-600 bg-slate-800/80 text-sm font-bold text-slate-300 backdrop-blur-md shadow-lg"
-                                        animate={{ 
-                                            y: isDragging ? -20 : 0, 
-                                            opacity: isDragging ? 0 : 1,
-                                            scale: isDragging ? 0.8 : 1
-                                        }}
-                                        transition={{ delay: i * 0.05 }}
-                                    >
-                                        {badge}
-                                    </motion.span>
-                                ))}
-                            </div>
-                        </motion.div>
-
-                        {/* Internal grid floor (activates when dragging) */}
-                        <motion.div 
-                            className="absolute inset-x-0 bottom-0 h-2/3 rounded-b-[40px] pointer-events-none"
-                            style={{
-                                backgroundImage: `
-                                    linear-gradient(to top, rgba(56, 189, 248, 0.2) 0%, transparent 100%),
-                                    linear-gradient(to right, rgba(255,255,255,0.08) 1px, transparent 1px),
-                                    linear-gradient(to bottom, rgba(255,255,255,0.08) 1px, transparent 1px)
-                                `,
-                                backgroundSize: '100% 100%, 30px 30px, 30px 30px',
-                                transform: 'rotateX(70deg) translateZ(-80px)',
-                                transformOrigin: 'bottom'
-                            }}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: isDragging ? 1 : 0 }}
-                            transition={{ duration: 0.4 }}
-                        />
-                    </motion.div>
+                    <h3 id="titleText" class="text-4xl font-black tracking-wide drop-shadow-2xl mb-4 text-title">Summon Assets</h3>
+                    <p class="text-slate-400 font-medium text-xl tracking-wide">Drag files or click to inject</p>
+                    
+                    <div class="flex gap-4 mt-10">
+                        <span class="px-4 py-1.5 rounded-full border border-slate-600 bg-slate-800/80 text-sm font-bold text-slate-300 backdrop-blur-md shadow-lg badge" style="transition-delay: 0s;">HD</span>
+                        <span class="px-4 py-1.5 rounded-full border border-slate-600 bg-slate-800/80 text-sm font-bold text-slate-300 backdrop-blur-md shadow-lg badge" style="transition-delay: 0.05s;">4K</span>
+                        <span class="px-4 py-1.5 rounded-full border border-slate-600 bg-slate-800/80 text-sm font-bold text-slate-300 backdrop-blur-md shadow-lg badge" style="transition-delay: 0.1s;">RAW</span>
+                        <span class="px-4 py-1.5 rounded-full border border-slate-600 bg-slate-800/80 text-sm font-bold text-slate-300 backdrop-blur-md shadow-lg badge" style="transition-delay: 0.15s;">OBJ</span>
+                    </div>
                 </div>
-            );
-        };
 
-        createRoot(document.getElementById('root')).render(<App />);
+                <div class="absolute inset-x-0 bottom-0 h-2/3 rounded-b-[40px] pointer-events-none grid-floor"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        const spotlight = document.getElementById('spotlight');
+        const titleText = document.getElementById('titleText');
+        
+        let dragCounter = 0;
+        
+        // Smoothing for mouse
+        let targetRotateX = 0;
+        let targetRotateY = 0;
+        let currentRotateX = 0;
+        let currentRotateY = 0;
+        
+        let targetSpotlightX = 50;
+        let targetSpotlightY = 50;
+        let currentSpotlightX = 50;
+        let currentSpotlightY = 50;
+        
+        function lerp(start, end, factor) {
+            return start + (end - start) * factor;
+        }
+        
+        function updateTransform() {
+            currentRotateX = lerp(currentRotateX, targetRotateX, 0.1);
+            currentRotateY = lerp(currentRotateY, targetRotateY, 0.1);
+            
+            const scale = dropzone.classList.contains('dragging') ? 0.95 : 1;
+            dropzone.style.transform = `rotateX(${currentRotateX}deg) rotateY(${currentRotateY}deg) scale(${scale})`;
+            
+            currentSpotlightX = lerp(currentSpotlightX, targetSpotlightX, 0.1);
+            currentSpotlightY = lerp(currentSpotlightY, targetSpotlightY, 0.1);
+            
+            spotlight.style.background = `radial-gradient(circle 400px at ${currentSpotlightX}% ${currentSpotlightY}%, rgba(255,255,255,1), transparent)`;
+            
+            requestAnimationFrame(updateTransform);
+        }
+        
+        updateTransform();
+        
+        function handleMouseMove(e) {
+            const rect = dropzone.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / rect.width;
+            const y = (e.clientY - rect.top) / rect.height;
+            
+            targetRotateX = (0.5 - y) * 30; // -15 to 15
+            targetRotateY = (x - 0.5) * 30; // -15 to 15
+            
+            targetSpotlightX = x * 100;
+            targetSpotlightY = y * 100;
+        }
+
+        window.addEventListener('dragover', e => e.preventDefault());
+        window.addEventListener('drop', e => e.preventDefault());
+
+        dropzone.addEventListener('mouseenter', () => {
+            dropzone.classList.add('hovered');
+        });
+        
+        dropzone.addEventListener('mouseleave', () => {
+            dropzone.classList.remove('hovered');
+            targetRotateX = 0;
+            targetRotateY = 0;
+            targetSpotlightX = 50;
+            targetSpotlightY = 50;
+        });
+        
+        dropzone.addEventListener('mousemove', handleMouseMove);
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            handleMouseMove(e);
+        });
+
+        dropzone.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            dragCounter++;
+            dropzone.classList.add('dragging');
+            titleText.textContent = "Release to Core!";
+        });
+        
+        dropzone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dragCounter--;
+            if (dragCounter === 0) {
+                dropzone.classList.remove('dragging');
+                titleText.textContent = "Summon Assets";
+            }
+        });
+        
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragCounter = 0;
+            dropzone.classList.remove('dragging');
+            dropzone.classList.remove('hovered');
+            titleText.textContent = "Summon Assets";
+            targetRotateX = 0;
+            targetRotateY = 0;
+            targetSpotlightX = 50;
+            targetSpotlightY = 50;
+            
+            const files = e.dataTransfer.files;
+            if(files.length > 0) {
+                alert(`Successfully processing ${files.length} file(s) in the spatial engine!`);
+            }
+        });
+        
+        dropzone.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            if(e.target.files.length > 0) {
+                alert(`Successfully processing ${e.target.files.length} file(s) in the spatial engine!`);
+            }
+        });
     </script>
 </body>
 </html>

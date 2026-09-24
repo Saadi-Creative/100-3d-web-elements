@@ -1,268 +1,194 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Isometric Voxel Loader</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>24 - Isometric Voxel Assembly Matrix</title>
+  <link rel="stylesheet" href="../../styles/shared.css" />
   <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body {
-      background: radial-gradient(ellipse at center, #0d1117 0%, #060810 100%);
-      width:100%; height:100vh;
-      display:flex; flex-direction:column;
-      align-items:center; justify-content:center;
-      overflow:hidden; font-family:'Courier New',monospace;
+    .demo-container {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-8);
+      background: radial-gradient(circle at 50% 50%, #0f172a 0%, #020617 100%);
+      font-family: var(--font-sans);
     }
-    #canvas-container { position:relative; }
-    canvas { display:block; }
 
-    .loader-label {
-      margin-top: 24px;
-      display: flex; flex-direction:column; align-items:center; gap:6px;
+    #canvas-container {
+      position: relative;
+      width: 340px;
+      height: 340px;
     }
-    .label-text {
-      font-size:9px; letter-spacing:5px; text-transform:uppercase;
-      color:rgba(255,255,255,0.2);
+
+    canvas {
+      display: block;
     }
-    .progress-track {
-      width: 120px; height:2px;
-      background:rgba(255,255,255,0.06);
-      border-radius:2px; overflow:hidden;
+
+    /* Telemetry Progress Bar */
+    .telemetry-card {
+      margin-top: var(--space-6);
+      padding: var(--space-3) var(--space-6);
+      border-radius: var(--radius-full);
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-2);
+      backdrop-filter: blur(16px);
+      box-shadow: var(--shadow-lg);
     }
-    .progress-bar {
-      height:100%; width:0%;
-      background:linear-gradient(90deg, #60a5fa, #a78bfa, #f0abfc);
-      background-size:200%;
-      animation:shimmerBar 1.5s linear infinite;
-      border-radius:2px;
+
+    .telemetry-status {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: var(--tracking-wider);
+      text-transform: uppercase;
+      color: var(--accent-base);
     }
-    @keyframes shimmerBar {
-      0%{background-position:200%}100%{background-position:-200%}
+
+    .progress-bar-track {
+      width: 140px;
+      height: 4px;
+      border-radius: var(--radius-full);
+      background: var(--surface-overlay);
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #6366f1, #38bdf8);
+      border-radius: var(--radius-full);
+      transition: width 0.1s linear;
     }
   </style>
 </head>
 <body>
+  <div class="demo-container">
+    <div id="canvas-container">
+      <canvas id="c"></canvas>
+    </div>
 
-<div id="canvas-container">
-  <canvas id="c"></canvas>
-</div>
-
-<div class="loader-label">
-  <div class="label-text" id="phaseLabel">Assembling</div>
-  <div class="progress-track">
-    <div class="progress-bar" id="progressBar" style="width:0%"></div>
+    <div class="telemetry-card">
+      <span class="telemetry-status" id="phaseStatus">Assembling Voxel Matrix</span>
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="progressFill"></div>
+      </div>
+    </div>
   </div>
-</div>
 
-<script type="importmap">
-{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
-</script>
-
-<script type="module">
-import * as THREE from 'three';
-
-const canvas    = document.getElementById('c');
-const SIZE      = Math.min(window.innerWidth, window.innerHeight, 420);
-canvas.width    = SIZE;
-canvas.height   = SIZE;
-
-const renderer  = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-renderer.setSize(SIZE, SIZE);
-renderer.setClearColor(0x000000, 0);
-
-const scene     = new THREE.Scene();
-
-// Isometric: OrthographicCamera
-const ISO       = SIZE / 12; // Zoomed out to fit larger cubes
-const camera    = new THREE.OrthographicCamera(-ISO, ISO, ISO, -ISO, 0.1, 1000);
-// Classic isometric angle: rotate 45° yaw, 35.264° pitch
-camera.position.set(20, 20, 20); // Moved back
-camera.lookAt(0, 0, 0);
-
-// Lighting — minimal, candy-like
-scene.add(new THREE.AmbientLight(0xffffff, 0.9));
-const dl1 = new THREE.DirectionalLight(0x60a5fa, 1.5);
-dl1.position.set(5, 8, 5);
-scene.add(dl1);
-const dl2 = new THREE.DirectionalLight(0xf0abfc, 0.8);
-dl2.position.set(-5, 3, -3);
-scene.add(dl2);
-
-// ── VOXEL GRID SETUP ──────────────────────────────
-// 4×4×4 cube = 64 voxels max
-const GRID  = 4;
-const STEP  = 2.2; // gap between voxels, doubled size
-const HALF  = ((GRID - 1) * STEP) / 2;
-
-// Target positions for "assembled cube"
-const targetPositions = [];
-for (let x = 0; x < GRID; x++)
-  for (let y = 0; y < GRID; y++)
-    for (let z = 0; z < GRID; z++)
-      targetPositions.push(new THREE.Vector3(
-        x * STEP - HALF, y * STEP - HALF, z * STEP - HALF
-      ));
-
-const COUNT = targetPositions.length; // 64
-
-// Candy palette
-const PALETTE = [
-  0x60a5fa, // blue
-  0xa78bfa, // purple
-  0xf0abfc, // pink
-  0x34d399, // green
-  0xfbbf24, // amber
-  0xf87171, // red
-  0x67e8f9, // cyan
-  0xc084fc, // violet
-];
-
-// ── INSTANCED MESH ─────────────────────────────────
-const boxGeo   = new THREE.BoxGeometry(1.8, 1.8, 1.8); // more than doubled size
-const mat      = new THREE.MeshStandardMaterial({
-  roughness: 0.25, metalness: 0.5,
-});
-const instMesh = new THREE.InstancedMesh(boxGeo, mat, COUNT);
-instMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-scene.add(instMesh);
-
-// Per-voxel state
-const dummy   = new THREE.Object3D();
-const curPos  = targetPositions.map(p => ({ // current positions
-  x: (Math.random()-0.5)*20,
-  y: (Math.random()-0.5)*20 + 10,
-  z: (Math.random()-0.5)*20,
-}));
-const curScale = new Float32Array(COUNT).fill(0);
-const colorArr = new THREE.Color();
-
-// Assign colors per voxel
-for (let i = 0; i < COUNT; i++) {
-  colorArr.setHex(PALETTE[i % PALETTE.length]);
-  instMesh.setColorAt(i, colorArr);
-}
-instMesh.instanceColor.needsUpdate = true;
-
-// ── ANIMATION PHASES ────────────────────────────────
-// 0: assemble → 1: hold → 2: explode → 3: hold → repeat
-const PHASE_TIMES  = [2.2, 0.8, 2.0, 0.5]; // seconds each
-let   phaseIndex   = 0;
-let   phaseTimer   = 0;
-const phaseLabels  = ['Assembling', 'Formed', 'Exploding', 'Void'];
-const phaseProg    = document.getElementById('progressBar');
-const phaseLabel   = document.getElementById('phaseLabel');
-
-// Per-voxel explosion velocities (wider spread)
-const explodeVel = targetPositions.map(() => new THREE.Vector3(
-  (Math.random()-0.5)*0.8,
-  (Math.random()-0.5)*0.8 + 0.2,
-  (Math.random()-0.5)*0.8,
-));
-// Scatter positions (reset each cycle)
-const scatterPos = curPos.map(p => ({...p}));
-
-function lerp(a, b, t) { return a + (b - a) * t; }
-function easeOut(t)    { return 1 - Math.pow(1-t, 3); }
-function easeIn(t)     { return t * t * t; }
-
-const clock = new THREE.Clock();
-
-function animate() {
-  requestAnimationFrame(animate);
-  const dt = Math.min(clock.getDelta(), 0.05);
-  phaseTimer += dt;
-
-  const phaseDur    = PHASE_TIMES[phaseIndex];
-  const phaseRaw    = Math.min(phaseTimer / phaseDur, 1.0);
-
-  phaseLabel.textContent = phaseLabels[phaseIndex];
-  phaseProg.style.width  = (phaseRaw * 100) + '%';
-
-  // Advance phase
-  if (phaseTimer >= phaseDur) {
-    phaseTimer = 0;
-    phaseIndex = (phaseIndex + 1) % 4;
-    if (phaseIndex === 2) {
-      // Snapshot current scatter pos
-      for (let i = 0; i < COUNT; i++) {
-        scatterPos[i] = { ...curPos[i] };
-        explodeVel[i].set(
-          (Math.random()-0.5)*0.9,
-          (Math.random()-0.5)*0.9 + 0.25,
-          (Math.random()-0.5)*0.9,
-        );
-      }
-    }
-    if (phaseIndex === 0) {
-      // Reset scatter to random spawn (wider bounds)
-      for (let i = 0; i < COUNT; i++) {
-        curPos[i] = {
-          x: (Math.random()-0.5)*40,
-          y: (Math.random()-0.5)*40 + 20,
-          z: (Math.random()-0.5)*40,
-        };
-        curScale[i] = 0;
-      }
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
     }
   }
+  </script>
 
-  // Slow base rotation for isometric interest
-  instMesh.rotation.y += 0.004;
+  <script type="module">
+    import * as THREE from 'three';
 
-  for (let i = 0; i < COUNT; i++) {
-    const tp = targetPositions[i];
+    const canvas = document.getElementById('c');
+    const SIZE = 340;
+    canvas.width = canvas.height = SIZE;
 
-    if (phaseIndex === 0) {
-      // ASSEMBLE: ease toward target with stagger
-      const stagger = i / COUNT * 0.6;
-      const localT  = Math.min(Math.max((phaseRaw - stagger * 0.5) / 0.7, 0), 1);
-      const ease    = easeOut(localT);
-      curPos[i].x = lerp(curPos[i].x, tp.x, ease * 0.1);
-      curPos[i].y = lerp(curPos[i].y, tp.y, ease * 0.1);
-      curPos[i].z = lerp(curPos[i].z, tp.z, ease * 0.1);
-      curScale[i]  = lerp(curScale[i], 1.0, ease * 0.12);
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.setSize(SIZE, SIZE);
 
-    } else if (phaseIndex === 1) {
-      // HOLD: subtle breathing
-      const breath = 1 + Math.sin(clock.elapsedTime * 3 + i * 0.3) * 0.04;
-      curScale[i]  = lerp(curScale[i], breath, 0.1);
-      curPos[i].x  = lerp(curPos[i].x, tp.x, 0.12);
-      curPos[i].y  = lerp(curPos[i].y, tp.y, 0.12);
-      curPos[i].z  = lerp(curPos[i].z, tp.z, 0.12);
+    const scene = new THREE.Scene();
+    const ISO = SIZE / 12;
+    const camera = new THREE.OrthographicCamera(-ISO, ISO, ISO, -ISO, 0.1, 1000);
+    camera.position.set(20, 20, 20);
+    camera.lookAt(0, 0, 0);
 
-    } else if (phaseIndex === 2) {
-      // EXPLODE: fly outward with gravity
-      explodeVel[i].y -= 0.008;
-      curPos[i].x += explodeVel[i].x;
-      curPos[i].y += explodeVel[i].y;
-      curPos[i].z += explodeVel[i].z;
-      curScale[i]  = lerp(curScale[i], 0.0, 0.035);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+    const dl1 = new THREE.DirectionalLight(0x6366f1, 1.5);
+    dl1.position.set(5, 8, 5);
+    scene.add(dl1);
 
-    } else {
-      // VOID: hold near exploded positions
-      curScale[i] = lerp(curScale[i], 0, 0.08);
+    const GRID = 4;
+    const STEP = 2.2;
+    const HALF = ((GRID - 1) * STEP) / 2;
+
+    const targetPositions = [];
+    for (let x = 0; x < GRID; x++)
+      for (let y = 0; y < GRID; y++)
+        for (let z = 0; z < GRID; z++)
+          targetPositions.push(new THREE.Vector3(x * STEP - HALF, y * STEP - HALF, z * STEP - HALF));
+
+    const COUNT = targetPositions.length;
+    const PALETTE = [0x6366f1, 0x8b5cf6, 0x38bdf8, 0x34d399, 0xf59e0b];
+
+    const boxGeo = new THREE.BoxGeometry(1.8, 1.8, 1.8);
+    const mat = new THREE.MeshStandardMaterial({ roughness: 0.2, metalness: 0.4 });
+    const instMesh = new THREE.InstancedMesh(boxGeo, mat, COUNT);
+    scene.add(instMesh);
+
+    const dummy = new THREE.Object3D();
+    const curPos = targetPositions.map(() => ({ x: (Math.random() - 0.5) * 30, y: (Math.random() - 0.5) * 30, z: (Math.random() - 0.5) * 30 }));
+    const colorArr = new THREE.Color();
+
+    for (let i = 0; i < COUNT; i++) {
+      colorArr.setHex(PALETTE[i % PALETTE.length]);
+      instMesh.setColorAt(i, colorArr);
     }
+    instMesh.instanceColor.needsUpdate = true;
 
-    dummy.position.set(curPos[i].x, curPos[i].y, curPos[i].z);
-    dummy.scale.setScalar(Math.max(curScale[i], 0));
-    dummy.updateMatrix();
-    instMesh.setMatrixAt(i, dummy.matrix);
-  }
+    const PHASE_TIMES = [2.2, 0.8, 2.0, 0.5];
+    let phaseIdx = 0;
+    let phaseTimer = 0;
+    const phaseNames = ['Assembling Matrix', 'Voxel Cube Formed', 'Exploding Particles', 'Void Reset'];
+    const phaseStatus = document.getElementById('phaseStatus');
+    const progressFill = document.getElementById('progressFill');
 
-  instMesh.instanceMatrix.needsUpdate = true;
-  renderer.render(scene, camera);
-}
+    function lerp(a, b, t) { return a + (b - a) * t; }
+    const clock = new THREE.Clock();
 
-animate();
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.05);
+      phaseTimer += dt;
 
-window.addEventListener('resize', () => {
-  const S = Math.min(window.innerWidth, window.innerHeight, 420);
-  renderer.setSize(S, S);
-  const I = S / 6;
-  camera.left=-I; camera.right=I; camera.top=I; camera.bottom=-I;
-  camera.updateProjectionMatrix();
-});
-</script>
+      const dur = PHASE_TIMES[phaseIdx];
+      const prog = Math.min(phaseTimer / dur, 1.0);
+
+      phaseStatus.textContent = phaseNames[phaseIdx];
+      progressFill.style.width = `${prog * 100}%`;
+
+      if (phaseTimer >= dur) {
+        phaseTimer = 0;
+        phaseIdx = (phaseIdx + 1) % 4;
+      }
+
+      instMesh.rotation.y += 0.005;
+
+      for (let i = 0; i < COUNT; i++) {
+        const tp = targetPositions[i];
+        if (phaseIdx === 0) {
+          curPos[i].x = lerp(curPos[i].x, tp.x, 0.08);
+          curPos[i].y = lerp(curPos[i].y, tp.y, 0.08);
+          curPos[i].z = lerp(curPos[i].z, tp.z, 0.08);
+        } else if (phaseIdx === 2) {
+          curPos[i].x += (Math.random() - 0.5) * 0.4;
+          curPos[i].y += (Math.random() - 0.5) * 0.4;
+          curPos[i].z += (Math.random() - 0.5) * 0.4;
+        }
+
+        dummy.position.set(curPos[i].x, curPos[i].y, curPos[i].z);
+        dummy.updateMatrix();
+        instMesh.setMatrixAt(i, dummy.matrix);
+      }
+      instMesh.instanceMatrix.needsUpdate = true;
+
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
 </body>
 </html>

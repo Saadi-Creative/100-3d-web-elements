@@ -3,386 +3,355 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prism Theme Switcher</title>
-    <script>
-        const origWarn = console.warn;
-        console.warn = function(...args) {
-            const msg = args[0];
-            if (typeof msg === 'string' && (msg.includes('Babel') || msg.includes('Tailwind') || msg.includes('tailwindcss'))) return;
-            origWarn.apply(console, args);
-        };
-    </script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Optical Crystal Prism Theme Switcher</title>
+    <link rel="stylesheet" href="../../styles/shared.css">
     <style>
         :root {
-            --theme-primary: #6366f1;
-            --theme-glow: rgba(99,102,241,0.25);
-            --theme-accent: #a5b4fc;
-            --theme-border: rgba(99,102,241,0.3);
-            --theme-bg: rgba(99,102,241,0.08);
+            --theme-primary: #38bdf8;
+            --theme-glow: rgba(56, 189, 248, 0.3);
+            --theme-accent: #818cf8;
+            --theme-bg: #070913;
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            margin: 0;
-            background: #07080f;
+            background: var(--theme-bg);
             min-height: 100vh;
-            font-family: 'Inter', sans-serif;
-            color: white;
             overflow: hidden;
-            transition: background 0.6s ease;
-        }
-        #root { width: 100%; height: 100vh; }
-
-        /* Navbar */
-        .navbar {
-            position: fixed; top: 0; left: 0; right: 0;
-            height: 64px;
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 2rem;
-            background: rgba(7, 8, 15, 0.82);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--theme-border);
-            box-shadow: 0 1px 0 var(--theme-glow);
-            z-index: 50;
-            transition: border-color 0.5s, box-shadow 0.5s;
-        }
-        .nav-logo {
-            font-size: 1.1rem; font-weight: 800;
-            color: var(--theme-primary);
-            letter-spacing: 0.08em;
-            transition: color 0.5s;
-            text-shadow: 0 0 20px var(--theme-glow);
-        }
-        .nav-links { display: flex; gap: 2.5rem; align-items: center; }
-        .nav-link {
-            font-size: 0.82rem; color: #64748b;
-            cursor: pointer; transition: color 0.2s;
-        }
-        .nav-link:hover { color: var(--theme-accent); transition: color 0.15s; }
-
-        /* Prism canvas wrapper in top-right corner */
-        .prism-wrapper {
-            width: 52px; height: 52px;
-            cursor: pointer;
-            position: relative;
-        }
-        .prism-wrapper::after {
-            content: 'Click';
-            position: absolute;
-            bottom: -18px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.55rem;
-            color: #475569;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            white-space: nowrap;
-        }
-
-        /* Page content */
-        .page-content {
-            position: absolute;
-            inset: 0;
+            color: white;
+            font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, sans-serif);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 2rem;
-            padding-top: 64px;
+            user-select: none;
+            transition: background 0.5s ease;
         }
-        .theme-badge {
+
+        #webgl-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .hud-overlay {
+            position: absolute;
+            top: 24px;
+            text-align: center;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .hud-badge {
             display: inline-flex;
             align-items: center;
-            gap: 0.6rem;
-            padding: 0.5rem 1.2rem;
-            border-radius: 999px;
-            background: var(--theme-bg);
-            border: 1px solid var(--theme-border);
-            color: var(--theme-accent);
-            font-size: 0.75rem;
-            font-weight: 600;
-            letter-spacing: 0.12em;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--theme-primary);
+            padding: 4px 14px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-family: var(--font-mono, monospace);
+            color: var(--theme-primary);
+            letter-spacing: 0.1em;
             text-transform: uppercase;
-            transition: background 0.5s, border-color 0.5s, color 0.5s;
+            margin-bottom: 8px;
+            box-shadow: 0 0 20px var(--theme-glow);
+            transition: all 0.4s ease;
         }
-        .theme-dot {
-            width: 8px; height: 8px;
+
+        .hud-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #f8fafc;
+            letter-spacing: -0.02em;
+        }
+
+        /* Interactive Prismatic Palette Selector */
+        .prism-palette-bar {
+            position: absolute;
+            bottom: 32px;
+            display: flex;
+            gap: 12px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 8px 14px;
+            border-radius: 9999px;
+            z-index: 20;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+        }
+
+        .palette-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 9999px;
+            background: transparent;
+            border: 1px solid transparent;
+            color: #94a3b8;
+            font-family: var(--font-mono, monospace);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .palette-dot {
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            background: var(--theme-primary);
-            box-shadow: 0 0 8px var(--theme-primary);
-            transition: background 0.5s, box-shadow 0.5s;
+            background: var(--dot-color);
+            box-shadow: 0 0 8px var(--dot-color);
         }
-        h1 {
-            font-size: 4rem; font-weight: 900;
-            background: linear-gradient(135deg, var(--theme-accent), var(--theme-primary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -0.04em;
-            text-align: center;
-            transition: background 0.5s;
+
+        .palette-pill:hover {
+            color: #f1f5f9;
+            background: rgba(255, 255, 255, 0.05);
         }
-        .card-row { display: flex; gap: 1.5rem; }
-        .card {
-            width: 180px; height: 100px;
-            border-radius: 16px;
-            background: var(--theme-bg);
-            border: 1px solid var(--theme-border);
-            display: flex; align-items: center; justify-content: center;
+
+        .palette-pill.active {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--theme-primary);
+            color: #ffffff;
+            box-shadow: 0 0 20px var(--theme-glow);
+        }
+
+        /* Mock UI Surface Card */
+        .mock-surface {
+            position: absolute;
+            width: 380px;
+            background: rgba(18, 24, 38, 0.75);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 24px;
+            z-index: 10;
+            pointer-events: none;
+            transform: translateZ(-20px);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+            display: flex;
             flex-direction: column;
-            gap: 0.5rem;
-            transition: background 0.5s, border-color 0.5s;
+            gap: 14px;
         }
-        .card-icon { font-size: 1.8rem; }
-        .card-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; }
-        .glow-bar {
-            width: 300px; height: 2px;
-            border-radius: 1px;
-            background: linear-gradient(to right, transparent, var(--theme-primary), transparent);
-            box-shadow: 0 0 20px var(--theme-primary);
-            transition: background 0.5s, box-shadow 0.5s;
+
+        .mock-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .mock-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #f8fafc;
+        }
+
+        .mock-btn {
+            background: var(--theme-primary);
+            color: #04060a;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px var(--theme-glow);
+            transition: all 0.4s ease;
+        }
+
+        .mock-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+
+        .mock-fill {
+            height: 100%;
+            width: 72%;
+            background: linear-gradient(90deg, var(--theme-primary), var(--theme-accent));
+            border-radius: 9999px;
+            transition: all 0.4s ease;
         }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.12?external=react,react-dom,three",
-            "@react-three/drei": "https://esm.sh/@react-three/drei@9.96.1?external=react,react-dom,three,@react-three/fiber",
-            "three": "https://esm.sh/three@0.160.0",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-    <div id="root"></div>
-    <script type="text/babel" data-type="module">
-        import React, { useRef, useState, useCallback, useEffect, Suspense } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { Canvas, useFrame } from '@react-three/fiber';
-        import { MeshTransmissionMaterial, Environment } from '@react-three/drei';
-        import { motion, AnimatePresence } from 'framer-motion';
-        import * as THREE from 'three';
 
-        // ─── Theme definitions ────────────────────────────────────────────────────
-        const THEMES = [
-            {
-                name: 'Midnight Indigo',
-                primary: '#6366f1',
-                accent: '#a5b4fc',
-                glow: 'rgba(99,102,241,0.25)',
-                border: 'rgba(99,102,241,0.3)',
-                bg: 'rgba(99,102,241,0.08)',
-                lights: ['#6366f1', '#818cf8', '#4338ca'],
+    <canvas id="webgl-canvas"></canvas>
+
+    <div class="hud-overlay">
+        <div class="hud-badge" id="theme-badge">
+            <span>💎</span>
+            <span id="theme-name">Cyan Prismatic Spectrum</span>
+        </div>
+        <div class="hud-title">Drag or click palette to rotate optical dispersion</div>
+    </div>
+
+    <div class="mock-surface">
+        <div class="mock-head">
+            <span class="mock-title">Active Quantum Environment</span>
+            <span class="mock-btn">DEPLOY</span>
+        </div>
+        <div style="font-size: 13px; color: #94a3b8; line-height: 1.5;">
+            Color variables synchronized with 3D prism angle of incidence and internal spectral refraction.
+        </div>
+        <div class="mock-bar">
+            <div class="mock-fill"></div>
+        </div>
+    </div>
+
+    <div class="prism-palette-bar">
+        <button class="palette-pill active" data-theme="cyan" data-color="#38bdf8" data-accent="#818cf8" data-bg="#070913" data-label="Cyan Prismatic Spectrum" style="--dot-color: #38bdf8;">
+            <span class="palette-dot"></span>
+            <span>Cyan</span>
+        </button>
+
+        <button class="palette-pill" data-theme="emerald" data-color="#34d399" data-accent="#10b981" data-bg="#04120b" data-label="Emerald Aurora Prism" style="--dot-color: #34d399;">
+            <span class="palette-dot"></span>
+            <span>Emerald</span>
+        </button>
+
+        <button class="palette-pill" data-theme="rose" data-color="#f43f5e" data-accent="#ec4899" data-bg="#14060b" data-label="Rose Crimson Dispersion" style="--dot-color: #f43f5e;">
+            <span class="palette-dot"></span>
+            <span>Rose</span>
+        </button>
+
+        <button class="palette-pill" data-theme="amber" data-color="#fbbf24" data-accent="#f97316" data-bg="#140e04" data-label="Solar Amber Refraction" style="--dot-color: #fbbf24;">
+            <span class="palette-dot"></span>
+            <span>Amber</span>
+        </button>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+
+        const canvas = document.getElementById('webgl-canvas');
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 0, 7);
+
+        // 3D Optical Glass Prism (Triangular Prism Geometry)
+        const prismGeo = new THREE.CylinderGeometry(1.6, 1.6, 2.2, 3, 1, false);
+        const prismMat = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff,
+            transmission: 0.95,
+            opacity: 1,
+            transparent: true,
+            roughness: 0.05,
+            ior: 1.65,
+            thickness: 1.8,
+            specularIntensity: 1.0,
+            clearcoat: 1.0,
+            attenuationColor: new THREE.Color(0x38bdf8),
+            attenuationDistance: 2.0
+        });
+
+        const prism = new THREE.Mesh(prismGeo, prismMat);
+        prism.rotation.z = Math.PI / 2;
+        scene.add(prism);
+
+        // Spectral Rainbow Caustic Ray Beams
+        const rayGeo = new THREE.ConeGeometry(2.5, 6, 32, 1, true);
+        rayGeo.rotateX(Math.PI / 2);
+        const rayMat = new THREE.ShaderMaterial({
+            uniforms: {
+                uColor: { value: new THREE.Color(0x38bdf8) }
             },
-            {
-                name: 'Neon Pink',
-                primary: '#ec4899',
-                accent: '#f9a8d4',
-                glow: 'rgba(236,72,153,0.25)',
-                border: 'rgba(236,72,153,0.3)',
-                bg: 'rgba(236,72,153,0.08)',
-                lights: ['#ec4899', '#f472b6', '#be185d'],
-            },
-            {
-                name: 'Cyber Cyan',
-                primary: '#06b6d4',
-                accent: '#67e8f9',
-                glow: 'rgba(6,182,212,0.25)',
-                border: 'rgba(6,182,212,0.3)',
-                bg: 'rgba(6,182,212,0.08)',
-                lights: ['#06b6d4', '#22d3ee', '#0e7490'],
-            },
-        ];
-
-        // ─── Apply theme to CSS vars ───────────────────────────────────────────────
-        const applyTheme = (t) => {
-            const r = document.documentElement.style;
-            r.setProperty('--theme-primary', t.primary);
-            r.setProperty('--theme-accent', t.accent);
-            r.setProperty('--theme-glow', t.glow);
-            r.setProperty('--theme-border', t.border);
-            r.setProperty('--theme-bg', t.bg);
-        };
-
-        // ─── The lightweight 3D geometric core ────────────────────────────────────
-        const GlassPrism = ({ themeIndex, onThemeChange, lights }) => {
-            const prismRef = useRef();
-            
-            // Target rotation snaps per face (we'll do 4 faces now for Icosahedron visual ease, but functionally the same)
-            const targetRotY = useRef(0);
-            const isClicking = useRef(false);
-
-            useFrame(({ clock }) => {
-                if (!prismRef.current) return;
-                const time = clock.getElapsedTime();
-
-                // Idle slow auto-rotation
-                if (!isClicking.current) {
-                    targetRotY.current += 0.006;
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
                 }
-                prismRef.current.rotation.y += (targetRotY.current - prismRef.current.rotation.y) * 0.08;
-                // Complex organic wobble
-                prismRef.current.rotation.x = Math.sin(time * 0.8) * 0.2;
-                prismRef.current.rotation.z = Math.cos(time * 0.5) * 0.15;
-            });
+            `,
+            fragmentShader: `
+                uniform vec3 uColor;
+                varying vec2 vUv;
+                void main() {
+                    float beam = smoothstep(0.0, 0.5, vUv.y) * (1.0 - vUv.y);
+                    gl_FragColor = vec4(uColor, beam * 0.4);
+                }
+            `,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            side: THREE.DoubleSide
+        });
 
-            const handleClick = useCallback(() => {
-                const nextIndex = (themeIndex + 1) % THEMES.length;
-                // Snap spin 90 degrees
-                targetRotY.current += Math.PI / 2;
-                isClicking.current = true;
-                setTimeout(() => { isClicking.current = false; }, 600);
-                onThemeChange(nextIndex);
-            }, [themeIndex, onThemeChange]);
+        const rayBeam = new THREE.Mesh(rayGeo, rayMat);
+        rayBeam.position.set(2.5, 0, 0);
+        rayBeam.rotation.y = -Math.PI / 2;
+        scene.add(rayBeam);
 
-            return (
-                <group
-                    ref={prismRef}
-                    onClick={handleClick}
-                    onPointerOver={() => { document.body.style.cursor = 'pointer'; }}
-                    onPointerOut={() => { document.body.style.cursor = 'auto'; }}
-                >
-                    {/* Outer sleek dark wireframe */}
-                    <mesh>
-                        <icosahedronGeometry args={[1.2, 0]} />
-                        <meshStandardMaterial 
-                            color="#1e293b" 
-                            wireframe 
-                            wireframeLinewidth={2}
-                            transparent opacity={0.4} 
-                        />
-                    </mesh>
+        // Ambient & Studio Lights
+        const ambLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambLight);
+        const light1 = new THREE.PointLight(0x38bdf8, 3.0, 15);
+        light1.position.set(-4, 3, 4);
+        scene.add(light1);
 
-                    {/* Inner glowing solid core */}
-                    <mesh scale={0.7}>
-                        <octahedronGeometry args={[1, 0]} />
-                        <meshStandardMaterial 
-                            color={lights[0]} 
-                            emissive={lights[1]} 
-                            emissiveIntensity={2} 
-                            roughness={0.2}
-                            metalness={0.8}
-                        />
-                    </mesh>
+        // Theme Palette Switcher
+        const pills = document.querySelectorAll('.palette-pill');
+        const themeName = document.getElementById('theme-name');
 
-                    {/* Surrounding ambient halo matching the theme */}
-                    <pointLight color={lights[1]} intensity={5} distance={3} decay={2} />
-                </group>
-            );
-        };
+        function setTheme(btn) {
+            pills.forEach(p => p.classList.remove('active'));
+            btn.classList.add('active');
 
-        // ─── Prism Canvas ─────────────────────────────────────────────────────────
-        const PrismCanvas = ({ themeIndex, onThemeChange }) => {
-            const theme = THEMES[themeIndex];
-            return (
-                <Canvas camera={{ position: [0, 0, 3.2], fov: 38 }} style={{ background: 'transparent' }}>
-                    <ambientLight intensity={0.1} />
-                    <Suspense fallback={null}>
-                        <Environment preset="studio" />
-                        <GlassPrism
-                            themeIndex={themeIndex}
-                            onThemeChange={onThemeChange}
-                            lights={theme.lights}
-                        />
-                    </Suspense>
-                </Canvas>
-            );
-        };
+            const color = btn.dataset.color;
+            const accent = btn.dataset.accent;
+            const bg = btn.dataset.bg;
+            const label = btn.dataset.label;
 
-        // ─── Flash overlay on theme change ────────────────────────────────────────
-        const FlashOverlay = ({ color, trigger }) => (
-            <AnimatePresence>
-                {trigger && (
-                    <motion.div
-                        key={trigger}
-                        style={{
-                            position: 'fixed', inset: 0,
-                            background: color,
-                            pointerEvents: 'none',
-                            zIndex: 9999,
-                        }}
-                        initial={{ opacity: 0.35 }}
-                        animate={{ opacity: 0 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.55, ease: 'easeOut' }}
-                    />
-                )}
-            </AnimatePresence>
-        );
+            document.documentElement.style.setProperty('--theme-primary', color);
+            document.documentElement.style.setProperty('--theme-glow', `${color}44`);
+            document.documentElement.style.setProperty('--theme-accent', accent);
+            document.documentElement.style.setProperty('--theme-bg', bg);
+            themeName.textContent = label;
 
-        // ─── App ──────────────────────────────────────────────────────────────────
-        const App = () => {
-            const [themeIndex, setThemeIndex] = useState(0);
-            const [flashTrigger, setFlashTrigger] = useState(null);
-            const theme = THEMES[themeIndex];
+            const hexColor = new THREE.Color(color);
+            prismMat.attenuationColor.set(hexColor);
+            rayMat.uniforms.uColor.value.set(hexColor);
+            light1.color.set(hexColor);
+        }
 
-            const handleThemeChange = useCallback((newIndex) => {
-                applyTheme(THEMES[newIndex]);
-                setThemeIndex(newIndex);
-                setFlashTrigger(Date.now()); // unique key triggers AnimatePresence re-entry
-            }, []);
+        pills.forEach(pill => {
+            pill.addEventListener('click', () => setTheme(pill));
+        });
 
-            return (
-                <>
-                    <FlashOverlay color={theme.primary} trigger={flashTrigger} />
+        // Mouse Drag / Orbit
+        let mouseX = 0;
+        let mouseY = 0;
+        window.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+            mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+        });
 
-                    {/* ── Navbar ── */}
-                    <nav className="navbar">
-                        <span className="nav-logo">PRISM UI</span>
-                        <div className="nav-links">
-                            <span className="nav-link">Components</span>
-                            <span className="nav-link">Docs</span>
-                            <span className="nav-link">GitHub</span>
-                            <div className="prism-wrapper">
-                                <PrismCanvas
-                                    themeIndex={themeIndex}
-                                    onThemeChange={handleThemeChange}
-                                />
-                            </div>
-                        </div>
-                    </nav>
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = clock.getElapsedTime();
 
-                    {/* ── Page content ── */}
-                    <div className="page-content">
-                        <div className="theme-badge">
-                            <span className="theme-dot" />
-                            {theme.name}
-                        </div>
+            prism.rotation.y = time * 0.6 + mouseX * 1.5;
+            prism.rotation.x = mouseY * 0.8;
 
-                        <h1>Design System<br />in Crystal Clear</h1>
+            rayBeam.rotation.z = Math.sin(time * 0.8) * 0.2;
 
-                        <div className="glow-bar" />
+            renderer.render(scene, camera);
+        }
 
-                        <div className="card-row">
-                            <div className="card">
-                                <span className="card-icon">🔷</span>
-                                <span className="card-label">Components</span>
-                            </div>
-                            <div className="card">
-                                <span className="card-icon">✨</span>
-                                <span className="card-label">Animations</span>
-                            </div>
-                            <div className="card">
-                                <span className="card-icon">🌐</span>
-                                <span className="card-label">WebGL</span>
-                            </div>
-                        </div>
+        animate();
 
-                        <p style={{ color: '#475569', fontSize: '0.8rem', letterSpacing: '0.05em' }}>
-                            Click the glass prism in the navbar to cycle themes ↗
-                        </p>
-                    </div>
-                </>
-            );
-        };
-
-        // Apply default theme on load
-        applyTheme(THEMES[0]);
-        createRoot(document.getElementById('root')).render(<App />);
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
     </script>
 </body>
 </html>

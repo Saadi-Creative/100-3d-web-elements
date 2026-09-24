@@ -7,121 +7,100 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body, html { margin: 0; font-family: 'Inter', sans-serif; overflow: hidden; background: #0f172a; }
+        
         .router-mask {
             clip-path: circle(0% at 50% 50%);
+            transition: clip-path 0.8s cubic-bezier(0.77, 0, 0.17, 1);
+        }
+        
+        .wiping-in {
+            clip-path: circle(150% at 50% 50%);
+        }
+
+        .page-container {
+            position: absolute;
+            inset: 0;
+            display: none;
+        }
+        .page-container.active {
+            display: flex;
         }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root" class="relative w-full h-screen">
+        
+        <!-- Home Page -->
+        <div id="page-home" class="page-container flex-col items-center justify-center p-8 bg-slate-50 active">
+            <div class="w-32 h-32 bg-indigo-600 rounded-full mb-8 shadow-2xl flex items-center justify-center font-black text-white text-5xl">1</div>
+            <h1 class="text-6xl md:text-8xl font-black text-slate-800 tracking-tighter mb-4 text-center">Home Protocol</h1>
+            <p class="text-slate-500 mb-12 max-w-lg text-center font-mediumtext-lg">Click the button below to initiate a total DOM tear down. It triggers an absolute geometric SVG eclipse mask transition.</p>
+            <button 
+                onclick="navigate('dash')"
+                class="px-10 py-5 bg-indigo-600 text-white font-bold tracking-tight rounded-full shadow-[0_20px_40px_rgba(79,70,229,0.4)] hover:scale-105 transition-transform active:scale-95 text-xl"
+            >
+                Initialize Warp to Dashboard
+            </button>
+        </div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useState } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, AnimatePresence } from 'framer-motion';
+        <!-- Dashboard Page -->
+        <div id="page-dash" class="page-container flex-col items-center justify-center p-8 bg-slate-900 border-[8px] border-emerald-500/20">
+            <div class="w-32 h-32 bg-emerald-500 rounded-3xl mb-8 shadow-[0_0_50px_rgba(16,185,129,0.5)] flex items-center justify-center font-black text-slate-900 text-5xl transform rotate-12">2</div>
+            <h1 class="text-6xl md:text-8xl font-black text-white tracking-tighter mb-4 text-center">Engine Room</h1>
+            <p class="text-emerald-500 mb-12 max-w-lg text-center font-bold tracking-widest uppercase">Target Unlocked.</p>
+            <button 
+                onclick="navigate('home')"
+                class="px-10 py-5 bg-white text-slate-900 font-black tracking-tight rounded-full shadow-xl hover:scale-105 transition-transform active:scale-95 text-xl"
+            >
+                Return to Home Protocol
+            </button>
+        </div>
 
-        // Fake Page Content 1
-        const HomePage = ({ navigate }) => (
-            <div className="w-full h-screen flex flex-col items-center justify-center relative p-8 bg-slate-50">
-                <div className="w-32 h-32 bg-indigo-600 rounded-full mb-8 shadow-2xl flex items-center justify-center font-black text-white text-5xl">1</div>
-                <h1 className="text-6xl md:text-8xl font-black text-slate-800 tracking-tighter mb-4 text-center">Home Protocol</h1>
-                <p className="text-slate-500 mb-12 max-w-lg text-center font-mediumtext-lg">Click the button below to initiate a total DOM tear down. It triggers an absolute geometric SVG eclipse mask transition.</p>
-                <button 
-                    onClick={() => navigate('dash')} 
-                    className="px-10 py-5 bg-indigo-600 text-white font-bold tracking-tight rounded-full shadow-[0_20px_40px_rgba(79,70,229,0.4)] hover:scale-105 transition-transform active:scale-95 text-xl"
-                >
-                    Initialize Warp to Dashboard
-                </button>
+        <!-- THE GLOBAL TRANSITION MASK -->
+        <div id="router-mask" class="router-mask fixed inset-0 z-50 bg-black pointer-events-none">
+            <div class="w-full h-full flex items-center justify-center">
+                <h2 class="text-white font-black tracking-widest uppercase opacity-30 text-2xl animate-pulse">Routing Vectors...</h2>
             </div>
-        );
+        </div>
 
-        // Fake Page Content 2
-        const DashboardPage = ({ navigate }) => (
-            <div className="w-full h-screen flex flex-col items-center justify-center relative p-8 bg-slate-900 border-[8px] border-emerald-500/20">
-                <div className="w-32 h-32 bg-emerald-500 rounded-3xl mb-8 shadow-[0_0_50px_rgba(16,185,129,0.5)] flex items-center justify-center font-black text-slate-900 text-5xl transform rotate-12">2</div>
-                <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter mb-4 text-center">Engine Room</h1>
-                <p className="text-emerald-500 mb-12 max-w-lg text-center font-bold tracking-widest uppercase">Target Unlocked.</p>
-                <button 
-                    onClick={() => navigate('home')} 
-                    className="px-10 py-5 bg-white text-slate-900 font-black tracking-tight rounded-full shadow-xl hover:scale-105 transition-transform active:scale-95 text-xl"
-                >
-                    Return to Home Protocol
-                </button>
-            </div>
-        );
+    </div>
 
-        const App = () => {
-            const [currentPage, setCurrentPage] = useState('home');
-            // State Machine for the Wipe: 'idle', 'wiping-in', 'wiping-out'
-            const [wipeState, setWipeState] = useState('idle');
+    <script>
+        let isNavigating = false;
+        const mask = document.getElementById('router-mask');
+        const pageHome = document.getElementById('page-home');
+        const pageDash = document.getElementById('page-dash');
 
-            // Hard orchestration: Prevent double clicking and overlapping React render cycles
-            const handleNavigate = (target) => {
-                if (wipeState !== 'idle') return; 
+        function navigate(target) {
+            if (isNavigating) return;
+            isNavigating = true;
+            
+            // 1. Drop curtain
+            mask.classList.add('wiping-in');
+
+            // 2. Wait exactly for animation to cover screen
+            setTimeout(() => {
                 
-                // 1. Drop the blackout curtain down
-                setWipeState('wiping-in');
+                // Swap DOM
+                if (target === 'dash') {
+                    pageHome.classList.remove('active');
+                    pageDash.classList.add('active');
+                } else {
+                    pageDash.classList.remove('active');
+                    pageHome.classList.add('active');
+                }
 
-                // 2. Wait exactly for the animation to cover the screen entirely, THEN swap the DOM beneath it
+                // 3. Immediately wipe out
+                mask.classList.remove('wiping-in');
+                
+                // 4. Reset machine after it vanishes
                 setTimeout(() => {
-                    setCurrentPage(target);
-                    // 3. Immediately tell it to wipe out to reveal the new page
-                    setWipeState('wiping-out');
-                    
-                    // 4. Reset machine after it vanishes
-                    setTimeout(() => {
-                        setWipeState('idle');
-                    }, 800);
-                }, 800); // 800ms perfectly matches the Framer Motion duration
-            };
-
-            return (
-                <div className="relative w-full h-screen">
-                    
-                    {/* The Currently Rendered DOM Page */}
-                    {/* By completely bypassing AnimatePresence and orchestrating it manually via setTimeout, we permanently eliminate ALL flickering React bugs associated with concurrent routing. */}
-                    {currentPage === 'home' && <HomePage navigate={handleNavigate} />}
-                    {currentPage === 'dash' && <DashboardPage navigate={handleNavigate} />}
-
-                    {/* THE GLOBAL TRANSITION MASK */}
-                    {/* It starts invisibly collapsed at 0% radius in the absolute center. 
-                        It expands to 150% (covering the corners of any screen size) using pure CSS clipping geometry. */}
-                    <motion.div
-                        className="fixed inset-0 z-50 bg-black pointer-events-none"
-                        animate={{
-                            // If we are wiping IN to obscure the screen, scale up to 150% radius.
-                            // If idle or wiping out, collapse down to 0% radius instantly.
-                            clipPath: wipeState === 'wiping-in' ? "circle(150% at 50% 50%)" 
-                                    : wipeState === 'wiping-out' ? "circle(0% at 50% 50%)" 
-                                    : "circle(0% at 50% 50%)"
-                        }}
-                        transition={{ 
-                            duration: 0.8, 
-                            ease: [0.77, 0, 0.17, 1] // Custom snappy bezier curve (ease-in-out-expo behavior)
-                        }}
-                    >
-                        {/* A nice little spinner or text during the blackout */}
-                        <div className="w-full h-full flex items-center justify-center">
-                            <h2 className="text-white font-black tracking-widest uppercase opacity-30 text-2xl animate-pulse">Routing Vectors...</h2>
-                        </div>
-                    </motion.div>
-
-                </div>
-            );
-        };
-
-        createRoot(document.getElementById('root')).render(<App />);
+                    isNavigating = false;
+                }, 800);
+                
+            }, 800); // matches CSS duration
+        }
     </script>
 </body>
 </html>

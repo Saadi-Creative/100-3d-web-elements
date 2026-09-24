@@ -13,136 +13,142 @@
         @keyframes float { 0%,100%{transform:translateY(0px) rotate(-5deg)} 50%{transform:translateY(-30px) rotate(5deg)} }
         @keyframes orbit { from{transform:rotate(0deg) translateX(120px) rotate(0deg)} to{transform:rotate(360deg) translateX(120px) rotate(-360deg)} }
         @keyframes beam { 0%,100%{opacity:0.4;transform:scaleX(1)} 50%{opacity:0.8;transform:scaleX(1.05)} }
+        
         .preserve-3d { transform-style:preserve-3d; }
+        
+        #scene-container {
+            transition: transform 0.1s;
+            transform: rotateX(0deg) rotateY(0deg);
+        }
+        
+        @keyframes qfloat {
+            0%, 100% { transform: translateY(0px) rotate(-10deg); opacity: 0.3; }
+            50% { transform: translateY(-12px) rotate(10deg); opacity: 0.7; }
+        }
+        
+        .question-mark {
+            position: absolute;
+            animation: qfloat var(--dur, 2s) infinite ease-in-out;
+            animation-delay: var(--delay, 0s);
+        }
+        
+        .btn-hover-fx {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-hover-fx:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 40px rgba(56,189,248,0.5);
+        }
+        .btn-hover-fx:active {
+            transform: scale(0.95);
+        }
     </style>
-    <script type="importmap">{"imports":{"react":"https://esm.sh/react@18.2.0","react-dom/client":"https://esm.sh/react-dom@18.2.0/client","framer-motion":"https://esm.sh/framer-motion@10.16.4?external=react,react-dom"}}</script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-<div id="root"></div>
-<script type="text/babel" data-type="module">
-import React, { useEffect, useState, useRef } from 'react';
-import { createRoot } from 'react-dom/client';
-import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from 'framer-motion';
+    <div id="main-wrapper" class="w-full h-screen relative flex flex-col items-center justify-center overflow-hidden" style="perspective:1200px">
+        
+        <div id="stars-container" class="absolute inset-0"></div>
 
-const Stars = () => {
-    const stars = Array.from({length: 80}, (_,i) => ({
-        id:i, x:Math.random()*100, y:Math.random()*100,
-        size: Math.random()*2+0.5,
-        d: (Math.random()*3+1)+'s',
-        delay: (Math.random()*3)+'s'
-    }));
-    return <>{stars.map(s=>(
-        <div key={s.id} className="star" style={{left:`${s.x}%`,top:`${s.y}%`,width:s.size,height:s.size,'--d':s.d,'--delay':s.delay}}/>
-    ))}</>;
-};
+        <!-- Nebula glow backdrop -->
+        <div class="absolute inset-0 pointer-events-none">
+            <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-900/20 rounded-full blur-[120px]"></div>
+            <div class="absolute bottom-1/3 right-1/4 w-80 h-80 bg-blue-900/20 rounded-full blur-[100px]"></div>
+        </div>
 
-const App = () => {
-    const containerRef = useRef(null);
-    const mouseX = useMotionValue(0.5);
-    const mouseY = useMotionValue(0.5);
-    const smoothX = useSpring(mouseX, {damping:25,stiffness:120});
-    const smoothY = useSpring(mouseY, {damping:25,stiffness:120});
-    const rotateY = useTransform(smoothX,[0,1],[-15,15]);
-    const rotateX = useTransform(smoothY,[0,1],[10,-10]);
+        <!-- Main 3D Scene -->
+        <div id="scene-container" class="relative flex flex-col items-center preserve-3d z-10">
 
-    const handleMove = (e) => {
-        const r = containerRef.current?.getBoundingClientRect();
-        if(!r) return;
-        mouseX.set((e.clientX-r.left)/r.width);
-        mouseY.set((e.clientY-r.top)/r.height);
-    };
-
-    return (
-        <div ref={containerRef} onMouseMove={handleMove} onMouseLeave={()=>{mouseX.set(0.5);mouseY.set(0.5);}}
-             className="w-full h-screen relative flex flex-col items-center justify-center overflow-hidden" style={{perspective:1200}}>
-            <Stars/>
-
-            {/* Nebula glow backdrop */}
-            <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-900/20 rounded-full blur-[120px]"/>
-                <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-blue-900/20 rounded-full blur-[100px]"/>
+            <!-- Orbiting Satellite -->
+            <div class="absolute w-8 h-8" style="animation:orbit 8s linear infinite; top:60px; left:50%; transform-origin:0 0;">
+                <div class="w-6 h-3 bg-slate-300 rounded-sm relative">
+                    <div class="absolute -left-4 top-0.5 w-4 h-2 bg-sky-400/60 border border-sky-300/50 rounded-sm"></div>
+                    <div class="absolute -right-4 top-0.5 w-4 h-2 bg-sky-400/60 border border-sky-300/50 rounded-sm"></div>
+                </div>
             </div>
 
-            {/* Main 3D Scene */}
-            <motion.div className="relative flex flex-col items-center preserve-3d z-10" style={{rotateX,rotateY}}>
+            <!-- Astronaut SVG Scene -->
+            <div style="animation:float 6s ease-in-out infinite" class="relative">
+                <svg width="200" height="220" viewBox="0 0 200 220" fill="none">
+                    <circle cx="100" cy="70" r="45" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+                    <circle cx="100" cy="70" r="38" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+                    <ellipse cx="100" cy="68" rx="22" ry="18" fill="#38bdf8" opacity="0.3"/>
+                    <ellipse cx="100" cy="68" rx="22" ry="18" fill="none" stroke="#7dd3fc" stroke-width="1.5"/>
+                    <ellipse cx="93" cy="62" rx="8" ry="5" fill="white" opacity="0.15" transform="rotate(-20 93 62)"/>
+                    <rect x="68" y="112" width="64" height="70" rx="20" fill="#1e293b" stroke="#334155" stroke-width="2"/>
+                    <rect x="82" y="128" width="36" height="20" rx="4" fill="#0ea5e9" opacity="0.3" stroke="#38bdf8" stroke-width="1"/>
+                    <rect x="38" y="115" width="34" height="16" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.5" transform="rotate(15 38 115)"/>
+                    <circle cx="34" cy="134" r="9" fill="#334155" stroke="#475569" stroke-width="1"/>
+                    <rect x="128" y="115" width="34" height="16" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.5" transform="rotate(-15 128 115)"/>
+                    <circle cx="166" cy="134" r="9" fill="#334155" stroke="#475569" stroke-width="1"/>
+                    <rect x="76" y="178" width="20" height="32" rx="10" fill="#1e293b" stroke="#334155" stroke-width="1.5" transform="rotate(-8 76 178)"/>
+                    <rect x="104" y="178" width="20" height="32" rx="10" fill="#1e293b" stroke="#334155" stroke-width="1.5" transform="rotate(8 104 178)"/>
+                    <ellipse cx="80" cy="210" rx="14" ry="7" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+                    <ellipse cx="120" cy="210" rx="14" ry="7" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+                    <path d="M160 128 Q185 100 178 70 Q172 50 155 55" stroke="#64748b" stroke-width="3" fill="none" stroke-dasharray="4 3"/>
+                    <rect x="128" y="120" width="22" height="36" rx="6" fill="#334155" stroke="#475569" stroke-width="1"/>
+                </svg>
 
-                {/* Orbiting Satellite */}
-                <div className="absolute w-8 h-8" style={{animation:'orbit 8s linear infinite',top:'60px',left:'50%',transformOrigin:'0 0'}}>
-                    <div className="w-6 h-3 bg-slate-300 rounded-sm relative">
-                        <div className="absolute -left-4 top-0.5 w-4 h-2 bg-sky-400/60 border border-sky-300/50 rounded-sm"/>
-                        <div className="absolute -right-4 top-0.5 w-4 h-2 bg-sky-400/60 border border-sky-300/50 rounded-sm"/>
-                    </div>
+                <div class="absolute top-12 right-0 w-32 h-1 origin-left opacity-50" style="animation:beam 2s ease-in-out infinite">
+                    <div class="w-full h-full bg-gradient-to-r from-sky-400 to-transparent rounded-full"></div>
+                    <div class="w-3/4 h-0.5 bg-gradient-to-r from-sky-400/60 to-transparent rounded-full mt-2"></div>
                 </div>
+            </div>
 
-                {/* Astronaut SVG Scene */}
-                <motion.div
-                    style={{animation:'float 6s ease-in-out infinite'}}
-                    className="relative"
-                >
-                    <svg width="200" height="220" viewBox="0 0 200 220" fill="none">
-                        {/* Helmet */}
-                        <circle cx="100" cy="70" r="45" fill="#1e293b" stroke="#475569" strokeWidth="2"/>
-                        <circle cx="100" cy="70" r="38" fill="#0f172a" stroke="#334155" strokeWidth="1"/>
-                        {/* Visor */}
-                        <ellipse cx="100" cy="68" rx="22" ry="18" fill="#38bdf8" opacity="0.3"/>
-                        <ellipse cx="100" cy="68" rx="22" ry="18" fill="none" stroke="#7dd3fc" strokeWidth="1.5"/>
-                        {/* Visor sheen */}
-                        <ellipse cx="93" cy="62" rx="8" ry="5" fill="white" opacity="0.15" transform="rotate(-20 93 62)"/>
-                        {/* Body */}
-                        <rect x="68" y="112" width="64" height="70" rx="20" fill="#1e293b" stroke="#334155" strokeWidth="2"/>
-                        {/* Suit details */}
-                        <rect x="82" y="128" width="36" height="20" rx="4" fill="#0ea5e9" opacity="0.3" stroke="#38bdf8" strokeWidth="1"/>
-                        {/* Left arm */}
-                        <rect x="38" y="115" width="34" height="16" rx="8" fill="#1e293b" stroke="#334155" strokeWidth="1.5" transform="rotate(15 38 115)"/>
-                        <circle cx="34" cy="134" r="9" fill="#334155" stroke="#475569" strokeWidth="1"/>
-                        {/* Right arm */}
-                        <rect x="128" y="115" width="34" height="16" rx="8" fill="#1e293b" stroke="#334155" strokeWidth="1.5" transform="rotate(-15 128 115)"/>
-                        <circle cx="166" cy="134" r="9" fill="#334155" stroke="#475569" strokeWidth="1"/>
-                        {/* Legs */}
-                        <rect x="76" y="178" width="20" height="32" rx="10" fill="#1e293b" stroke="#334155" strokeWidth="1.5" transform="rotate(-8 76 178)"/>
-                        <rect x="104" y="178" width="20" height="32" rx="10" fill="#1e293b" stroke="#334155" strokeWidth="1.5" transform="rotate(8 104 178)"/>
-                        {/* Boots */}
-                        <ellipse cx="80" cy="210" rx="14" ry="7" fill="#0f172a" stroke="#1e293b" strokeWidth="1"/>
-                        <ellipse cx="120" cy="210" rx="14" ry="7" fill="#0f172a" stroke="#1e293b" strokeWidth="1"/>
-                        {/* Oxygen tube */}
-                        <path d="M160 128 Q185 100 178 70 Q172 50 155 55" stroke="#64748b" strokeWidth="3" fill="none" strokeDasharray="4 3"/>
-                        {/* Backpack */}
-                        <rect x="128" y="120" width="22" height="36" rx="6" fill="#334155" stroke="#475569" strokeWidth="1"/>
-                    </svg>
-
-                    {/* Lost signal beam */}
-                    <div className="absolute top-12 right-0 w-32 h-1 origin-left opacity-50" style={{animation:'beam 2s ease-in-out infinite'}}>
-                        <div className="w-full h-full bg-gradient-to-r from-sky-400 to-transparent rounded-full"/>
-                        <div className="w-3/4 h-0.5 bg-gradient-to-r from-sky-400/60 to-transparent rounded-full mt-2"/>
-                    </div>
-                </motion.div>
-
-                {/* Question marks floating around */}
-                {['?','?','?'].map((q,i)=>(
-                    <motion.div key={i} className="absolute text-slate-600 font-black text-2xl"
-                        style={{left:`${[20,155,70][i]}px`, top:`${[50,90,170][i]}px`}}
-                        animate={{y:[0,-12,0], opacity:[0.3,0.7,0.3], rotate:[-10,10,-10]}}
-                        transition={{duration:2+i*0.7, repeat:Infinity, delay:i*0.5}}
-                    >{q}</motion.div>
-                ))}
-            </motion.div>
-
-            {/* Text */}
-            <motion.div className="text-center mt-8 z-10 relative" initial={{opacity:0,y:30}} animate={{opacity:1,y:0}} transition={{delay:0.4,duration:0.8}}>
-                <h2 className="text-4xl font-black text-white tracking-tighter mb-3">Lost in the void.</h2>
-                <p className="text-slate-400 font-medium max-w-xs mx-auto leading-relaxed mb-8">Houston, we have a problem. There's nothing here yet. Time to plant your first flag.</p>
-                <motion.button
-                    className="px-8 py-3.5 bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-bold rounded-full shadow-[0_0_30px_rgba(56,189,248,0.3)] hover:shadow-[0_0_40px_rgba(56,189,248,0.5)] transition-shadow"
-                    whileHover={{scale:1.05}} whileTap={{scale:0.95}}
-                >
-                    🚀 Create First Mission
-                </motion.button>
-            </motion.div>
+            <div class="question-mark text-slate-600 font-black text-2xl" style="left:20px; top:50px; --dur:2s; --delay:0s;">?</div>
+            <div class="question-mark text-slate-600 font-black text-2xl" style="left:155px; top:90px; --dur:2.7s; --delay:0.5s;">?</div>
+            <div class="question-mark text-slate-600 font-black text-2xl" style="left:70px; top:170px; --dur:3.4s; --delay:1s;">?</div>
         </div>
-    );
-};
-createRoot(document.getElementById('root')).render(<App/>);
-</script>
+
+        <div id="text-block" class="text-center mt-8 z-10 relative opacity-0 translate-y-[30px]" style="transition: all 0.8s ease-out; transition-delay: 0.4s;">
+            <h2 class="text-4xl font-black text-white tracking-tighter mb-3">Lost in the void.</h2>
+            <p class="text-slate-400 font-medium max-w-xs mx-auto leading-relaxed mb-8">Houston, we have a problem. There's nothing here yet. Time to plant your first flag.</p>
+            <button class="btn-hover-fx px-8 py-3.5 bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-bold rounded-full shadow-[0_0_30px_rgba(56,189,248,0.3)]">
+                🚀 Create First Mission
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        // Generate stars
+        const starsContainer = document.getElementById('stars-container');
+        for(let i=0; i<80; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = `${Math.random()*100}%`;
+            star.style.top = `${Math.random()*100}%`;
+            const size = Math.random()*2+0.5;
+            star.style.width = `${size}px`;
+            star.style.height = `${size}px`;
+            star.style.setProperty('--d', `${Math.random()*3+1}s`);
+            star.style.setProperty('--delay', `${Math.random()*3}s`);
+            starsContainer.appendChild(star);
+        }
+        
+        // Setup Parallax
+        const wrapper = document.getElementById('main-wrapper');
+        const scene = document.getElementById('scene-container');
+        
+        wrapper.addEventListener('mousemove', (e) => {
+            const r = wrapper.getBoundingClientRect();
+            const x = (e.clientX - r.left) / r.width;
+            const y = (e.clientY - r.top) / r.height;
+            
+            const rx = (y - 0.5) * -20; // 10 to -10
+            const ry = (x - 0.5) * 30; // -15 to 15
+            
+            scene.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+        });
+        
+        wrapper.addEventListener('mouseleave', () => {
+            scene.style.transform = `rotateX(0deg) rotateY(0deg)`;
+        });
+        
+        // Entrance animation
+        setTimeout(() => {
+            const tb = document.getElementById('text-block');
+            tb.style.opacity = '1';
+            tb.style.transform = 'translateY(0px)';
+        }, 100);
+    </script>
 </body>
 </html>

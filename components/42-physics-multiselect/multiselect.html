@@ -4,279 +4,358 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anti-Gravity Physics Multi-Select Tags</title>
-    <script>
-        const origWarn = console.warn;
-        console.warn = function(...args) {
-            const msg = args[0];
-            if (typeof msg === 'string' && (msg.includes('Babel') || msg.includes('Tailwind') || msg.includes('tailwindcss'))) return;
-            origWarn.apply(console, args);
-        };
-    </script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../../styles/shared.css">
     <style>
-        body { margin: 0; background: linear-gradient(160deg, #0a0a1a 0%, #0f172a 40%, #1a1040 100%); min-height: 100vh; overflow: hidden; font-family: 'Inter', sans-serif; color: white; }
-        #root { width: 100%; height: 100vh; display: flex; align-items: center; justify-content: center; }
+        body {
+            background: radial-gradient(circle at center, #101426 0%, #05070d 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 32px 20px;
+            overflow: hidden;
+            user-select: none;
+            perspective: 1000px;
+        }
+
+        .header-hud {
+            text-align: center;
+            z-index: 20;
+        }
+
+        .hud-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            padding: 4px 14px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-family: var(--font-mono, monospace);
+            color: #38bdf8;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .hud-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #f8fafc;
+            letter-spacing: -0.02em;
+        }
+
+        /* Physics Sandbox Stage */
+        .physics-stage {
+            position: relative;
+            width: 100%;
+            max-width: 680px;
+            height: 380px;
+            border-radius: 24px;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 
+                0 30px 60px rgba(0, 0, 0, 0.7),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            overflow: hidden;
+            transform-style: preserve-3d;
+        }
+
+        #beams-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Physics Tag Pill */
+        .physics-tag {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 9999px;
+            color: #cbd5e1;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            z-index: 5;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s linear;
+            will-change: transform;
+        }
+
+        .physics-tag:hover {
+            border-color: var(--tag-color, #38bdf8);
+            box-shadow: 0 0 20px var(--tag-glow, rgba(56, 189, 248, 0.4));
+        }
+
+        .physics-tag.selected {
+            background: linear-gradient(135deg, rgba(30, 58, 138, 0.9), rgba(15, 23, 42, 0.95));
+            border-color: var(--tag-color, #38bdf8);
+            color: #ffffff;
+            box-shadow: 
+                0 0 25px var(--tag-glow, rgba(56, 189, 248, 0.6)),
+                inset 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+
+        .tag-icon {
+            font-size: 15px;
+        }
+
+        /* Selection Tray Footer */
+        .selection-tray {
+            width: 100%;
+            max-width: 680px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            background: rgba(18, 24, 38, 0.8);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            z-index: 20;
+        }
+
+        .tray-chips {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .tray-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            background: rgba(56, 189, 248, 0.15);
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            color: #f1f5f9;
+            font-size: 11px;
+            font-family: var(--font-mono, monospace);
+        }
+
+        .tray-chip .remove-btn {
+            cursor: pointer;
+            color: #94a3b8;
+            font-weight: 700;
+        }
+
+        .tray-chip .remove-btn:hover {
+            color: #ef4444;
+        }
+
+        .tray-count {
+            font-family: var(--font-mono, monospace);
+            font-size: 11px;
+            color: #64748b;
+        }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div id="root"></div>
 
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <div class="header-hud">
+        <div class="hud-badge">
+            <span>✨</span>
+            <span>Zero-G Kinetic Tag Mesh</span>
+        </div>
+        <div class="hud-title">Click tags to bind neural entanglement threads</div>
+    </div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useState, useCallback, useRef, useEffect } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion';
+    <div class="physics-stage" id="stage">
+        <canvas id="beams-canvas"></canvas>
+    </div>
 
-        const TAG_OPTIONS = [
-            { id: 'react', label: 'React', icon: '⚛️', color: '#61dafb' },
-            { id: 'three', label: 'Three.js', icon: '🔺', color: '#049ef4' },
-            { id: 'tailwind', label: 'Tailwind', icon: '🎨', color: '#38bdf8' },
-            { id: 'framer', label: 'Framer', icon: '✨', color: '#bb4bff' },
-            { id: 'typescript', label: 'TypeScript', icon: '📘', color: '#3178c6' },
-            { id: 'vite', label: 'Vite', icon: '⚡', color: '#ffc018' },
-            { id: 'nextjs', label: 'Next.js', icon: '▲', color: '#ffffff' },
-            { id: 'node', label: 'Node.js', icon: '🟢', color: '#68a063' },
-            { id: 'prisma', label: 'Prisma', icon: '◆', color: '#5a67d8' },
-            { id: 'gsap', label: 'GSAP', icon: '🟩', color: '#88ce02' },
+    <div class="selection-tray">
+        <div class="tray-chips" id="tray-chips">
+            <span style="font-size: 12px; color: #64748b; font-family: var(--font-mono, monospace);">Select tags from orbit above...</span>
+        </div>
+        <div class="tray-count" id="tray-count">0 SELECTED</div>
+    </div>
+
+    <script>
+        const TAG_DATA = [
+            { id: 'react', label: 'React 19', icon: '⚛️', color: '#38bdf8', glow: 'rgba(56,189,248,0.5)' },
+            { id: 'three', label: 'Three.js WebGL', icon: '🔺', color: '#06b6d4', glow: 'rgba(6,182,212,0.5)' },
+            { id: 'wasm', label: 'Rust WASM', icon: '🦀', color: '#f97316', glow: 'rgba(249,115,22,0.5)' },
+            { id: 'tailwind', label: 'OKLCH CSS', icon: '🎨', color: '#a855f7', glow: 'rgba(168,85,247,0.5)' },
+            { id: 'motion', label: 'Kinetic Physics', icon: '⚡', color: '#fbbf24', glow: 'rgba(251,191,36,0.5)' },
+            { id: 'typescript', label: 'TypeScript 5', icon: '📘', color: '#60a5fa', glow: 'rgba(96,165,250,0.5)' },
+            { id: 'graphql', label: 'GraphQL Mesh', icon: '◈', color: '#ec4899', glow: 'rgba(236,72,153,0.5)' },
+            { id: 'redis', label: 'Redis L1 Cache', icon: '⚡', color: '#ef4444', glow: 'rgba(239,68,68,0.5)' },
+            { id: 'security', label: 'Zero-Trust IAM', icon: '🛡️', color: '#10b981', glow: 'rgba(16,185,129,0.5)' },
         ];
 
-        const PhysicsPill = ({ tag, onRemove, containerRef, index }) => {
-            const pillRef = useRef(null);
-            const x = useMotionValue(0);
-            const y = useMotionValue(0);
-            const rotate = useMotionValue(0);
-            const vx = useRef((Math.random() - 0.5) * 3);
-            const vy = useRef(-2 - Math.random() * 3);
-            const vr = useRef((Math.random() - 0.5) * 5);
-            const settled = useRef(false);
-            const posX = useRef((Math.random() - 0.5) * 200);
-            const posY = useRef(-200 - index * 30);
-            const posR = useRef(Math.random() * 30 - 15);
-            const animFrame = useRef(null);
-            const gravity = 0.15;
-            const bounce = 0.4;
-            const friction = 0.98;
+        const stage = document.getElementById('stage');
+        const canvas = document.getElementById('beams-canvas');
+        const ctx = canvas.getContext('2d');
+        const trayChips = document.getElementById('tray-chips');
+        const trayCount = document.getElementById('tray-count');
 
-            useEffect(() => {
-                const loop = () => {
-                    if (settled.current) return;
+        let stageWidth = stage.clientWidth;
+        let stageHeight = stage.clientHeight;
 
-                    const container = containerRef.current;
-                    if (!container || !pillRef.current) { animFrame.current = requestAnimationFrame(loop); return; }
+        function resizeCanvas() {
+            stageWidth = stage.clientWidth;
+            stageHeight = stage.clientHeight;
+            canvas.width = stageWidth;
+            canvas.height = stageHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
 
-                    const cRect = container.getBoundingClientRect();
-                    const pRect = pillRef.current.getBoundingClientRect();
+        const selectedSet = new Set(['react', 'three']);
+        const bodies = [];
 
-                    // Gravity
-                    vy.current += gravity;
-                    vx.current *= friction;
-                    vy.current *= friction;
-                    vr.current *= 0.97;
+        // Spawn Tag Physics Bodies
+        TAG_DATA.forEach((tag, idx) => {
+            const el = document.createElement('div');
+            el.className = `physics-tag ${selectedSet.has(tag.id) ? 'selected' : ''}`;
+            el.style.setProperty('--tag-color', tag.color);
+            el.style.setProperty('--tag-glow', tag.glow);
+            el.innerHTML = `<span class="tag-icon">${tag.icon}</span><span>${tag.label}</span>`;
+            stage.appendChild(el);
 
-                    posX.current += vx.current;
-                    posY.current += vy.current;
-                    posR.current += vr.current;
-
-                    // Floor collision
-                    const maxY = (cRect.height / 2) - (pRect.height / 2) - 8;
-                    if (posY.current > maxY) {
-                        posY.current = maxY;
-                        vy.current = -Math.abs(vy.current) * bounce;
-                        vx.current += (Math.random() - 0.5) * 2;
-                        vr.current = (Math.random() - 0.5) * 4;
-
-                        // Check if settled
-                        if (Math.abs(vy.current) < 0.3) {
-                            settled.current = true;
-                            vy.current = 0;
-                        }
-                    }
-
-                    // Wall collisions
-                    const maxX = (cRect.width / 2) - (pRect.width / 2) - 8;
-                    if (posX.current > maxX) { posX.current = maxX; vx.current = -Math.abs(vx.current) * bounce; }
-                    if (posX.current < -maxX) { posX.current = -maxX; vx.current = Math.abs(vx.current) * bounce; }
-
-                    // Ceiling collision
-                    const minY = -(cRect.height / 2) + (pRect.height / 2) + 8;
-                    if (posY.current < minY) { posY.current = minY; vy.current = Math.abs(vy.current) * bounce; }
-
-                    x.set(posX.current);
-                    y.set(posY.current);
-                    rotate.set(posR.current);
-
-                    animFrame.current = requestAnimationFrame(loop);
-                };
-
-                animFrame.current = requestAnimationFrame(loop);
-                return () => cancelAnimationFrame(animFrame.current);
-            }, []);
-
-            return (
-                <motion.div
-                    ref={pillRef}
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0, opacity: 0, transition: { type: 'spring', stiffness: 500, damping: 20 } }}
-                    className="absolute flex items-center gap-1.5 px-3.5 py-1.5 rounded-full cursor-pointer select-none"
-                    style={{
-                        x,
-                        y,
-                        rotate,
-                        background: `${tag.color}20`,
-                        border: `1px solid ${tag.color}50`,
-                        boxShadow: `0 2px 10px ${tag.color}20`,
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        whiteSpace: 'nowrap',
-                    }}
-                    onClick={onRemove}
-                    whileHover={{ scale: 1.1, boxShadow: `0 4px 20px ${tag.color}40` }}
-                    whileTap={{ scale: 0.85 }}
-                    drag
-                    dragConstraints={containerRef}
-                    dragElastic={0.1}
-                    onDragEnd={() => { settled.current = false; }}
-                >
-                    <span className="text-sm">{tag.icon}</span>
-                    <span className="text-xs font-semibold" style={{ color: tag.color }}>{tag.label}</span>
-                    <span className="text-xs" style={{ color: `${tag.color}80` }}>×</span>
-                </motion.div>
-            );
-        };
-
-        const PhysicsMultiSelect = () => {
-            const [selectedTags, setSelectedTags] = useState([]);
-            const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-            const containerRef = useRef(null);
-            const dropdownRef = useRef(null);
-
-            const availableTags = TAG_OPTIONS.filter(t => !selectedTags.find(s => s.id === t.id));
-
-            const addTag = (tag) => {
-                setSelectedTags(prev => [...prev, tag]);
+            const body = {
+                id: tag.id,
+                tag: tag,
+                el: el,
+                x: 60 + Math.random() * (stageWidth - 180),
+                y: 40 + Math.random() * (stageHeight - 120),
+                vx: (Math.random() - 0.5) * 1.5,
+                vy: (Math.random() - 0.5) * 1.5,
+                w: 120,
+                h: 38,
             };
 
-            const removeTag = (tagId) => {
-                setSelectedTags(prev => prev.filter(t => t.id !== tagId));
-            };
+            el.addEventListener('click', () => {
+                if (selectedSet.has(tag.id)) {
+                    selectedSet.delete(tag.id);
+                    el.classList.remove('selected');
+                } else {
+                    selectedSet.add(tag.id);
+                    el.classList.add('selected');
+                }
+                updateTray();
+            });
 
-            // Close dropdown on outside click
-            useEffect(() => {
-                const handleClick = (e) => {
-                    if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-                        setIsDropdownOpen(false);
+            bodies.push(body);
+        });
+
+        function updateTray() {
+            trayChips.innerHTML = '';
+            if (selectedSet.size === 0) {
+                trayChips.innerHTML = `<span style="font-size: 12px; color: #64748b; font-family: var(--font-mono, monospace);">Select tags from orbit above...</span>`;
+                trayCount.textContent = '0 SELECTED';
+                return;
+            }
+
+            selectedSet.forEach(id => {
+                const item = TAG_DATA.find(t => t.id === id);
+                if (!item) return;
+                const chip = document.createElement('div');
+                chip.className = 'tray-chip';
+                chip.innerHTML = `<span>${item.icon} ${item.label}</span><span class="remove-btn">×</span>`;
+                chip.querySelector('.remove-btn').addEventListener('click', () => {
+                    selectedSet.delete(id);
+                    const b = bodies.find(b => b.id === id);
+                    if (b) b.el.classList.remove('selected');
+                    updateTray();
+                });
+                trayChips.appendChild(chip);
+            });
+
+            trayCount.textContent = `${selectedSet.size} SELECTED`;
+        }
+
+        updateTray();
+
+        // Mouse gravity influence
+        let mouseX = -1000;
+        let mouseY = -1000;
+        stage.addEventListener('mousemove', (e) => {
+            const rect = stage.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+            mouseY = e.clientY - rect.top;
+        });
+        stage.addEventListener('mouseleave', () => {
+            mouseX = -1000;
+            mouseY = -1000;
+        });
+
+        // Physics Simulation Loop
+        function stepPhysics() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw laser connection beams between selected tags
+            const selectedBodies = bodies.filter(b => selectedSet.has(b.id));
+            if (selectedBodies.length > 1) {
+                for (let i = 0; i < selectedBodies.length; i++) {
+                    for (let j = i + 1; j < selectedBodies.length; j++) {
+                        const b1 = selectedBodies[i];
+                        const b2 = selectedBodies[j];
+                        ctx.beginPath();
+                        ctx.moveTo(b1.x + b1.w / 2, b1.y + b1.h / 2);
+                        ctx.lineTo(b2.x + b2.w / 2, b2.y + b2.h / 2);
+                        ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+                        ctx.lineWidth = 1.5;
+                        ctx.setLineDash([4, 4]);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
                     }
-                };
-                document.addEventListener('mousedown', handleClick);
-                return () => document.removeEventListener('mousedown', handleClick);
-            }, []);
+                }
+            }
 
-            return (
-                <div className="flex flex-col items-center gap-6 w-full max-w-lg px-4">
-                    {/* Title */}
-                    <div className="text-center">
-                        <p className="text-xs uppercase tracking-[0.3em] text-slate-500 mb-1">Click pills to pop</p>
-                        <h2 className="text-xl font-bold text-white">Anti-Gravity Multi-Select</h2>
-                    </div>
+            bodies.forEach(b => {
+                // Bounds measurement
+                b.w = b.el.offsetWidth || 120;
+                b.h = b.el.offsetHeight || 38;
 
-                    {/* Physics Container - the "box" where pills drop into */}
-                    <div
-                        ref={containerRef}
-                        className="relative w-full rounded-2xl overflow-hidden"
-                        style={{
-                            height: '240px',
-                            background: 'rgba(255, 255, 255, 0.03)',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                            boxShadow: 'inset 0 2px 20px rgba(0,0,0,0.3)',
-                        }}
-                    >
-                        {selectedTags.length === 0 && (
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <p className="text-slate-600 text-sm text-center px-8">
-                                    Select technologies below.<br />
-                                    <span className="text-slate-700 text-xs">Pills will physically drop in with gravity.</span>
-                                </p>
-                            </div>
-                        )}
+                // Mouse attraction/repulsion
+                const dx = mouseX - (b.x + b.w / 2);
+                const dy = mouseY - (b.y + b.h / 2);
+                const dist = Math.hypot(dx, dy);
 
-                        <AnimatePresence>
-                            {selectedTags.map((tag, i) => (
-                                <PhysicsPill
-                                    key={tag.id}
-                                    tag={tag}
-                                    index={i}
-                                    containerRef={containerRef}
-                                    onRemove={() => removeTag(tag.id)}
-                                />
-                            ))}
-                        </AnimatePresence>
-                    </div>
+                if (dist < 140 && dist > 10) {
+                    b.vx -= (dx / dist) * 0.15;
+                    b.vy -= (dy / dist) * 0.15;
+                }
 
-                    {/* Add Tags Dropdown */}
-                    <div ref={dropdownRef} className="relative w-full">
-                        <button
-                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                            disabled={availableTags.length === 0}
-                            className="w-full flex items-center justify-between px-5 py-3.5 rounded-xl text-sm cursor-pointer transition-all"
-                            style={{
-                                background: 'rgba(255, 255, 255, 0.06)',
-                                border: `1px solid ${isDropdownOpen ? 'rgba(139, 92, 246, 0.4)' : 'rgba(255, 255, 255, 0.1)'}`,
-                                color: availableTags.length === 0 ? '#334155' : '#94a3b8',
-                            }}
-                        >
-                            <span>{availableTags.length === 0 ? 'All tags selected!' : `+ Add Technology (${availableTags.length} left)`}</span>
-                            <span style={{ transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }}>▾</span>
-                        </button>
+                // Drag friction
+                b.vx *= 0.99;
+                b.vy *= 0.99;
 
-                        {isDropdownOpen && availableTags.length > 0 && (
-                            <div 
-                                className="absolute bottom-full left-0 w-full mb-2 rounded-xl overflow-hidden z-50"
-                                style={{
-                                    background: 'rgba(15, 20, 35, 0.97)',
-                                    border: '1px solid rgba(255,255,255,0.08)',
-                                    boxShadow: '0 -10px 40px rgba(0,0,0,0.4)',
-                                    maxHeight: '200px',
-                                    overflowY: 'auto',
-                                }}
-                            >
-                                {availableTags.map((tag) => (
-                                    <button
-                                        key={tag.id}
-                                        onClick={() => { addTag(tag); }}
-                                        className="w-full flex items-center gap-3 px-4 py-3 text-left cursor-pointer transition-colors hover:bg-white/5"
-                                        style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
-                                    >
-                                        <span className="text-base">{tag.icon}</span>
-                                        <span className="text-sm font-medium" style={{ color: tag.color }}>{tag.label}</span>
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                // Slight ambient drift
+                b.vx += (Math.random() - 0.5) * 0.05;
+                b.vy += (Math.random() - 0.5) * 0.05;
 
-                    {/* Count */}
-                    <p className="text-xs text-slate-600 font-mono">
-                        {selectedTags.length} / {TAG_OPTIONS.length} selected
-                    </p>
-                </div>
-            );
-        };
+                b.x += b.vx;
+                b.y += b.vy;
 
-        const root = createRoot(document.getElementById('root'));
-        root.render(<PhysicsMultiSelect />);
+                // Wall bounce
+                if (b.x < 10) { b.x = 10; b.vx = Math.abs(b.vx) * 0.8; }
+                if (b.x + b.w > stageWidth - 10) { b.x = stageWidth - b.w - 10; b.vx = -Math.abs(b.vx) * 0.8; }
+                if (b.y < 10) { b.y = 10; b.vy = Math.abs(b.vy) * 0.8; }
+                if (b.y + b.h > stageHeight - 10) { b.y = stageHeight - b.h - 10; b.vy = -Math.abs(b.vy) * 0.8; }
+
+                b.el.style.transform = `translate3d(${b.x}px, ${b.y}px, 0)`;
+            });
+
+            requestAnimationFrame(stepPhysics);
+        }
+
+        stepPhysics();
     </script>
 </body>
 </html>

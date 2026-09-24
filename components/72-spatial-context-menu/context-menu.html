@@ -8,146 +8,141 @@
     <style>
         body { margin: 0; background: #e0e7ff; min-height: 100vh; overflow: hidden; font-family: 'Inter', sans-serif; cursor: crosshair; }
         .preserve-3d { transform-style: preserve-3d; perspective: 1200px; }
+        
+        #context-menu {
+            transform-origin: top left;
+            transition: opacity 0.3s, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            opacity: 0;
+            transform: scale(0.8) translateZ(-100px) rotateX(0deg) rotateY(0deg);
+            pointer-events: none;
+        }
+        
+        #context-menu.active {
+            opacity: 1;
+            transform: scale(1) translateZ(50px) rotateX(0deg) rotateY(0deg);
+            pointer-events: auto;
+        }
+        
+        #menu-shadow {
+            transition: transform 0.1s;
+            transform: translateZ(-50px);
+        }
+        
+        .menu-item {
+            transition: transform 0.2s, background-color 0.2s;
+        }
+        .menu-item:hover {
+            transform: translateX(5px);
+            background-color: rgba(255,255,255,0.8);
+        }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body>
-    <div id="root"></div>
+<body id="app-body">
+    <div class="w-full h-full preserve-3d flex items-center justify-center p-8 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.8)_0%,transparent_100%)]">
+        <div class="absolute inset-0 pointer-events-none bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MiIgaGVpZ2h0PSI0MiI+PHBhdGggZD0iTTIgMmgydjJIMnoiIGZpbGw9IiM2MzY2ZjEiIGZpbGwtb3BhY2l0eT0iMC4xIi8+PC9zdmc+')] opacity-50"></div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useState, useRef, useEffect } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
+        <div class="max-w-md text-center bg-white/40 p-10 rounded-[32px] backdrop-blur-3xl shadow-xl border border-white relative z-10 pointer-events-none">
+            <div class="w-16 h-16 bg-indigo-600 rounded-2xl mx-auto mb-6 flex items-center justify-center text-white shadow-lg rotate-12">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
+            </div>
+            <h1 class="text-4xl font-black text-indigo-950 mb-4 tracking-tight">Interactive Context.</h1>
+            <p class="text-indigo-900/70 font-medium">Right-click anywhere on this screen. A custom 2.5D physical context menu will drop from the Z-axis instantly. Moving your mouse over it will physically tilt the glass panel, proving its depth.</p>
+        </div>
 
-        const CustomContextMenu = ({ x, y, onClose }) => {
-            const menuRef = useRef(null);
-
-            // Motion values pointing strictly inside the menu bounds
-            const mouseX = useMotionValue(0);
-            const mouseY = useMotionValue(0);
-
-            const smoothX = useSpring(mouseX, { damping: 20, stiffness: 300 });
-            const smoothY = useSpring(mouseY, { damping: 20, stiffness: 300 });
-
-            // The trick: rotate the menu away from the cursor to cast shadow naturally
-            const rotateX = useTransform(smoothY, [-100, 100], [15, -15]);
-            const rotateY = useTransform(smoothX, [-100, 100], [-15, 15]);
+        <!-- The Menu Overlay container -->
+        <div id="menu-overlay" class="fixed inset-0 preserve-3d z-50 pointer-events-none hidden">
             
-            // Dynamic shadow position mirroring the physical rotation
-            const shadowX = useTransform(smoothX, [-100, 100], [20, -20]);
-            const shadowY = useTransform(smoothY, [-100, 100], [20, -20]);
+            <div id="context-menu" class="absolute w-64 rounded-2xl bg-white/60 backdrop-blur-xl border border-white/80 p-2 flex flex-col shadow-[inset_0_0_20px_rgba(255,255,255,1)]">
+                
+                <div id="menu-shadow" class="absolute inset-0 bg-indigo-500/20 rounded-2xl blur-[15px] pointer-events-none"></div>
 
-            const handleMouseMove = (e) => {
-                if (!menuRef.current) return;
-                const rect = menuRef.current.getBoundingClientRect();
-                // Get offset from exact center of the menu
-                const mx = e.clientX - rect.left - rect.width / 2;
-                const my = e.clientY - rect.top - rect.height / 2;
-                mouseX.set(mx);
-                mouseY.set(my);
-            };
-
-            const handleMouseLeave = () => {
-                mouseX.set(0);
-                mouseY.set(0);
-            };
-
-            return (
-                <div 
-                    className="fixed inset-0 preserve-3d z-50 pointer-events-none"
-                    onClick={onClose}
-                    onContextMenu={(e) => { e.preventDefault(); onClose(); }}
-                >
-                    <motion.div
-                        ref={menuRef}
-                        className="absolute w-64 rounded-2xl bg-white/60 backdrop-blur-xl border border-white/80 p-2 flex flex-col pointer-events-auto shadow-[inset_0_0_20px_rgba(255,255,255,1)]"
-                        style={{ 
-                            left: x, 
-                            top: y, 
-                            rotateX, 
-                            rotateY,
-                            transformOrigin: 'top left' // Spawns right off the cursor point
-                        }}
-                        initial={{ opacity: 0, scale: 0.8, z: -100 }}
-                        animate={{ opacity: 1, scale: 1, z: 50 }}
-                        exit={{ opacity: 0, scale: 0.9, z: -50 }}
-                        transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                        onMouseMove={handleMouseMove}
-                        onMouseLeave={handleMouseLeave}
-                    >
-                        {/* Shimmer Floor Shadow tied to mouse tilt */}
-                        <motion.div 
-                            className="absolute inset-0 bg-indigo-500/20 rounded-2xl blur-[15px] pointer-events-none"
-                            style={{ 
-                                x: shadowX, 
-                                y: shadowY, 
-                                z: -50 
-                            }}
-                        />
-
-                        {/* Menu Items */}
-                        <MenuItem icon="👁️" label="Preview Document" />
-                        <MenuItem icon="🚀" label="Deploy to Edge" />
-                        <hr className="border-indigo-100 my-1"/>
-                        <MenuItem icon="✂️" label="Extract Assets" />
-                        <MenuItem icon="🗑️" label="Purge Memory" color="text-rose-600 hover:bg-rose-100 hover:text-rose-700" />
-                    </motion.div>
+                <div class="menu-item flex items-center gap-3 px-4 py-3 rounded-xl cursor-default text-indigo-900 hover:bg-indigo-50">
+                    <span class="text-xl drop-shadow-sm">👁️</span>
+                    <span class="font-semibold">Preview Document</span>
                 </div>
-            );
-        };
-
-        const MenuItem = ({ icon, label, color = "text-indigo-900 hover:bg-indigo-50" }) => (
-            <motion.div 
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-default transition-colors ${color}`}
-                whileHover={{ x: 5, backgroundColor: 'rgba(255,255,255,0.8)' }}
-            >
-                <span className="text-xl drop-shadow-sm">{icon}</span>
-                <span className="font-semibold">{label}</span>
-            </motion.div>
-        );
-
-        const App = () => {
-            const [menu, setMenu] = useState(null);
-
-            const handleContextMenu = (e) => {
-                e.preventDefault(); // Stop native menu
-                setMenu({ x: e.clientX, y: e.clientY });
-            };
-
-            return (
-                <div 
-                    className="w-full h-full preserve-3d flex items-center justify-center p-8 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.8)_0%,transparent_100%)]"
-                    onContextMenu={handleContextMenu}
-                    onClick={() => setMenu(null)} // close if click outside
-                >
-                    <div className="absolute inset-0 pointer-events-none bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MiIgaGVpZ2h0PSI0MiI+PHBhdGggZD0iTTIgMmgydjJIMnoiIGZpbGw9IiM2MzY2ZjEiIGZpbGwtb3BhY2l0eT0iMC4xIi8+PC9zdmc+')] opacity-50"></div>
-
-                    <div className="max-w-md text-center bg-white/40 p-10 rounded-[32px] backdrop-blur-3xl shadow-xl border border-white relative z-10 pointer-events-none">
-                        <div className="w-16 h-16 bg-indigo-600 rounded-2xl mx-auto mb-6 flex items-center justify-center text-white shadow-lg rotate-12">
-                            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
-                        </div>
-                        <h1 className="text-4xl font-black text-indigo-950 mb-4 tracking-tight">Interactive Context.</h1>
-                        <p className="text-indigo-900/70 font-medium">Right-click anywhere on this screen. A custom 2.5D physical context menu will drop from the Z-axis instantly. Moving your mouse over it will physically tilt the glass panel, proving its depth.</p>
-                    </div>
-
-                    <AnimatePresence>
-                        {menu && <CustomContextMenu x={menu.x} y={menu.y} onClose={() => setMenu(null)} />}
-                    </AnimatePresence>
+                <div class="menu-item flex items-center gap-3 px-4 py-3 rounded-xl cursor-default text-indigo-900 hover:bg-indigo-50">
+                    <span class="text-xl drop-shadow-sm">🚀</span>
+                    <span class="font-semibold">Deploy to Edge</span>
                 </div>
-            );
-        };
+                <hr class="border-indigo-100 my-1"/>
+                <div class="menu-item flex items-center gap-3 px-4 py-3 rounded-xl cursor-default text-indigo-900 hover:bg-indigo-50">
+                    <span class="text-xl drop-shadow-sm">✂️</span>
+                    <span class="font-semibold">Extract Assets</span>
+                </div>
+                <div class="menu-item flex items-center gap-3 px-4 py-3 rounded-xl cursor-default text-rose-600 hover:bg-rose-100 hover:text-rose-700">
+                    <span class="text-xl drop-shadow-sm">🗑️</span>
+                    <span class="font-semibold">Purge Memory</span>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const appBody = document.getElementById('app-body');
+        const overlay = document.getElementById('menu-overlay');
+        const contextMenu = document.getElementById('context-menu');
+        const menuShadow = document.getElementById('menu-shadow');
 
-        createRoot(document.getElementById('root')).render(<App />);
+        appBody.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            overlay.classList.remove('hidden');
+            overlay.classList.add('block');
+            overlay.style.pointerEvents = 'auto'; // allow clicking outside to close
+            
+            contextMenu.style.left = `${e.clientX}px`;
+            contextMenu.style.top = `${e.clientY}px`;
+            
+            // Trigger animation frame for transition
+            requestAnimationFrame(() => {
+                contextMenu.classList.add('active');
+            });
+        });
+
+        overlay.addEventListener('click', (e) => {
+            closeMenu();
+        });
+
+        overlay.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            closeMenu();
+        });
+        
+        function closeMenu() {
+            contextMenu.classList.remove('active');
+            overlay.style.pointerEvents = 'none';
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                overlay.classList.remove('block');
+                contextMenu.style.transform = `scale(0.8) translateZ(-100px) rotateX(0deg) rotateY(0deg)`;
+                menuShadow.style.transform = `translateZ(-50px) translateX(0px) translateY(0px)`;
+            }, 300);
+        }
+
+        contextMenu.addEventListener('mousemove', (e) => {
+            e.stopPropagation(); // prevent clicking outside to close
+            const rect = contextMenu.getBoundingClientRect();
+            const mx = e.clientX - rect.left - rect.width / 2;
+            const my = e.clientY - rect.top - rect.height / 2;
+
+            const rx = (my / rect.height) * -30; // -15 to 15
+            const ry = (mx / rect.width) * 30;  // -15 to 15
+            
+            // disable transition for snappy follow
+            contextMenu.style.transition = 'none';
+            contextMenu.style.transform = `scale(1) translateZ(50px) rotateX(${rx}deg) rotateY(${ry}deg)`;
+            
+            const sx = (mx / rect.width) * -40;
+            const sy = (my / rect.height) * -40;
+            menuShadow.style.transform = `translateZ(-50px) translateX(${sx}px) translateY(${sy}px)`;
+        });
+
+        contextMenu.addEventListener('mouseleave', () => {
+            contextMenu.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            contextMenu.style.transform = `scale(1) translateZ(50px) rotateX(0deg) rotateY(0deg)`;
+            menuShadow.style.transform = `translateZ(-50px) translateX(0px) translateY(0px)`;
+        });
     </script>
 </body>
 </html>

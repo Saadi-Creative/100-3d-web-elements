@@ -1,493 +1,211 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Elastic Toggle Bar</title>
+    <title>Elastic Glass Toggle</title>
+    <link rel="stylesheet" href="../../styles/shared.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #0a0a14 0%, #12121f 50%, #1a1a2e 100%);
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            gap: 40px;
-            perspective: 1000px;
-        }
-
-        .toggle-wrapper {
-            position: relative;
+        .stage {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 28px;
-        }
-
-        /* Particle Canvas */
-        #particleCanvas {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-            z-index: 10;
-        }
-
-        /* ELASTIC TOGGLE BAR - Single Instance */
-        .toggle-bar {
+            gap: var(--space-8);
             position: relative;
-            width: 100px;
-            height: 52px;
-            background: linear-gradient(180deg, #3a3a55, #2a2a40);
-            border-radius: 26px;
+        }
+
+        /* Glass Track */
+        .toggle-track {
+            position: relative;
+            width: 140px;
+            height: 60px;
+            border-radius: var(--radius-full);
             cursor: pointer;
-            transform-style: preserve-3d;
-
-            /* Base 3D thick bar */
-            transform: rotateX(0deg) scaleX(1);
-            transition:
-                transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
-                box-shadow 0.3s ease,
-                border-radius 0.2s ease;
-
-            /* Thickness via layered shadows */
-            box-shadow:
-                0 6px 0 0 #252538,
-                0 8px 0 0 #1e1e2e,
-                0 10px 0 0 #161622,
-                0 12px 24px rgba(0, 0, 0, 0.5),
-                inset 0 2px 4px rgba(255, 255, 255, 0.05),
-                inset 0 -2px 6px rgba(0, 0, 0, 0.3);
-
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            
+            /* Apply glass material from design system */
+            background: var(--surface-glass);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--border-subtle);
+            box-shadow: 
+                inset 0 4px 10px rgba(0,0,0,0.4),
+                0 4px 24px -1px rgba(0, 0, 0, 0.2);
+                
+            transition: border-color var(--time-slow) var(--ease-out);
         }
 
-        .toggle-bar:focus {
-            outline: none;
-            box-shadow:
-                0 6px 0 0 #252538,
-                0 8px 0 0 #1e1e2e,
-                0 10px 0 0 #161622,
-                0 12px 24px rgba(0, 0, 0, 0.5),
-                0 0 0 4px rgba(99, 102, 241, 0.3),
-                inset 0 2px 4px rgba(255, 255, 255, 0.05);
+        .toggle-track:hover {
+            border-color: var(--border-strong);
         }
 
-        /* Stretching animation during toggle */
-        .toggle-bar.stretching {
-            transform: rotateX(5deg) scaleX(1.04) scaleY(0.96);
-            border-radius: 28px;
+        .toggle-track.active {
+            border-color: oklch(70% 0.15 150 / 0.5); /* Success subtle border */
         }
 
-        /* Bending/compression during motion */
-        .toggle-bar.bending {
-            transform: rotateX(-3deg) scaleX(0.98);
-        }
-
-        /* ON State */
-        .toggle-bar.on {
-            background: linear-gradient(180deg, #22c55e, #16a34a);
-            box-shadow:
-                0 6px 0 0 #15803d,
-                0 8px 0 0 #166534,
-                0 10px 0 0 #14532d,
-                0 12px 24px rgba(0, 0, 0, 0.4),
-                0 4px 30px rgba(34, 197, 94, 0.4),
-                0 8px 50px rgba(34, 197, 94, 0.2),
-                inset 0 2px 4px rgba(255, 255, 255, 0.15),
-                inset 0 -2px 6px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Inner track groove */
-        .toggle-bar::before {
-            content: '';
+        /* Internal Track Groove Indicator (Optional glow) */
+        .track-glow {
             position: absolute;
-            top: 6px;
-            left: 6px;
-            right: 6px;
-            bottom: 6px;
-            background: rgba(0, 0, 0, 0.25);
-            border-radius: 20px;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
-            transition: transform 0.2s ease;
+            inset: 0;
+            border-radius: inherit;
+            background: radial-gradient(circle at 70% 50%, oklch(70% 0.15 150 / 0.2), transparent 50%);
+            opacity: 0;
+            transition: opacity var(--time-slow) var(--ease-out);
+            pointer-events: none;
         }
 
-        .toggle-bar.stretching::before {
-            transform: scaleX(1.02);
+        .toggle-track.active .track-glow {
+            opacity: 1;
         }
 
-        /* THE THUMB - Snaps into position (with spring physics) */
-        .toggle-bar .thumb {
+        /* Elastic Thumb */
+        .toggle-thumb {
             position: absolute;
-            top: 6px;
-            left: 6px;
+            top: 10px;
+            left: 10px;
             width: 40px;
             height: 40px;
-            background: linear-gradient(145deg, #ffffff, #e8e8e8);
-            border-radius: 50%;
-
-            transition:
-                transform 0.2s cubic-bezier(0.34, 1.4, 0.64, 1),
-                box-shadow 0.2s ease;
-
-            /* Thumb thickness */
-            box-shadow:
-                0 3px 0 0 #d1d5db,
-                0 5px 0 0 #9ca3af,
-                0 6px 12px rgba(0, 0, 0, 0.3),
-                inset 0 2px 0 rgba(255, 255, 255, 0.9),
-                inset 0 -1px 0 rgba(0, 0, 0, 0.1);
-
-            transform: translateZ(4px) scale(1);
+            border-radius: 20px; /* Fully rounded */
+            background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+            box-shadow: 
+                0 4px 12px rgba(0,0,0,0.5),
+                inset 0 -2px 4px rgba(0,0,0,0.2),
+                inset 0 2px 4px rgba(255,255,255,0.5);
+            pointer-events: none;
+            z-index: 2;
+            
+            /* Display flex for internal marker */
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
-        /* Thumb stretches during motion */
-        .toggle-bar.stretching .thumb {
-            transform: translateZ(6px) scaleX(1.1) scaleY(0.92);
-        }
-
-        /* Thumb snaps to ON position */
-        .toggle-bar.on .thumb {
-            left: 54px;
-            box-shadow:
-                0 3px 0 0 #d1d5db,
-                0 5px 0 0 #9ca3af,
-                0 6px 12px rgba(0, 0, 0, 0.3),
-                0 0 20px rgba(34, 197, 94, 0.5),
-                inset 0 2px 0 rgba(255, 255, 255, 0.95);
-        }
-
-        /* Thumb highlight */
-        .toggle-bar .thumb::before {
-            content: '';
-            position: absolute;
-            top: 4px;
-            left: 8px;
-            right: 8px;
-            height: 10px;
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.7), transparent);
-            border-radius: 50%;
-            transition: transform 0.2s ease;
-        }
-
-        .toggle-bar.stretching .thumb::before {
-            transform: scaleX(1.1);
-        }
-
-        /* Center dot */
-        .toggle-bar .thumb::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+        /* Internal marker logic */
+        .thumb-marker {
             width: 12px;
             height: 12px;
-            background: linear-gradient(145deg, #d1d5db, #a1a1aa);
             border-radius: 50%;
-            transition: all 0.2s ease;
-            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15);
+            background: var(--bg-primary);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+            transition: background var(--time-base) var(--ease-out);
         }
 
-        .toggle-bar.on .thumb::after {
-            background: linear-gradient(145deg, #4ade80, #22c55e);
-            box-shadow:
-                inset 0 1px 2px rgba(0, 0, 0, 0.1),
-                0 0 10px rgba(74, 222, 128, 0.8);
+        .toggle-track.active .thumb-marker {
+            background: var(--success);
+            box-shadow: 0 0 10px var(--success), inset 0 1px 2px rgba(255,255,255,0.5);
         }
 
-        /* Status */
+        /* Status Label */
         .status {
-            font-size: 20px;
-            font-weight: 700;
-            padding: 14px 40px;
-            border-radius: 50px;
-            letter-spacing: 3px;
+            font-size: var(--text-sm);
+            color: var(--text-muted);
+            letter-spacing: 0.15em;
             text-transform: uppercase;
-            transition: all 0.25s cubic-bezier(0.34, 1.4, 0.64, 1);
+            font-weight: 600;
+            padding: var(--space-2) var(--space-6);
+            border-radius: var(--radius-full);
+            background: var(--surface-base);
+            border: 1px solid var(--border-subtle);
+            transition: all var(--time-slow) var(--ease-out);
         }
 
-        .status.off {
-            background: rgba(40, 40, 60, 0.8);
-            color: #6b7280;
-        }
-
-        .status.on {
-            background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(22, 163, 74, 0.3));
-            color: #4ade80;
-            box-shadow: 0 0 30px rgba(34, 197, 94, 0.2);
-        }
-
-        .hint {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.3);
-        }
-
-        .hint kbd {
-            background: rgba(255, 255, 255, 0.08);
-            padding: 3px 8px;
-            border-radius: 4px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            font-family: inherit;
+        .toggle-track.active ~ .status {
+            color: var(--success);
+            border-color: oklch(70% 0.15 150 / 0.3);
+            background: var(--surface-elevated);
         }
     </style>
 </head>
-
 <body>
-    <div class="toggle-wrapper">
-        <!-- SINGLE INSTANCE - Elastic Toggle Bar -->
-        <canvas id="particleCanvas" width="400" height="400"></canvas>
-        <div class="toggle-bar" id="toggle" tabindex="0" role="switch" aria-checked="false" aria-label="Toggle switch">
-            <div class="thumb"></div>
+    <div class="stage">
+        <div class="toggle-track" id="toggle" role="switch" aria-checked="false" tabindex="0">
+            <div class="track-glow"></div>
+            <div class="toggle-thumb" id="thumb">
+                <div class="thumb-marker"></div>
+            </div>
         </div>
-        <div class="status off" id="status">OFF</div>
-        <div class="hint">Click or press <kbd>Space</kbd> / <kbd>Enter</kbd></div>
+        <div class="status" id="status">System Off</div>
     </div>
 
     <script>
         const toggle = document.getElementById('toggle');
+        const thumb = document.getElementById('thumb');
         const statusEl = document.getElementById('status');
-        const thumb = toggle.querySelector('.thumb');
-        const canvas = document.getElementById('particleCanvas');
-        const ctx = canvas.getContext('2d');
-
-        let isOn = false;
-        let particles = [];
-
-        // ========== PARTICLE SYSTEM ==========
-        class Particle {
-            constructor(x, y, isSparkle = false) {
-                this.x = x;
-                this.y = y;
-                this.vx = (Math.random() - 0.5) * 8;
-                this.vy = (Math.random() - 0.5) * 8 - 2;
-                this.life = 1;
-                this.decay = Math.random() * 0.015 + 0.015;
-                this.size = Math.random() * 4 + 2;
-                this.isSparkle = isSparkle;
-                this.rotation = Math.random() * Math.PI * 2;
-                this.rotationSpeed = (Math.random() - 0.5) * 0.2;
-                this.hue = Math.random() * 60 + 100; // Green to cyan
-            }
-
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.vy += 0.15; // Gravity
-                this.vx *= 0.98; // Air resistance
-                this.life -= this.decay;
-                this.rotation += this.rotationSpeed;
-            }
-
-            draw() {
-                ctx.save();
-                ctx.globalAlpha = this.life;
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.rotation);
-
-                if (this.isSparkle) {
-                    // Star/sparkle shape
-                    ctx.fillStyle = `hsl(${this.hue}, 80%, 70%)`;
-                    ctx.shadowBlur = 10;
-                    ctx.shadowColor = `hsl(${this.hue}, 100%, 60%)`;
-
-                    const spikes = 4;
-                    const outerRadius = this.size;
-                    const innerRadius = this.size / 2;
-
-                    ctx.beginPath();
-                    for (let i = 0; i < spikes * 2; i++) {
-                        const radius = i % 2 === 0 ? outerRadius : innerRadius;
-                        const angle = (Math.PI / spikes) * i;
-                        const x = Math.cos(angle) * radius;
-                        const y = Math.sin(angle) * radius;
-                        if (i === 0) ctx.moveTo(x, y);
-                        else ctx.lineTo(x, y);
-                    }
-                    ctx.closePath();
-                    ctx.fill();
-                } else {
-                    // Circle particle
-                    const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size);
-                    gradient.addColorStop(0, `hsla(${this.hue}, 100%, 80%, 1)`);
-                    gradient.addColorStop(1, `hsla(${this.hue}, 100%, 50%, 0)`);
-
-                    ctx.fillStyle = gradient;
-                    ctx.beginPath();
-                    ctx.arc(0, 0, this.size, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-
-                ctx.restore();
-            }
-        }
-
-        function emitParticles(x, y, count = 20) {
-            // Canvas is centered on the toggle, so use center coordinates
-            const canvasX = canvas.width / 2;
-            const canvasY = 100; // Position near top of canvas where toggle is
-
-            for (let i = 0; i < count; i++) {
-                particles.push(new Particle(canvasX, canvasY, i % 3 === 0));
-            }
-        }
-
-        function animateParticles() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            particles = particles.filter(p => p.life > 0);
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
-
-            requestAnimationFrame(animateParticles);
-        }
-        animateParticles();
-
-        // ========== SPRING PHYSICS ==========
-        let thumbPosition = 6; // Current position
-        let thumbVelocity = 0; // Velocity
-        let thumbTarget = 6; // Target position (6 or 54)
-
-        const springConfig = {
-            stiffness: 0.15,  // Spring stiffness (higher = faster)
-            damping: 0.7,     // Damping (lower = more bounce)
-            mass: 1           // Mass
-        };
-
-        function animateSpring() {
-            const distance = thumbTarget - thumbPosition;
-            const acceleration = (distance * springConfig.stiffness) / springConfig.mass;
-
-            thumbVelocity += acceleration;
-            thumbVelocity *= springConfig.damping;
-            thumbPosition += thumbVelocity;
-
-            // Apply position to thumb
-            thumb.style.left = `${thumbPosition}px`;
-
-            // Continue animation if still moving
-            if (Math.abs(distance) > 0.01 || Math.abs(thumbVelocity) > 0.01) {
-                requestAnimationFrame(animateSpring);
-            } else {
-                thumbPosition = thumbTarget; // Snap to final position
-                thumb.style.left = `${thumbPosition}px`;
-            }
-        }
-
-        // ========== TOGGLE LOGIC ==========
-        window.ElasticToggle = {
-            get state() { return isOn; },
-            set state(val) { if (val !== isOn) performToggle(); },
-            toggle: () => performToggle()
-        };
+        let isActive = false;
+        let isAnimating = false;
 
         function performToggle() {
-            // Phase 1: Stretch - bar elongates, thumb squishes
-            toggle.classList.add('stretching');
+            if (isAnimating) return;
+            isAnimating = true;
+            isActive = !isActive;
+            
+            // Base kinematics
+            const trackWidth = 140;
+            const padding = 10;
+            const thumbBaseSize = 40;
+            const stretchSize = 70;
+            
+            // Positions
+            const posLeft = padding;
+            const posRight = trackWidth - padding - thumbBaseSize;
+            
+            // The position when stretched needs to be anchored to the movement direction
+            // Moving Right: thumb left moves slightly, width expands.
+            // Moving Left: thumb left moves heavily, width expands.
 
-            setTimeout(() => {
-                // Phase 2: Release stretch, add bend
-                toggle.classList.remove('stretching');
-                toggle.classList.add('bending');
+            if (isActive) {
+                toggle.classList.add('active');
+                toggle.setAttribute('aria-checked', 'true');
+                statusEl.textContent = 'System On';
+                
+                // Stretch Phase (Moving Right)
+                thumb.style.transition = 'width 0.15s cubic-bezier(0.4, 0, 1, 1), left 0.15s cubic-bezier(0.4, 0, 1, 1)';
+                thumb.style.width = stretchSize + 'px';
+                // Move left slightly while stretching to maintain mass center illusion
+                thumb.style.left = (posLeft + 10) + 'px';
 
-                // Change state
-                isOn = !isOn;
-                toggle.classList.toggle('on', isOn);
-                toggle.setAttribute('aria-checked', isOn);
-                statusEl.textContent = isOn ? 'ON' : 'OFF';
-                statusEl.className = isOn ? 'status on' : 'status off';
-
-                // Update spring target and animate
-                thumbTarget = isOn ? 54 : 6;
-                animateSpring();
-
-                // Emit particles when turning ON
-                if (isOn) {
-                    const rect = toggle.getBoundingClientRect();
-                    const centerX = rect.left + rect.width / 2;
-                    const centerY = rect.top + rect.height / 2;
-                    emitParticles(centerX, centerY, 25);
-                }
-
-                // Phase 3: Settle flat
+                // Snap Phase
                 setTimeout(() => {
-                    toggle.classList.remove('bending');
-                }, 120);
-            }, 100);
+                    thumb.style.transition = 'width 0.3s var(--ease-spring), left 0.3s var(--ease-spring)';
+                    thumb.style.width = thumbBaseSize + 'px';
+                    thumb.style.left = posRight + 'px';
+                    
+                    setTimeout(() => isAnimating = false, 300);
+                }, 150);
+                
+            } else {
+                toggle.classList.remove('active');
+                toggle.setAttribute('aria-checked', 'false');
+                statusEl.textContent = 'System Off';
+                
+                // Stretch Phase (Moving Left)
+                thumb.style.transition = 'width 0.15s cubic-bezier(0.4, 0, 1, 1), left 0.15s cubic-bezier(0.4, 0, 1, 1)';
+                thumb.style.width = stretchSize + 'px';
+                // Move left heavily so the right edge stays roughly in place while stretching
+                thumb.style.left = (posRight - (stretchSize - thumbBaseSize) - 10) + 'px';
+
+                // Snap Phase
+                setTimeout(() => {
+                    thumb.style.transition = 'width 0.3s var(--ease-spring), left 0.3s var(--ease-spring)';
+                    thumb.style.width = thumbBaseSize + 'px';
+                    thumb.style.left = posLeft + 'px';
+                    
+                    setTimeout(() => isAnimating = false, 300);
+                }, 150);
+            }
         }
 
-        // Click
         toggle.addEventListener('click', performToggle);
-
-        // Keyboard
+        
+        // Keyboard support
         toggle.addEventListener('keydown', (e) => {
             if (e.key === ' ' || e.key === 'Enter') {
                 e.preventDefault();
                 performToggle();
             }
         });
-
-        // Drag support
-        let startX = 0;
-        let isDragging = false;
-
-        toggle.addEventListener('mousedown', (e) => {
-            startX = e.clientX;
-            isDragging = true;
-            toggle.classList.add('stretching');
-            e.preventDefault();
-        });
-
-        window.addEventListener('mousemove', (e) => {
-            if (isDragging) {
-                const deltaX = e.clientX - startX;
-                if (Math.abs(deltaX) > 25) {
-                    const shouldBeOn = deltaX > 0;
-                    if (shouldBeOn !== isOn) {
-                        toggle.classList.remove('stretching');
-                        toggle.classList.add('bending');
-
-                        isOn = shouldBeOn;
-                        toggle.classList.toggle('on', isOn);
-                        toggle.setAttribute('aria-checked', isOn);
-                        statusEl.textContent = isOn ? 'ON' : 'OFF';
-                        statusEl.className = isOn ? 'status on' : 'status off';
-
-                        // Spring animation
-                        thumbTarget = isOn ? 54 : 6;
-                        animateSpring();
-
-                        // Particles on drag to ON
-                        if (isOn) {
-                            const rect = toggle.getBoundingClientRect();
-                            emitParticles(rect.left + rect.width / 2, rect.top + rect.height / 2, 20);
-                        }
-
-                        setTimeout(() => toggle.classList.remove('bending'), 120);
-                    }
-                    isDragging = false;
-                }
-            }
-        });
-
-        window.addEventListener('mouseup', () => {
-            if (isDragging) {
-                toggle.classList.remove('stretching');
-                isDragging = false;
-            }
-        });
     </script>
 </body>
-
 </html>

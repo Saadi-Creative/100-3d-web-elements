@@ -6,7 +6,6 @@
     <title>Global Parallax Depth Map</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* CRITICAL FIX: To make absolute/fixed parallax work, the body MUST be allowed to scroll normally. Height relies on internal relative blocks. */
         body, html { 
             margin: 0; 
             padding: 0;
@@ -16,113 +15,93 @@
             overflow-y: auto;
             min-height: 100%;
         }
+        .will-change-transform { will-change: transform; }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-    <div id="root"></div>
-
-    <script type="text/babel" data-type="module">
-        import React, { useRef } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
-
-        const ParallaxEngine = () => {
-            // Track the native window scroll seamlessly
-            const { scrollY } = useScroll();
-            // A gentle spring prevents rigid jumps
-            const smoothY = useSpring(scrollY, { damping: 40, stiffness: 150 });
-
-            // Layer 1: The Deep Background (Moves up very slowly, simulating extreme distance)
-            const bgY = useTransform(smoothY, y => -(y * 0.15)); 
+    <div id="root">
+        <div class="w-full relative">
             
-            // Layer 2: The Midground Floor (1:1 standard scroll syncing so text remains readable)
-            const midY = useTransform(smoothY, y => -y);
-            
-            // Layer 3: The Foreground Floating Details (Moves up incredibly fast, simulating close proximity to the lens)
-            const fgY = useTransform(smoothY, y => -(y * 1.6));
+            <!-- CRITICAL SCROLL DRIVER -->
+            <div class="w-full relative h-[400vh] pointer-events-none z-0 invisible"></div>
 
-            return (
-                <div className="w-full relative">
-                    
-                    {/* THE CRITICAL SCROLL DRIVER
-                        This relative div forces the browser to create a native scrollbar of exactly 400vh tall.
-                        Without this, the fixed layers have no mathematical baseline to translate against! */}
-                    <div className="w-full relative h-[400vh] pointer-events-none z-0 invisible"></div>
+            <!-- BACKGROUND LAYER (Deep Depth) -->
+            <div id="bg-layer" class="fixed top-0 left-0 w-full h-screen z-0 pointer-events-none flex items-center justify-center opacity-40 mix-blend-screen will-change-transform">
+                <div class="absolute top-[20vh] left-[10vw] w-[80vw] h-[80vh] bg-indigo-900/40 rounded-full blur-[120px]"></div>
+                <div class="absolute top-[60vh] right-[10vw] w-[60vw] h-[60vh] bg-fuchsia-900/30 rounded-full blur-[100px]"></div>
+                <div class="absolute top-[120vh] left-[20vw] w-[90vw] h-[80vh] bg-teal-900/30 rounded-full blur-[140px]"></div>
+            </div>
 
-                    {/* --- BACKGROUND LAYER (Deep Depth) --- */}
-                    {/* Fixed to screen, relies entirely on framer motion translations to move. */}
-                    <motion.div 
-                        className="fixed top-0 left-0 w-full h-screen z-0 pointer-events-none flex items-center justify-center opacity-40 mix-blend-screen"
-                        style={{ y: bgY }}
-                    >
-                        <div className="absolute top-[20vh] left-[10vw] w-[80vw] h-[80vh] bg-indigo-900/40 rounded-full blur-[120px]"></div>
-                        <div className="absolute top-[60vh] right-[10vw] w-[60vw] h-[60vh] bg-fuchsia-900/30 rounded-full blur-[100px]"></div>
-                        <div className="absolute top-[120vh] left-[20vw] w-[90vw] h-[80vh] bg-teal-900/30 rounded-full blur-[140px]"></div>
-                    </motion.div>
+            <!-- MIDGROUND LAYER (Standard Reading Plane) -->
+            <div id="mid-layer" class="fixed top-0 left-0 w-full z-10 flex flex-col items-center justify-start pt-32 px-4 will-change-transform">
+                <div class="mb-20 animate-bounce text-slate-500 font-bold tracking-widest uppercase">Scroll Down Continuously</div>
 
+                <h1 class="text-6xl md:text-[120px] font-black tracking-tighter text-white leading-none mb-12 text-center drop-shadow-2xl">
+                    Parallax Core.
+                </h1>
+                <p class="text-xl text-slate-400 font-medium text-center max-w-2xl mb-48 leading-relaxed">
+                    True hardware-accelerated depth mapping. The background blurs drift sluggishly mimicking distance. The midground (this text) translates linearly. The foreground widgets aggressively overshoot the camera lens.
+                </p>
 
-                    {/* --- MIDGROUND LAYER (Standard Reading Plane) --- */}
-                    {/* This layer moves smoothly upward exactly 1px for every 1px scrolled. */}
-                    <motion.div 
-                        className="fixed top-0 left-0 w-full z-10 flex flex-col items-center justify-start pt-32 px-4"
-                        style={{ y: midY }}
-                    >
-                        <div className="mb-20 animate-bounce text-slate-500 font-bold tracking-widest uppercase">Scroll Down Continuously</div>
+                <div id="cards-container" class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl"></div>
+                
+                <div class="mt-64 pb-32 font-bold text-slate-600 tracking-widest text-3xl uppercase">End of Content Map</div>
+            </div>
 
-                        <h1 className="text-6xl md:text-[120px] font-black tracking-tighter text-white leading-none mb-12 text-center drop-shadow-2xl">
-                            Parallax Core.
-                        </h1>
-                        <p className="text-xl text-slate-400 font-medium text-center max-w-2xl mb-48 leading-relaxed">
-                            True hardware-accelerated depth mapping. The background blurs drift sluggishly mimicking distance. The midground (this text) translates linearly. The foreground widgets aggressively overshoot the camera lens.
-                        </p>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl">
-                            {[1, 2, 3, 4, 5, 6].map(idx => (
-                                <div key={idx} className="h-64 bg-slate-900/90 backdrop-blur-2xl rounded-[32px] border border-slate-700/60 shadow-2xl p-10 hover:bg-slate-800 transition-colors">
-                                    <h2 className="text-2xl font-black tracking-tight text-white mb-4">Reading Block 0{idx}</h2>
-                                    <div className="w-full h-4 bg-slate-800 rounded mb-3"></div>
-                                    <div className="w-3/4 h-4 bg-slate-800 rounded mb-3"></div>
-                                    <div className="w-1/2 h-4 bg-slate-800 rounded"></div>
-                                </div>
-                            ))}
-                        </div>
-                        
-                        <div className="mt-64 pb-32 font-bold text-slate-600 tracking-widest text-3xl uppercase">End of Content Map</div>
-                    </motion.div>
-
-
-                    {/* --- FOREGROUND LAYER (Intense Depth, Floating very close) --- */}
-                    <motion.div 
-                        className="fixed top-0 left-0 w-full h-[400vh] z-20 pointer-events-none flex flex-col items-center justify-start overflow-hidden"
-                        style={{ y: fgY }}
-                    >
-                        {/* Huge floating geometrical shapes that fly past the screen rapidly */}
-                        <div className="w-[150px] h-[150px] bg-gradient-to-tr from-fuchsia-500 to-rose-500 rounded-3xl absolute top-[60vh] left-[10vw] shadow-[0_40px_80px_rgba(244,63,94,0.4)] border border-white/20 transform rotate-12 backdrop-blur-md opacity-90 blur-sm"></div>
-                        
-                        <div className="w-[300px] h-[300px] bg-gradient-to-tl from-teal-400 to-emerald-500 rounded-full absolute top-[180vh] right-[-5vw] shadow-[0_40px_100px_rgba(16,185,129,0.3)] border border-white/20 transform -translate-y-[10vh] opacity-80 blur-md"></div>
-                        
-                        <div className="w-[200px] h-[100px] bg-sky-500 rounded-[40px] shadow-2xl border-t border-sky-400 absolute top-[280vh] left-[20vw] opacity-90 blur-sm flex justify-center items-center text-sky-200 font-bold text-xl tracking-widest">
-                            [ Z: +200 ]
-                        </div>
-                    </motion.div>
-
+            <!-- FOREGROUND LAYER (Intense Depth, Floating very close) -->
+            <div id="fg-layer" class="fixed top-0 left-0 w-full h-[400vh] z-20 pointer-events-none flex flex-col items-center justify-start overflow-hidden will-change-transform">
+                <div class="w-[150px] h-[150px] bg-gradient-to-tr from-fuchsia-500 to-rose-500 rounded-3xl absolute top-[60vh] left-[10vw] shadow-[0_40px_80px_rgba(244,63,94,0.4)] border border-white/20 transform rotate-12 backdrop-blur-md opacity-90 blur-sm"></div>
+                
+                <div class="w-[300px] h-[300px] bg-gradient-to-tl from-teal-400 to-emerald-500 rounded-full absolute top-[180vh] right-[-5vw] shadow-[0_40px_100px_rgba(16,185,129,0.3)] border border-white/20 transform -translate-y-[10vh] opacity-80 blur-md"></div>
+                
+                <div class="w-[200px] h-[100px] bg-sky-500 rounded-[40px] shadow-2xl border-t border-sky-400 absolute top-[280vh] left-[20vw] opacity-90 blur-sm flex justify-center items-center text-sky-200 font-bold text-xl tracking-widest">
+                    [ Z: +200 ]
                 </div>
-            );
-        };
+            </div>
 
-        const App = () => <ParallaxEngine />;
-        createRoot(document.getElementById('root')).render(<App />);
+        </div>
+    </div>
+
+    <script>
+        // Generate Cards
+        const cardsContainer = document.getElementById('cards-container');
+        for (let idx = 1; idx <= 6; idx++) {
+            const html = `
+                <div class="h-64 bg-slate-900/90 backdrop-blur-2xl rounded-[32px] border border-slate-700/60 shadow-2xl p-10 hover:bg-slate-800 transition-colors pointer-events-auto">
+                    <h2 class="text-2xl font-black tracking-tight text-white mb-4">Reading Block 0${idx}</h2>
+                    <div class="w-full h-4 bg-slate-800 rounded mb-3"></div>
+                    <div class="w-3/4 h-4 bg-slate-800 rounded mb-3"></div>
+                    <div class="w-1/2 h-4 bg-slate-800 rounded"></div>
+                </div>
+            `;
+            cardsContainer.insertAdjacentHTML('beforeend', html);
+        }
+
+        const bgLayer = document.getElementById('bg-layer');
+        const midLayer = document.getElementById('mid-layer');
+        const fgLayer = document.getElementById('fg-layer');
+
+        let targetY = 0;
+        let currentY = 0;
+
+        function render() {
+            targetY = window.scrollY;
+            currentY += (targetY - currentY) * 0.08; // Lerp damper
+
+            // Math identical to Framer Motion transforms
+            const bgY = -(currentY * 0.15);
+            const midY = -currentY;
+            const fgY = -(currentY * 1.6);
+
+            bgLayer.style.transform = `translateY(${bgY}px)`;
+            midLayer.style.transform = `translateY(${midY}px)`;
+            fgLayer.style.transform = `translateY(${fgY}px)`;
+
+            requestAnimationFrame(render);
+        }
+
+        render();
     </script>
 </body>
 </html>

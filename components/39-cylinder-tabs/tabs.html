@@ -3,170 +3,391 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Swipeable Card Stack</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>3D Cylinder Roller Tabs</title>
+    <link rel="stylesheet" href="../../styles/shared.css">
     <style>
-        body { margin: 0; background: linear-gradient(160deg, #0a0a1a 0%, #0f172a 40%, #1a1040 100%); min-height: 100vh; overflow: hidden; font-family: 'Inter', sans-serif; color: white; }
-        #root { width: 100%; height: 100vh; display: flex; align-items: center; justify-content: center; }
+        body {
+            background: radial-gradient(circle at center, #0f1322 0%, #05070d 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            user-select: none;
+            perspective: 1200px;
+        }
+
+        .cylinder-hud {
+            position: absolute;
+            top: 24px;
+            font-family: var(--font-mono, monospace);
+            font-size: 11px;
+            color: #64748b;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .hud-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #38bdf8;
+            box-shadow: 0 0 10px #38bdf8;
+        }
+
+        /* 3D Drum Stage */
+        .stage-wrapper {
+            position: relative;
+            width: 440px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 32px;
+            transform-style: preserve-3d;
+        }
+
+        /* 3D Rotating Drum Housing */
+        .drum-housing {
+            position: relative;
+            width: 320px;
+            height: 56px;
+            perspective: 800px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .drum-cylinder {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .drum-face {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: rgba(18, 24, 38, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #94a3b8;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            backface-visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .drum-face.active {
+            color: #ffffff;
+            border-color: var(--tab-accent, #38bdf8);
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98));
+            box-shadow: 0 0 25px var(--tab-glow, rgba(56, 189, 248, 0.3));
+        }
+
+        .drum-face:hover:not(.active) {
+            border-color: rgba(255, 255, 255, 0.25);
+            color: #f1f5f9;
+        }
+
+        .drum-icon {
+            font-size: 18px;
+        }
+
+        /* Optical Prismatic Lens Overlay */
+        .lens-bezel {
+            position: absolute;
+            inset: -6px -12px;
+            border-radius: 18px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            pointer-events: none;
+            box-shadow: 
+                inset 0 0 15px rgba(56, 189, 248, 0.1),
+                0 0 20px rgba(56, 189, 248, 0.15);
+        }
+
+        /* 3D Content Deck */
+        .content-deck {
+            position: relative;
+            width: 100%;
+            height: 220px;
+            transform-style: preserve-3d;
+        }
+
+        .content-card {
+            position: absolute;
+            inset: 0;
+            background: rgba(18, 24, 38, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            transform-style: preserve-3d;
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateZ(-80px) scale(0.92);
+        }
+
+        .content-card.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateZ(0) scale(1);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: #f8fafc;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-badge {
+            font-size: 10px;
+            font-family: var(--font-mono, monospace);
+            padding: 3px 8px;
+            border-radius: 9999px;
+            background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+        }
+
+        .card-body {
+            font-size: 13.5px;
+            color: #94a3b8;
+            line-height: 1.6;
+        }
+
+        .card-stats {
+            display: flex;
+            gap: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 14px;
+        }
+
+        .stat-col {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-label {
+            font-size: 9px;
+            font-family: var(--font-mono, monospace);
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 13px;
+            font-family: var(--font-mono, monospace);
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        /* Drum Wheel Chevrons */
+        .drum-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #cbd5e1;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            z-index: 10;
+        }
+
+        .drum-nav:hover {
+            background: rgba(56, 189, 248, 0.2);
+            color: #38bdf8;
+            border-color: #38bdf8;
+        }
+
+        .drum-nav.left { left: -44px; }
+        .drum-nav.right { right: -44px; }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div id="root"></div>
 
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
+    <div class="cylinder-hud">
+        <span class="hud-dot"></span>
+        <span>Axial Roller Matrix · 60 FPS</span>
+    </div>
+
+    <div class="stage-wrapper">
+        <div class="drum-housing">
+            <button class="drum-nav left" id="nav-prev">◀</button>
+            <div class="drum-cylinder" id="cylinder">
+                <!-- Drum Faces rendered dynamically -->
+            </div>
+            <button class="drum-nav right" id="nav-next">▶</button>
+            <div class="lens-bezel"></div>
+        </div>
+
+        <div class="content-deck" id="deck">
+            <!-- Cards rendered dynamically -->
+        </div>
+    </div>
 
     <script>
-        const origWarn = console.warn;
-        console.warn = function(...args) {
-            if (args[0] && typeof args[0] === 'string' && (args[0].includes('in-browser Babel transformer') || args[0].includes('cdn.tailwindcss.com should not be used in production'))) return;
-            origWarn.apply(console, args);
-        };
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-    <script type="text/babel" data-type="module">
-        import React, { useState } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, AnimatePresence } from 'framer-motion';
-
-        const CARDS = [
-            { id: 1, name: 'Marcus Chen', role: 'Lead Engineer @ Stripe', avatar: '👨‍💻', quote: '"This component library completely transformed how we approach UI. The 3D interactions feel native and buttery smooth."', color: '#8b5cf6' },
-            { id: 2, name: 'Sarah Kim', role: 'Design Director @ Figma', avatar: '👩‍🎨', quote: '"I have never seen DOM elements move this fluidly. The spring physics feel like they belong in a AAA game engine."', color: '#ec4899' },
-            { id: 3, name: 'Alex Rivera', role: 'CTO @ Vercel', avatar: '🧑‍🚀', quote: '"Zero WebGL overhead for the CSS components is genius. We ship these to production without any performance anxiety."', color: '#06b6d4' },
-            { id: 4, name: 'Priya Patel', role: 'Frontend Architect @ Netflix', avatar: '👩‍💼', quote: '"The procedural 3D generation approach means zero external assets. Our lighthouse scores actually went UP after integrating these."', color: '#f59e0b' },
-            { id: 5, name: 'James O\'Brien', role: 'VP of Product @ Linear', avatar: '🧔', quote: '"Every component feels like it was designed by someone who truly understands both engineering and aesthetics."', color: '#10b981' },
+        const TABS = [
+            {
+                id: 'compute',
+                label: 'Compute Clusters',
+                icon: '⚡',
+                accent: '#38bdf8',
+                glow: 'rgba(56, 189, 248, 0.3)',
+                desc: 'Elastic GPU and CPU worker orchestrations with automated horizontal replication and sub-millisecond cold starts.',
+                stat1: { label: 'Active Cores', val: '4,096 vCPU' },
+                stat2: { label: 'Avg Provision', val: '120ms' },
+                stat3: { label: 'Efficiency', val: '99.98%' }
+            },
+            {
+                id: 'neural',
+                label: 'Neural Weights',
+                icon: '🧠',
+                accent: '#a855f7',
+                glow: 'rgba(168, 85, 247, 0.3)',
+                desc: 'Distributed quantized model tensor checkpoints cached across low-latency global NVMe memory fabrics.',
+                stat1: { label: 'Model Size', val: '70B MoE' },
+                stat2: { label: 'Tensor Bandwidth', val: '3.2 TB/s' },
+                stat3: { label: 'FP8 Precision', val: 'Lossless' }
+            },
+            {
+                id: 'pipeline',
+                label: 'Vector Pipeline',
+                icon: '◈',
+                accent: '#34d399',
+                glow: 'rgba(52, 211, 153, 0.3)',
+                desc: 'Hierarchical Navigable Small World (HNSW) spatial indexing with cosine similarity graph searches.',
+                stat1: { label: 'Embedding Dim', val: '1536' },
+                stat2: { label: 'Query Latency', val: '0.8ms' },
+                stat3: { label: 'Index Size', val: '1.2B Nodes' }
+            },
+            {
+                id: 'vault',
+                label: 'Zero-Trust Vault',
+                icon: '🛡️',
+                accent: '#fbbf24',
+                glow: 'rgba(251, 191, 36, 0.3)',
+                desc: 'Hardware security module (HSM) encrypted session state with ephemeral cryptographic token rotation.',
+                stat1: { label: 'Encryption', val: 'AES-256-GCM' },
+                stat2: { label: 'Key Rotation', val: 'Every 5m' },
+                stat3: { label: 'Threat Score', val: '0.000' }
+            }
         ];
 
-        const CardStack = () => {
-            const [cards, setCards] = useState(CARDS);
+        const cylinder = document.getElementById('cylinder');
+        const deck = document.getElementById('deck');
+        const navPrev = document.getElementById('nav-prev');
+        const navNext = document.getElementById('nav-next');
 
-            const removeTopCard = (direction) => {
-                setCards(prev => {
-                    const [removed, ...rest] = prev;
-                    // Put the removed card at the bottom
-                    return [...rest, removed];
-                });
-            };
+        const TAB_COUNT = TABS.length;
+        const RADIUS = 70; // 3D cylinder radial depth
+        const ANGLE_STEP = 360 / TAB_COUNT;
+        let currentIndex = 0;
 
-            return (
-                <div className="flex flex-col items-center gap-8">
-                    {/* Title */}
-                    <div className="text-center">
-                        <p className="text-xs uppercase tracking-[0.3em] text-slate-500 mb-1">Drag to Dismiss</p>
-                        <h2 className="text-2xl font-bold text-white">3D Card Stack</h2>
+        // Render Drum & Cards
+        TABS.forEach((tab, idx) => {
+            const angle = idx * ANGLE_STEP;
+
+            // Drum Face
+            const face = document.createElement('div');
+            face.className = `drum-face ${idx === 0 ? 'active' : ''}`;
+            face.style.setProperty('--tab-accent', tab.accent);
+            face.style.setProperty('--tab-glow', tab.glow);
+            face.style.transform = `rotateX(${angle}deg) translateZ(${RADIUS}px)`;
+            face.innerHTML = `
+                <span class="drum-icon">${tab.icon}</span>
+                <span>${tab.label}</span>
+            `;
+            face.addEventListener('click', () => rotateDrum(idx));
+            cylinder.appendChild(face);
+
+            // Content Card
+            const card = document.createElement('div');
+            card.className = `content-card ${idx === 0 ? 'active' : ''}`;
+            card.innerHTML = `
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>${tab.icon}</span>
+                        <span>${tab.label}</span>
                     </div>
-
-                    {/* Card Stack Area */}
-                    <div className="relative w-80 h-72" style={{ perspective: '1200px' }}>
-                        <AnimatePresence>
-                            {cards.slice(0, 4).map((card, i) => {
-                                const isTop = i === 0;
-                                return (
-                                    <motion.div
-                                        key={card.id}
-                                        className="absolute inset-0 rounded-2xl p-6 cursor-grab active:cursor-grabbing select-none"
-                                        style={{
-                                            background: `linear-gradient(145deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98))`,
-                                            border: `1px solid ${card.color}33`,
-                                            boxShadow: `0 ${4 + i * 2}px ${20 + i * 10}px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)`,
-                                            zIndex: cards.length - i,
-                                            transformStyle: 'preserve-3d',
-                                        }}
-                                        initial={{ scale: 0.9, y: 30, opacity: 0 }}
-                                        animate={{
-                                            scale: 1 - i * 0.05,
-                                            y: i * 12,
-                                            rotateZ: i * (i % 2 === 0 ? -2 : 2),
-                                            opacity: 1 - i * 0.15,
-                                        }}
-                                        exit={{
-                                            x: 300,
-                                            rotateZ: 25,
-                                            opacity: 0,
-                                            transition: { type: 'spring', stiffness: 200, damping: 20 }
-                                        }}
-                                        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                                        drag={isTop ? 'x' : false}
-                                        dragConstraints={{ left: 0, right: 0 }}
-                                        dragElastic={0.8}
-                                        onDragEnd={(e, info) => {
-                                            if (Math.abs(info.offset.x) > 100) {
-                                                removeTopCard(info.offset.x > 0 ? 'right' : 'left');
-                                            }
-                                        }}
-                                        whileDrag={{ scale: 1.05, cursor: 'grabbing' }}
-                                    >
-                                        {/* Card Content */}
-                                        <div className="flex items-center gap-3 mb-4">
-                                            <div
-                                                className="w-12 h-12 rounded-full flex items-center justify-center text-2xl"
-                                                style={{ background: `${card.color}20`, border: `1px solid ${card.color}40` }}
-                                            >
-                                                {card.avatar}
-                                            </div>
-                                            <div>
-                                                <h3 className="text-sm font-bold text-white">{card.name}</h3>
-                                                <p className="text-xs text-slate-500">{card.role}</p>
-                                            </div>
-                                        </div>
-
-                                        <p className="text-sm text-slate-300 leading-relaxed italic mb-4">
-                                            {card.quote}
-                                        </p>
-
-                                        {/* Rating Stars */}
-                                        <div className="flex gap-1">
-                                            {[1,2,3,4,5].map(s => (
-                                                <span key={s} className="text-amber-400 text-sm">★</span>
-                                            ))}
-                                        </div>
-
-                                        {/* Drag hint for top card */}
-                                        {isTop && (
-                                            <div className="absolute bottom-3 left-0 right-0 text-center">
-                                                <span className="text-[10px] text-slate-600 tracking-widest uppercase">← swipe →</span>
-                                            </div>
-                                        )}
-
-                                        {/* Color accent */}
-                                        <div
-                                            className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl"
-                                            style={{ background: `linear-gradient(90deg, transparent, ${card.color}, transparent)` }}
-                                        />
-                                    </motion.div>
-                                );
-                            })}
-                        </AnimatePresence>
+                    <span class="card-badge">LIVE MODULE</span>
+                </div>
+                <div class="card-body">${tab.desc}</div>
+                <div class="card-stats">
+                    <div class="stat-col">
+                        <span class="stat-label">${tab.stat1.label}</span>
+                        <span class="stat-value">${tab.stat1.val}</span>
                     </div>
-
-                    {/* Counter */}
-                    <div className="flex items-center gap-3">
-                        {CARDS.map((c, i) => (
-                            <div
-                                key={c.id}
-                                className="w-2 h-2 rounded-full transition-all duration-300"
-                                style={{
-                                    background: cards[0]?.id === c.id ? c.color : 'rgba(255,255,255,0.15)',
-                                    boxShadow: cards[0]?.id === c.id ? `0 0 8px ${c.color}` : 'none',
-                                }}
-                            />
-                        ))}
+                    <div class="stat-col">
+                        <span class="stat-label">${tab.stat2.label}</span>
+                        <span class="stat-value">${tab.stat2.val}</span>
+                    </div>
+                    <div class="stat-col">
+                        <span class="stat-label">${tab.stat3.label}</span>
+                        <span class="stat-value">${tab.stat3.val}</span>
                     </div>
                 </div>
-            );
-        };
+            `;
+            deck.appendChild(card);
+        });
 
-        const root = createRoot(document.getElementById('root'));
-        root.render(<CardStack />);
+        function rotateDrum(index) {
+            currentIndex = (index + TAB_COUNT) % TAB_COUNT;
+            const rotation = -currentIndex * ANGLE_STEP;
+            cylinder.style.transform = `rotateX(${rotation}deg)`;
+
+            const faces = cylinder.querySelectorAll('.drum-face');
+            const cards = deck.querySelectorAll('.content-card');
+
+            faces.forEach((f, i) => f.classList.toggle('active', i === currentIndex));
+            cards.forEach((c, i) => c.classList.toggle('active', i === currentIndex));
+        }
+
+        navPrev.addEventListener('click', () => rotateDrum(currentIndex - 1));
+        navNext.addEventListener('click', () => rotateDrum(currentIndex + 1));
+
+        // Mouse wheel rotation
+        let wheelLock = false;
+        window.addEventListener('wheel', (e) => {
+            if (wheelLock) return;
+            wheelLock = true;
+            if (e.deltaY > 0) rotateDrum(currentIndex + 1);
+            else if (e.deltaY < 0) rotateDrum(currentIndex - 1);
+            setTimeout(() => { wheelLock = false; }, 250);
+        }, { passive: true });
     </script>
 </body>
 </html>

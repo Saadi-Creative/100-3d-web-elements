@@ -1,0 +1,167 @@
+/* ==========================================================================
+   DESIGN SYSTEM - 100 3D WEB ELEMENTS
+   ========================================================================== */
+
+:root {
+  /* 
+   * COLOR SYSTEM (OKLCH) 
+   * Using perceptually uniform color space for high-end feel.
+   */
+  
+  /* Base - Deep, sophisticated dark theme */
+  --hue-base: 240;
+  --bg-primary: oklch(14% 0.015 var(--hue-base));     /* Very dark blue-gray */
+  --bg-secondary: oklch(18% 0.02 var(--hue-base));   
+  --bg-elevated: oklch(22% 0.025 var(--hue-base));
+  
+  /* Surfaces */
+  --surface-base: oklch(22% 0.02 var(--hue-base) / 0.7);
+  --surface-elevated: oklch(28% 0.025 var(--hue-base) / 0.8);
+  --surface-interactive: oklch(35% 0.03 var(--hue-base) / 0.9);
+  --surface-glass: oklch(95% 0.01 var(--hue-base) / 0.04);
+  
+  /* Borders */
+  --border-subtle: oklch(95% 0.01 var(--hue-base) / 0.06);
+  --border-strong: oklch(95% 0.01 var(--hue-base) / 0.12);
+  --border-glow: oklch(95% 0.01 var(--hue-base) / 0.25);
+  
+  /* Text */
+  --text-primary: oklch(98% 0.01 var(--hue-base));
+  --text-secondary: oklch(75% 0.02 var(--hue-base));
+  --text-tertiary: oklch(55% 0.03 var(--hue-base));
+  --text-muted: oklch(45% 0.03 var(--hue-base));
+  
+  /* Accents - Sophisticated and vibrant */
+  --accent-base: oklch(70% 0.15 285);       /* Subtle Purple/Pink */
+  --accent-hover: oklch(75% 0.18 285);
+  --accent-active: oklch(60% 0.12 285);
+  --accent-subtle: oklch(70% 0.15 285 / 0.15);
+
+  /* Semantic */
+  --success: oklch(70% 0.15 150);
+  --warning: oklch(80% 0.12 80);
+  --error: oklch(65% 0.18 25);
+  --info: oklch(70% 0.15 240);
+
+  /* 
+   * TYPOGRAPHY 
+   * Fluid scaling based on viewport width
+   */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  
+  --text-xs: clamp(0.75rem, 0.7rem + 0.2vw, 0.8rem);
+  --text-sm: clamp(0.875rem, 0.8rem + 0.3vw, 0.95rem);
+  --text-base: clamp(1rem, 0.9rem + 0.4vw, 1.125rem);
+  --text-lg: clamp(1.125rem, 1rem + 0.5vw, 1.25rem);
+  --text-xl: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem);
+  --text-2xl: clamp(1.5rem, 1.3rem + 1vw, 2rem);
+  --text-3xl: clamp(2rem, 1.8rem + 1.5vw, 2.5rem);
+  --text-4xl: clamp(2.5rem, 2.2rem + 2vw, 3.5rem);
+
+  /* 
+   * SPACING RHYTHM
+   */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-24: 6rem;
+  
+  /* 
+   * RADIUS 
+   */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* 
+   * Z-INDEX SYSTEM 
+   */
+  --z-environment: -10;
+  --z-background: -1;
+  --z-base: 0;
+  --z-main: 10;
+  --z-interaction: 20;
+  --z-controls: 30;
+  --z-overlay: 100;
+  
+  /* 
+   * ANIMATION TIMINGS & EASING 
+   */
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Physics-based easings for organic feeling */
+  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --ease-elastic: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  
+  --time-fast: 150ms;
+  --time-base: 300ms;
+  --time-slow: 600ms;
+}
+
+/* ==========================================================================
+   MATERIAL CLASSES (COMPOSITION OVER CONFIGURATION)
+   ========================================================================== */
+
+.mat-glass {
+  background: var(--surface-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.1);
+}
+
+.mat-matte {
+  background: var(--surface-base);
+  border: 1px solid var(--border-subtle);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05), 
+              0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.mat-metallic {
+  background: linear-gradient(145deg, 
+    oklch(45% 0.02 var(--hue-base)), 
+    oklch(25% 0.02 var(--hue-base))
+  );
+  border: 1px solid var(--border-strong);
+  box-shadow: inset 0 1px 1px oklch(98% 0.01 var(--hue-base) / 0.2), 
+              0 8px 16px rgba(0, 0, 0, 0.4);
+}
+
+.mat-holographic {
+  background: linear-gradient(135deg, 
+    oklch(75% 0.2 280 / 0.1), 
+    oklch(75% 0.2 180 / 0.1)
+  );
+  backdrop-filter: blur(8px);
+  border: 1px solid oklch(98% 0.01 var(--hue-base) / 0.3);
+  box-shadow: 0 0 20px oklch(75% 0.2 280 / 0.1);
+}
+
+/* ==========================================================================
+   GLOBAL RESETS & ACCESSIBILITY
+   ========================================================================== */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -8,103 +8,189 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
         body { margin:0; background:#0f172a; min-height:100vh; display:flex; align-items:center; justify-content:center; font-family:'Inter',sans-serif; overflow:hidden; }
+        
+        .dock-highlight {
+            position: absolute;
+            width: 3.5rem; /* w-14 */
+            height: 3.5rem; /* h-14 */
+            background-color: #334155; /* slate-700 */
+            border-radius: 1rem;
+            box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
+            border: 1px solid rgba(71, 85, 105, 0.5);
+            z-index: 0;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+            left: 0;
+            top: 0;
+        }
+
+        .content-panel {
+            position: absolute;
+            inset: 0;
+            padding: 3rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            opacity: 0;
+            transform: scale(0.95) translateY(20px);
+            transition: opacity 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+        }
+        
+        .content-panel.active {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: auto;
+        }
+
+        .content-panel.exiting {
+            opacity: 0;
+            transform: scale(1.05) translateY(-20px);
+        }
+
+        .stagger-item {
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.4s, transform 0.4s;
+        }
+        
+        .content-panel.active .stagger-item {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .content-panel.active .stagger-1 { transition-delay: 0.1s; }
+        .content-panel.active .stagger-2 { transition-delay: 0.2s; }
+        .content-panel.active .stagger-3 { transition-delay: 0.3s; }
     </style>
-    <script type="importmap">{"imports":{"react":"https://esm.sh/react@18.2.0","react-dom/client":"https://esm.sh/react-dom@18.2.0/client","framer-motion":"https://esm.sh/framer-motion@10.16.4?external=react,react-dom"}}</script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-<div id="root"></div>
-<script type="text/babel" data-type="module">
-import React, { useState } from 'react';
-import { createRoot } from 'react-dom/client';
-import { motion, AnimatePresence } from 'framer-motion';
-
-const APPS = [
-    { id:'dash', name:'Insights', icon:'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6', color:'text-sky-400', bg:'bg-sky-500/10' },
-    { id:'mail', name:'Inbox', icon:'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', color:'text-pink-400', bg:'bg-pink-500/10' },
-    { id:'tasks', name:'Projects', icon:'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4', color:'text-emerald-400', bg:'bg-emerald-500/10' },
-    { id:'team', name:'Network', icon:'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z', color:'text-violet-400', bg:'bg-violet-500/10' },
-    { id:'settings', name:'Control', icon:'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z', color:'text-slate-400', bg:'bg-slate-500/10' }
-];
-
-const App = () => {
-    const [active, setActive] = useState(APPS[0].id);
-    const activeApp = APPS.find(a => a.id === active);
-
-    return (
-        <div className="flex w-full max-w-5xl h-[600px] p-8 gap-8 items-center justify-center">
-            
-            {/* The Floating Holographic Dock */}
-            <div className="flex flex-col gap-3 p-3 bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-3xl shadow-2xl relative z-10 w-24 flex-shrink-0">
-                {APPS.map((app) => (
-                    <div key={app.id} className="relative group flex items-center justify-center">
-                        <button 
-                            onClick={() => setActive(app.id)}
-                            className={`w-14 h-14 rounded-2xl flex items-center justify-center relative z-10 transition-all duration-300
-                                ${active === app.id ? `${app.color} ${app.bg}` : 'text-slate-500 hover:text-slate-300 hover:bg-slate-700/50'}`}
-                        >
-                            {/* The iconic gliding pill background for the active state */}
-                            {active === app.id && (
-                                <motion.div 
-                                    layoutId="dock-highlight"
-                                    className="absolute inset-0 bg-slate-700 rounded-2xl shadow-inner border border-slate-600/50 z-[-1]"
-                                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                                />
-                            )}
-                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={app.icon}/>
-                            </svg>
-                        </button>
-                        
-                        {/* Tooltip */}
-                        <div className="absolute left-20 bg-slate-800 text-slate-300 text-xs font-bold px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap border border-slate-700 shadow-xl">
-                            {app.name}
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            {/* The Dynamic Content Panel */}
-            <div className="flex-1 h-full bg-slate-900 rounded-[40px] border border-slate-800 shadow-2xl overflow-hidden relative">
-                {/* Background Grid Pattern just for texture */}
-                <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-                
-                <AnimatePresence mode="popLayout" initial={false}>
-                    <motion.div 
-                        key={activeApp.id}
-                        className="absolute inset-0 p-12 flex flex-col justify-center"
-                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 1.05, y: -20 }}
-                        transition={{ type: "spring", stiffness: 350, damping: 30 }}
-                    >
-                        {/* Dynamic Header */}
-                        <div className="flex items-center gap-6 mb-10">
-                            <div className={`w-20 h-20 rounded-3xl ${activeApp.bg} border border-slate-700/50 flex items-center justify-center ${activeApp.color} shadow-lg`}>
-                                <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={activeApp.icon}/>
-                                </svg>
-                            </div>
-                            <div>
-                                <h1 className="text-5xl font-black text-white tracking-tighter mb-2">{activeApp.name} Engine</h1>
-                                <p className="text-slate-400 font-medium text-lg uppercase tracking-widest">System Operational</p>
-                            </div>
-                        </div>
-
-                        {/* Staggered Content Blocks to show layout loading */}
-                        <div className="grid grid-cols-2 gap-6 w-full max-w-2xl">
-                            <motion.div className="h-32 bg-slate-800/50 rounded-2xl border border-slate-700/50" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} />
-                            <motion.div className="h-32 bg-slate-800/50 rounded-2xl border border-slate-700/50" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} />
-                            <motion.div className="col-span-2 h-40 bg-slate-800/50 rounded-2xl border border-slate-700/50" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} />
-                        </div>
-                    </motion.div>
-                </AnimatePresence>
-            </div>
-
+<div id="root">
+    <div class="flex w-full max-w-5xl h-[600px] p-8 gap-8 items-center justify-center">
+        
+        <!-- The Floating Holographic Dock -->
+        <div class="flex flex-col gap-3 p-3 bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-3xl shadow-2xl relative z-10 w-24 flex-shrink-0" id="dock">
+            <div id="dock-highlight" class="dock-highlight"></div>
+            <!-- Apps rendered via JS -->
         </div>
-    );
-};
-createRoot(document.getElementById('root')).render(<App/>);
+
+        <!-- The Dynamic Content Panel -->
+        <div class="flex-1 h-full bg-slate-900 rounded-[40px] border border-slate-800 shadow-2xl overflow-hidden relative">
+            <div class="absolute inset-0 opacity-[0.03] bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+            
+            <div id="content-container">
+                <!-- Content panels rendered via JS -->
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const APPS = [
+        { id:'dash', name:'Insights', icon:'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6', color:'text-sky-400', bg:'bg-sky-500/10' },
+        { id:'mail', name:'Inbox', icon:'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', color:'text-pink-400', bg:'bg-pink-500/10' },
+        { id:'tasks', name:'Projects', icon:'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4', color:'text-emerald-400', bg:'bg-emerald-500/10' },
+        { id:'team', name:'Network', icon:'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z', color:'text-violet-400', bg:'bg-violet-500/10' },
+        { id:'settings', name:'Control', icon:'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z', color:'text-slate-400', bg:'bg-slate-500/10' }
+    ];
+
+    const dock = document.getElementById('dock');
+    const highlight = document.getElementById('dock-highlight');
+    const contentContainer = document.getElementById('content-container');
+    let activeId = APPS[0].id;
+
+    function renderApps() {
+        APPS.forEach((app, index) => {
+            // Render dock icon
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative group flex items-center justify-center';
+            wrapper.innerHTML = `
+                <button class="app-btn w-14 h-14 rounded-2xl flex items-center justify-center relative z-10 transition-all duration-300 ${activeId === app.id ? `${app.color} ${app.bg}` : 'text-slate-500 hover:text-slate-300 hover:bg-slate-700/50'}" data-id="${app.id}" data-index="${index}">
+                    <svg class="w-6 h-6 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${app.icon}"/>
+                    </svg>
+                </button>
+                <div class="absolute left-20 bg-slate-800 text-slate-300 text-xs font-bold px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap border border-slate-700 shadow-xl z-50">
+                    ${app.name}
+                </div>
+            `;
+            dock.appendChild(wrapper);
+
+            // Render content panel
+            const panel = document.createElement('div');
+            panel.className = `content-panel ${activeId === app.id ? 'active' : ''}`;
+            panel.id = `panel-${app.id}`;
+            panel.innerHTML = `
+                <div class="flex items-center gap-6 mb-10">
+                    <div class="w-20 h-20 rounded-3xl ${app.bg} border border-slate-700/50 flex items-center justify-center ${app.color} shadow-lg">
+                        <svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${app.icon}"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-5xl font-black text-white tracking-tighter mb-2">${app.name} Engine</h1>
+                        <p class="text-slate-400 font-medium text-lg uppercase tracking-widest">System Operational</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-6 w-full max-w-2xl">
+                    <div class="stagger-item stagger-1 h-32 bg-slate-800/50 rounded-2xl border border-slate-700/50"></div>
+                    <div class="stagger-item stagger-2 h-32 bg-slate-800/50 rounded-2xl border border-slate-700/50"></div>
+                    <div class="stagger-item stagger-3 col-span-2 h-40 bg-slate-800/50 rounded-2xl border border-slate-700/50"></div>
+                </div>
+            `;
+            contentContainer.appendChild(panel);
+        });
+
+        // Initialize highlight position
+        updateHighlight(0);
+
+        // Attach listeners
+        const buttons = document.querySelectorAll('.app-btn');
+        buttons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = btn.getAttribute('data-id');
+                const idx = parseInt(btn.getAttribute('data-index'));
+                if (id === activeId) return;
+
+                // Old panel exiting
+                const oldPanel = document.getElementById(`panel-${activeId}`);
+                oldPanel.classList.remove('active');
+                oldPanel.classList.add('exiting');
+
+                // New panel entering
+                const newPanel = document.getElementById(`panel-${id}`);
+                newPanel.classList.remove('exiting');
+                // slight delay to allow exit animation to begin
+                setTimeout(() => {
+                    newPanel.classList.add('active');
+                }, 50);
+
+                // Update classes on buttons
+                buttons.forEach(b => {
+                    const app = APPS.find(a => a.id === b.getAttribute('data-id'));
+                    if (b.getAttribute('data-id') === id) {
+                        b.className = `app-btn w-14 h-14 rounded-2xl flex items-center justify-center relative z-10 transition-all duration-300 ${app.color} ${app.bg}`;
+                    } else {
+                        b.className = `app-btn w-14 h-14 rounded-2xl flex items-center justify-center relative z-10 transition-all duration-300 text-slate-500 hover:text-slate-300 hover:bg-slate-700/50`;
+                    }
+                });
+
+                activeId = id;
+                updateHighlight(idx);
+            });
+        });
+    }
+
+    function updateHighlight(index) {
+        // height is 14 (3.5rem) + gap is 3 (0.75rem). padding is 3 (0.75rem)
+        // translateY = index * (56px + 12px) + 12px
+        const yOffset = index * 68 + 12;
+        highlight.style.transform = `translateY(${yOffset}px) translateX(12px)`;
+    }
+
+    renderApps();
 </script>
 </body>
 </html>

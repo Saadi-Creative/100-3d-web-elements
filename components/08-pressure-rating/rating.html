@@ -1,324 +1,304 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Pressure Rating (Blue Stars)</title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background-color: #f8fafc;
-            font-family: 'Segoe UI', sans-serif;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>08 - Pressure-Sensitive Rating Gauge</title>
+  <link rel="stylesheet" href="../../styles/shared.css" />
+  <style>
+    .demo-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: var(--space-8);
+      perspective: 1000px;
+      user-select: none;
+    }
 
-        #canvas-container {
-            width: 100vw;
-            height: 100vh;
-        }
+    /* Machined Obsidian Plate */
+    .rating-deck {
+      position: relative;
+      padding: var(--space-8) var(--space-10);
+      border-radius: var(--radius-2xl);
+      background: linear-gradient(145deg, #1e293b, #0f172a);
+      border: 1px solid var(--border-subtle);
+      box-shadow:
+        0 25px 50px -12px rgba(0, 0, 0, 0.7),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-6);
+      transform-style: preserve-3d;
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
 
-        .hint {
-            position: absolute;
-            bottom: 30px;
-            width: 100%;
-            text-align: center;
-            color: rgba(0, 0, 0, 0.4);
-            pointer-events: none;
-            user-select: none;
-            font-size: 14px;
-            letter-spacing: 1px;
-            font-weight: 600;
-        }
+    .rating-deck:hover {
+      transform: translateY(-4px) rotateX(4deg) rotateY(-2deg);
+    }
 
-        /* ── Ripple Burst on click ── */
-        .star-ripple {
-            position: fixed;
-            border-radius: 50%;
-            pointer-events: none;
-            transform: translate(-50%, -50%) scale(0);
-            animation: starRipple 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-            border: 3px solid rgba(59, 130, 246, 0.85);
-            box-shadow: 0 0 20px rgba(59, 130, 246, 0.6), inset 0 0 8px rgba(147, 197, 253, 0.4);
-        }
+    /* Deck Header & Live Score */
+    .deck-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      min-width: 320px;
+    }
 
-        @keyframes starRipple {
-            0% {
-                width: 0px;
-                height: 0px;
-                opacity: 1;
-            }
+    .deck-title {
+      font-size: var(--text-xs);
+      font-weight: 600;
+      letter-spacing: var(--tracking-widest);
+      text-transform: uppercase;
+      color: var(--text-subtle);
+    }
 
-            60% {
-                opacity: 0.7;
-            }
+    .score-badge {
+      font-size: var(--text-sm);
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      background: var(--surface-overlay);
+      border: 1px solid var(--border-subtle);
+      color: var(--accent-base);
+      box-shadow: 0 0 12px var(--accent-glow);
+      transition: all 0.3s ease;
+    }
 
-            100% {
-                width: 140px;
-                height: 140px;
-                opacity: 0;
-            }
-        }
-    </style>
+    /* Star Track Slot */
+    .star-slot-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-xl);
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.8);
+      transform-style: preserve-3d;
+    }
+
+    /* 3D Star Jewel Button */
+    .star-jewel {
+      position: relative;
+      width: 48px;
+      height: 48px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      outline: none;
+      transform-style: preserve-3d;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .star-jewel-body {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-subtle);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      transform: translateZ(10px);
+    }
+
+    .star-jewel-body svg {
+      width: 26px;
+      height: 26px;
+      fill: currentColor;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+      transition: transform 0.25s ease, fill 0.25s ease, filter 0.25s ease;
+    }
+
+    /* Hover & Active States */
+    .star-jewel:hover .star-jewel-body {
+      transform: translateZ(18px) scale(1.1);
+      color: #facc15;
+      border-color: rgba(250, 204, 21, 0.4);
+      box-shadow: 0 8px 20px rgba(250, 204, 21, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+
+    .star-jewel:active .star-jewel-body {
+      transform: translateZ(4px) scale(0.95);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.6);
+    }
+
+    /* Selected Star State */
+    .star-jewel.is-active .star-jewel-body {
+      background: linear-gradient(135deg, #eab308, #ca8a04);
+      border-color: #fef08a;
+      color: #0f172a;
+      box-shadow: 0 0 20px rgba(234, 179, 8, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+      transform: translateZ(16px);
+    }
+
+    .star-jewel.is-active .star-jewel-body svg {
+      fill: #0f172a;
+      filter: drop-shadow(0 1px 2px rgba(255, 255, 255, 0.4));
+    }
+
+    .star-jewel:focus-visible .star-jewel-body {
+      border-color: var(--accent-base);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    /* Feedback Label */
+    .feedback-label {
+      font-size: var(--text-xs);
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: var(--tracking-wide);
+      min-height: 20px;
+    }
+
+    /* Pressure Shockwave Pulse */
+    .shockwave {
+      position: absolute;
+      border-radius: 50%;
+      border: 2px solid rgba(234, 179, 8, 0.8);
+      pointer-events: none;
+      animation: shockwavePulse 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes shockwavePulse {
+      0% {
+        width: 10px;
+        height: 10px;
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      100% {
+        width: 140px;
+        height: 140px;
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1.5);
+      }
+    }
+  </style>
 </head>
-
 <body>
-    <div id="canvas-container"></div>
-    <div class="hint">HOVER to dent • CLICK to rate</div>
+  <div class="demo-container">
+    <div class="rating-deck" id="deck">
+      <div class="deck-header">
+        <span class="deck-title">Experience Rating</span>
+        <span class="score-badge" id="scoreBadge">0.0 / 5.0</span>
+      </div>
 
-    <!-- Three.js CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+      <div class="star-slot-row" id="starRow" role="radiogroup" aria-label="Rating scale 1 to 5 stars">
+        <!-- 5 Star Buttons -->
+        <button class="star-jewel" data-value="1" role="radio" aria-checked="false" aria-label="1 star">
+          <div class="star-jewel-body">
+            <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+          </div>
+        </button>
+        <button class="star-jewel" data-value="2" role="radio" aria-checked="false" aria-label="2 stars">
+          <div class="star-jewel-body">
+            <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+          </div>
+        </button>
+        <button class="star-jewel" data-value="3" role="radio" aria-checked="false" aria-label="3 stars">
+          <div class="star-jewel-body">
+            <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+          </div>
+        </button>
+        <button class="star-jewel" data-value="4" role="radio" aria-checked="false" aria-label="4 stars">
+          <div class="star-jewel-body">
+            <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+          </div>
+        </button>
+        <button class="star-jewel" data-value="5" role="radio" aria-checked="false" aria-label="5 stars">
+          <div class="star-jewel-body">
+            <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+          </div>
+        </button>
+      </div>
 
-    <script>
-        // --- 1. SETUP ---
-        const container = document.getElementById('canvas-container');
-        const scene = new THREE.Scene();
-        // Bright Background (Off-white/Blue-grey)
-        scene.background = new THREE.Color(0xf1f5f9);
-        scene.fog = new THREE.FogExp2(0xf1f5f9, 0.002);
+      <div class="feedback-label" id="feedbackLabel">Click or press 1–5 to record feedback</div>
+    </div>
+  </div>
 
-        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 0, 14);
+  <script>
+    const stars = document.querySelectorAll('.star-jewel');
+    const scoreBadge = document.getElementById('scoreBadge');
+    const feedbackLabel = document.getElementById('feedbackLabel');
+    const deck = document.getElementById('deck');
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Soft shadows
-        container.appendChild(renderer.domElement);
+    const descriptions = [
+      'Needs Significant Improvement',
+      'Fair · Room for Growth',
+      'Good · Solid Performance',
+      'Very Good · Highly Recommended',
+      'Exceptional · Unrivaled Excellence'
+    ];
 
-        // --- 2. LIGHTING (Bright & Clean) ---
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-        scene.add(ambientLight);
+    let currentRating = 0;
+    let hoverRating = 0;
 
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
-        dirLight.position.set(5, 12, 8);
-        dirLight.castShadow = true;
-        // Shadow optimization
-        dirLight.shadow.mapSize.width = 2048;
-        dirLight.shadow.mapSize.height = 2048;
-        dirLight.shadow.camera.near = 0.5;
-        dirLight.shadow.camera.far = 50;
-        dirLight.shadow.bias = -0.001;
-        scene.add(dirLight);
+    function renderRating(val) {
+      stars.forEach((star, idx) => {
+        const ratingVal = idx + 1;
+        const isActive = ratingVal <= val;
+        star.classList.toggle('is-active', isActive);
+        star.setAttribute('aria-checked', isActive ? 'true' : 'false');
+      });
 
-        // Warm highlight interact light
-        const pointLight = new THREE.PointLight(0xffb700, 0.6, 20);
-        pointLight.position.set(-2, 2, 5);
-        scene.add(pointLight);
+      if (val > 0) {
+        scoreBadge.textContent = `${val}.0 / 5.0`;
+        feedbackLabel.textContent = descriptions[val - 1];
+      } else {
+        scoreBadge.textContent = `0.0 / 5.0`;
+        feedbackLabel.textContent = 'Click or press 1–5 to record feedback';
+      }
+    }
 
-        // --- 3. MATERIALS ---
+    stars.forEach((star, idx) => {
+      const val = idx + 1;
 
-        // Ceramic Deep Blue Slab
-        const slabMaterial = new THREE.MeshPhysicalMaterial({
-            color: 0x1e3a8a, // Deep Royal Blue
-            metalness: 0.2,
-            roughness: 0.1,
-            clearcoat: 0.8,
-            clearcoatRoughness: 0.1,
-            reflectivity: 0.5
-        });
+      star.addEventListener('mouseenter', () => {
+        hoverRating = val;
+        renderRating(hoverRating);
+      });
 
-        // Inactive Star: Matte Silver/Grey
-        const starEmptyMat = new THREE.MeshStandardMaterial({
-            color: 0xe2e8f0,
-            roughness: 0.4,
-            metalness: 0.2
-        });
+      star.addEventListener('click', (e) => {
+        currentRating = val;
+        renderRating(currentRating);
+        createShockwave(e.clientX, e.clientY);
+      });
+    });
 
-        // Active Star: Electric Blue
-        const starFilledMat = new THREE.MeshPhysicalMaterial({
-            color: 0x2563eb,
-            emissive: 0x3b82f6,
-            emissiveIntensity: 0.45,
-            metalness: 0.6,
-            roughness: 0.1,
-            clearcoat: 1.0
-        });
+    document.getElementById('starRow').addEventListener('mouseleave', () => {
+      hoverRating = 0;
+      renderRating(currentRating);
+    });
 
-        // --- 4. GEOMETRY ---
+    // Keyboard controls
+    window.addEventListener('keydown', (e) => {
+      if (e.key >= '1' && e.key <= '5') {
+        currentRating = parseInt(e.key, 10);
+        renderRating(currentRating);
+        const targetStar = stars[currentRating - 1];
+        const rect = targetStar.getBoundingClientRect();
+        createShockwave(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      }
+    });
 
-        // SLAB (Box)
-        const slabGeom = new THREE.BoxGeometry(10, 2.5, 0.5);
-        // Add more segments to top face for vertex displacement (if we used shaders)
-        // But for this version we prioritize the "Real Stars" meshes
-        const slab = new THREE.Mesh(slabGeom, slabMaterial);
-        slab.receiveShadow = true;
-        slab.castShadow = true;
-        scene.add(slab);
+    function createShockwave(x, y) {
+      const wave = document.createElement('div');
+      wave.className = 'shockwave';
+      wave.style.left = `${x}px`;
+      wave.style.top = `${y}px`;
+      document.body.appendChild(wave);
 
-        // STAR SHAPE GENERATOR (Thick Extruded 3D)
-        function createStarShape(points, innerRadius, outerRadius) {
-            const shape = new THREE.Shape();
-            const angleStep = Math.PI / points;
-
-            for (let i = 0; i < 2 * points; i++) {
-                const r = (i % 2 === 0) ? outerRadius : innerRadius;
-                const a = i * angleStep;
-                // Rotate -90deg to point up
-                const x = Math.cos(a - Math.PI / 2) * r;
-                const y = Math.sin(a - Math.PI / 2) * r;
-                if (i === 0) shape.moveTo(x, y);
-                else shape.lineTo(x, y);
-            }
-            shape.closePath();
-            return shape;
-        }
-
-        const starShape = createStarShape(5, 0.35, 0.85); // 5 points, slightly chunky
-        const starGeom = new THREE.ExtrudeGeometry(starShape, {
-            depth: 0.3, // Thick 3D stars
-            bevelEnabled: true,
-            bevelThickness: 0.1,
-            bevelSize: 0.05,
-            bevelSegments: 4 // Smooth bevel
-        });
-
-        starGeom.center(); // Pivot at center
-
-        const stars = [];
-        const gap = 1.8;
-        const startX = -((gap * 4) / 2); // Center the group
-
-        for (let i = 0; i < 5; i++) {
-            const star = new THREE.Mesh(starGeom, starEmptyMat.clone());
-            star.position.set(startX + i * gap, 0, 0.35); // Sitting well ON TOP of slab
-            star.castShadow = true;
-            star.receiveShadow = true;
-
-            // Interaction Data
-            star.userData = { id: i + 1, isFilled: false };
-
-            scene.add(star);
-            stars.push(star);
-        }
-
-        // --- 5. INTERACTION ---
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-
-        let currentRating = 0;
-        let hoverRating = 0;
-
-        function updateRatingVisuals(rating) {
-            stars.forEach((star, index) => {
-                const isActive = (index < rating);
-
-                // Animate Material Swap
-                if (isActive) {
-                    star.material = starFilledMat;
-                    star.userData.targetScale = 1.15;
-                    star.userData.targetZ = 0.5; // Lift up when active
-                    star.userData.targetRot = Math.PI * 0.1;
-                } else {
-                    star.material = starEmptyMat;
-                    star.userData.targetScale = 1.0;
-                    star.userData.targetZ = 0.35; // Rest position
-                    star.userData.targetRot = 0;
-                }
-            });
-        }
-
-        function onMouseMove(event) {
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-            // Raycasting for Star Hover
-            raycaster.setFromCamera(mouse, camera);
-
-            // We interact with invisible plane for better hit area? 
-            // Or just stars + slab? Intersecting Slab gives us "Cursor on widget" context.
-            const intersects = raycaster.intersectObjects(stars);
-
-            if (intersects.length > 0) {
-                const hitStar = intersects[0].object;
-                hoverRating = hitStar.userData.id;
-                document.body.style.cursor = 'pointer';
-            } else {
-                // If interacting with SLAB, keep last hover? Or reset?
-                // For better UX, let's keep it 0 if not on stars directly
-                // Or find nearest star? Let's strictly highlight hovered star
-                hoverRating = 0;
-                document.body.style.cursor = 'default';
-            }
-
-            // Visual Update
-            const displayRating = hoverRating > 0 ? hoverRating : currentRating;
-            updateRatingVisuals(displayRating);
-
-            // Slab Tilt
-            const tiltX = mouse.y * 0.15;
-            const tiltY = mouse.x * 0.15;
-            targetSlabRot.set(tiltX, tiltY);
-        }
-
-        function spawnRipple(x, y) {
-            const el = document.createElement('div');
-            el.className = 'star-ripple';
-            el.style.left = x + 'px';
-            el.style.top = y + 'px';
-            document.body.appendChild(el);
-            el.addEventListener('animationend', () => el.remove());
-        }
-
-        function onClick(event) {
-            if (hoverRating > 0) {
-                currentRating = hoverRating;
-
-                // 3D instant-scale punch
-                const star = stars[hoverRating - 1];
-                star.scale.setScalar(1.5);
-
-                // Unique ripple-burst effect (CSS ring expanding outward)
-                spawnRipple(event.clientX, event.clientY);
-                // Secondary delayed ring
-                setTimeout(() => spawnRipple(event.clientX, event.clientY), 120);
-            }
-        }
-
-        window.addEventListener('mousemove', onMouseMove);
-        window.addEventListener('click', onClick);
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
-        // --- 6. ANIMATION LOOP ---
-        const targetSlabRot = new THREE.Vector2();
-
-        function animate() {
-            requestAnimationFrame(animate);
-
-            // Smooth Slab Tilt (Damped spring)
-            slab.rotation.x += (targetSlabRot.x - slab.rotation.x) * 0.08;
-            slab.rotation.y += (targetSlabRot.y - slab.rotation.y) * 0.08;
-
-            // Animate Stars
-            stars.forEach((star, i) => {
-                // Smooth Scale
-                const targetS = star.userData.targetScale || 1.0;
-                star.scale.lerp(new THREE.Vector3(targetS, targetS, targetS), 0.1);
-
-                // Smooth Z Position (Lift)
-                const targetZ = star.userData.targetZ || 0.35;
-                star.position.z += (targetZ - star.position.z) * 0.1;
-
-                // Smooth Rotation
-                const targetR = star.userData.targetRot || 0;
-                star.rotation.z += (targetR - star.rotation.z) * 0.08;
-
-                // Idle Float for filled stars
-                if (i < currentRating) {
-                    star.rotation.y = Math.sin(Date.now() * 0.002 + i) * 0.1;
-                }
-            });
-
-            renderer.render(scene, camera);
-        }
-
-        animate();
-    </script>
+      wave.addEventListener('animationend', () => wave.remove());
+    }
+  </script>
 </body>
-
 </html>

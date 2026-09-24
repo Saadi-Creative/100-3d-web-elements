@@ -1,270 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Interactive Timeline</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        neutral: {
-                            950: '#0a0a0a',
-                            900: '#171717',
-                        },
-                        brand: {
-                            500: '#06b6d4', // Cyan
-                            400: '#22d3ee',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body { margin: 0; background-color: #0a0a0a; color: white; overflow-x: hidden; }
-        
-        /* Premium glass timeline cards */
-        .timeline-card {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
-        }
-        
-        /* Custom scrollbar to look sleek */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #0a0a0a; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #555; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>29 - 3D Spatial Hinge Timeline</title>
+  <link rel="stylesheet" href="../../styles/shared.css" />
+  <style>
+    .demo-container {
+      position: relative;
+      min-height: 100vh;
+      padding: var(--space-12) var(--space-8);
+      background: radial-gradient(circle at 50% 30%, #0f172a 0%, #020617 100%);
+      font-family: var(--font-sans);
+    }
+
+    .timeline-header {
+      text-align: center;
+      margin-bottom: var(--space-12);
+    }
+
+    .timeline-title {
+      font-size: var(--text-3xl);
+      font-weight: 800;
+      color: var(--text-heading);
+      letter-spacing: var(--tracking-tight);
+    }
+
+    .timeline-sub {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      letter-spacing: var(--tracking-wider);
+      text-transform: uppercase;
+      margin-top: var(--space-2);
+    }
+
+    /* Central Spine */
+    .timeline-spine {
+      position: relative;
+      max-width: 720px;
+      margin: 0 auto;
+      padding-left: 20px;
+    }
+
+    .spine-line {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 20px;
+      width: 2px;
+      background: var(--surface-overlay);
+      border-radius: var(--radius-full);
+    }
+
+    /* 3D Timeline Node Card */
+    .timeline-node {
+      position: relative;
+      margin-bottom: var(--space-8);
+      padding-left: var(--space-8);
+      perspective: 1000px;
+    }
+
+    .node-dot {
+      position: absolute;
+      left: -5px;
+      top: 24px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--accent-base);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+
+    .node-card {
+      padding: var(--space-6);
+      border-radius: var(--radius-2xl);
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-xl);
+      transform-style: preserve-3d;
+      transition: transform 0.3s ease, border-color 0.3s ease;
+      cursor: pointer;
+    }
+
+    .node-card:hover {
+      border-color: var(--border-strong);
+      transform: rotateY(-6deg) translateY(-4px);
+    }
+
+    .node-year {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: var(--tracking-widest);
+      color: var(--accent-base);
+      text-transform: uppercase;
+    }
+
+    .node-title {
+      font-size: var(--text-lg);
+      font-weight: 700;
+      color: var(--text-heading);
+      margin-top: var(--space-1);
+    }
+
+    .node-desc {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      margin-top: var(--space-2);
+      line-height: var(--leading-relaxed);
+    }
+  </style>
 </head>
 <body>
-    <div id="root"></div>
+  <div class="demo-container">
+    <div class="timeline-header">
+      <h1 class="timeline-title">Spatial Hinge Timeline</h1>
+      <p class="timeline-sub">Interactive 3D Chronological Evolution</p>
+    </div>
 
-    <!-- React, ReactDOM, and Framer Motion via ESM -->
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@11.0.8?external=react,react-dom",
-            "three": "https://esm.sh/three@0.160.0",
-            "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.14?external=react,react-dom,three",
-            "@react-three/drei": "https://esm.sh/@react-three/drei@9.96.1?external=react,react-dom,three,@react-three/fiber"
-        }
-    }
-    </script>
+    <div class="timeline-spine">
+      <div class="spine-line"></div>
 
-    <!-- Babel for JSX -->
-    <script>
-        const origWarn = console.warn;
-        console.warn = function(...args) {
-            if (args[0] && typeof args[0] === 'string' && (args[0].includes('in-browser Babel transformer') || args[0].includes('cdn.tailwindcss.com should not be used in production'))) return;
-            origWarn.apply(console, args);
-        };
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+      <div class="timeline-node">
+        <div class="node-dot"></div>
+        <div class="node-card">
+          <span class="node-year">2023 · INCEPTION</span>
+          <h2 class="node-title">Neural Engine Core</h2>
+          <p class="node-desc">Architecture design of hardware-accelerated 3D spatial WebGL components.</p>
+        </div>
+      </div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useRef } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
-        import * as THREE from 'three';
-        import { Canvas, useFrame, useThree } from '@react-three/fiber';
+      <div class="timeline-node">
+        <div class="node-dot"></div>
+        <div class="node-card">
+          <span class="node-year">2024 · DEPLOYMENT</span>
+          <h2 class="node-title">Global Mesh Launch</h2>
+          <p class="node-desc">Distributed component library across 35 edge regions with zero runtime dependencies.</p>
+        </div>
+      </div>
 
-        const getMatcapTexture = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = 64; canvas.height = 64;
-            const ctx = canvas.getContext('2d');
-            const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-            gradient.addColorStop(0, '#ffffff'); 
-            gradient.addColorStop(0.5, '#22d3ee');
-            gradient.addColorStop(1, '#083344'); 
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, 64, 64);
-            return new THREE.CanvasTexture(canvas);
-        };
-        const defaultMatcap = getMatcapTexture();
-
-        const WebGLCursor = ({ scrollProgress }) => {
-            const meshRef = useRef();
-            const { viewport } = useThree();
-            
-            useFrame(() => {
-                if (meshRef.current) {
-                    const y = (0.5 - scrollProgress.get()) * viewport.height;
-                    meshRef.current.position.y += (y - meshRef.current.position.y) * 0.1;
-                    meshRef.current.rotation.x = scrollProgress.get() * Math.PI * 4;
-                    meshRef.current.rotation.y = scrollProgress.get() * Math.PI * 4;
-                }
-            });
-
-            return (
-                <mesh ref={meshRef} scale={1.2}>
-                    <octahedronGeometry args={[1, 0]} />
-                    <meshMatcapMaterial matcap={defaultMatcap} color="#06b6d4" />
-                </mesh>
-            );
-        };
-
-        const TIMELINE_DATA = [
-            {
-                year: "2020",
-                title: "The Inception",
-                description: "Initial research and core physics engine prototype completed by a small team of engineers in a garage studio."
-            },
-            {
-                year: "2021",
-                title: "Series A Seed",
-                description: "Secured $5M funding. Expanded the team and developed the first usable beta of the WebGL framework."
-            },
-            {
-                year: "2022",
-                title: "Public Launch v1.0",
-                description: "Launched to overwhelming developer reception. Hit 100k downloads in the first week, establishing a new standard."
-            },
-            {
-                year: "2023",
-                title: "Enterprise Scaling",
-                description: "Introduced advanced team collaboration tools, robust CI/CD integrations, and native support for massive data sets."
-            },
-            {
-                year: "2024",
-                title: "AI Integration",
-                description: "Pioneered neural-rendering pipelines, allowing artists to generate real-time geometry from plain text prompts."
-            },
-            {
-                year: "2025",
-                title: "Global Summit",
-                description: "Hosted the first global interactive web summit entirely within our own 3D spatial browser architecture."
-            }
-        ];
-
-        const TimelineItem = ({ item, index }) => {
-            const ref = useRef(null);
-            
-            // Track this specific element's progression through the viewport
-            const { scrollYProgress } = useScroll({
-                target: ref,
-                offset: ["0 1", "0.5 0.5"] // Start when top of element hits bottom of viewport, end when element hits center
-            });
-
-            // Smooth the progress so it feels weighty and premium
-            const smoothProgress = useSpring(scrollYProgress, {
-                damping: 20,
-                stiffness: 100,
-                mass: 0.5
-            });
-
-            // Calculate 3D spatial properties tied directly to scroll depth
-            const zTranslate = useTransform(smoothProgress, [0, 1], [-100, 0]);
-            const opacity = useTransform(smoothProgress, [0, 0.8, 1], [0, 1, 1]);
-            
-            // Alternating physics: Left side swings from right hinge, Right side swings from left hinge
-            const isEven = index % 2 === 0;
-            const xMovement = useTransform(smoothProgress, [0, 1], [isEven ? -50 : 50, 0]);
-            const rotateY = useTransform(smoothProgress, [0, 1], [isEven ? 45 : -45, 0]);
-            
-            return (
-                <div ref={ref} className="relative w-full flex items-center justify-center min-h-[40vh]" style={{ perspective: '1200px' }}>
-                    
-                    {/* Outer wrapper to contain the 3D perspective exclusively for this card */}
-
-                    {/* The Card Container */}
-                    <motion.div 
-                        style={{
-                            opacity,
-                            z: zTranslate,
-                            x: xMovement,
-                            rotateY,
-                            transformOrigin: isEven ? "right center" : "left center" 
-                        }}
-                        className={"w-[calc(50%-3rem)] " + (isEven ? 'mr-auto text-right pr-8' : 'ml-auto text-left pl-8')}
-                    >
-                        <div className="timeline-card p-8 rounded-2xl relative overflow-hidden group">
-                            {/* Subtle hover gradient wash */}
-                            <div className="absolute inset-0 bg-gradient-to-br from-brand-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"></div>
-                            
-                            <h2 className="text-brand-400 text-6xl font-black tracking-tighter mb-2 opacity-50 mix-blend-screen">{item.year}</h2>
-                            <h3 className="text-2xl font-bold mb-3 text-white relative z-10">{item.title}</h3>
-                            <p className={"text-neutral-400 leading-relaxed max-w-sm relative z-10 " + (isEven ? 'ml-auto' : 'mr-auto')}>{item.description}</p>
-                        </div>
-                    </motion.div>
-                </div>
-            );
-        };
-
-        const App = () => {
-            const containerRef = useRef(null);
-            
-            // Track full container scroll for the central line's "fill" effect
-            const { scrollYProgress } = useScroll({
-                target: containerRef,
-                offset: ["start center", "end center"]
-            });
-
-            // Also track global scroll for the 3D cursor
-            const { scrollYProgress: globalScroll } = useScroll();
-
-            const lineHeight = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
-
-            return (
-                <div className="min-h-screen bg-neutral-950 relative">
-                    
-                    {/* Fixed 3D Canvas Background */}
-                    <div className="fixed inset-0 z-0 pointer-events-none">
-                        <Canvas camera={{ position: [0, 0, 10], fov: 45 }}>
-                            <WebGLCursor scrollProgress={globalScroll} />
-                        </Canvas>
-                    </div>
-
-                    <div className="relative z-10 w-full overflow-hidden">
-                        {/* Hero Header */}
-                        <div className="h-[60vh] flex flex-col items-center justify-center relative z-10">
-                            <motion.h1 
-                                initial={{ opacity: 0, y: 30 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 1, ease: "easeOut" }}
-                                className="text-5xl md:text-7xl font-black tracking-tighter mb-4 text-center mix-blend-screen text-white bg-neutral-950/80 px-8 py-4 rounded-3xl backdrop-blur-md inline-block"
-                            >
-                                The Journey
-                            </motion.h1>
-                        </div>
-
-                        {/* Timeline Container */}
-                        <div ref={containerRef} className="max-w-6xl mx-auto relative py-20 px-4">
-                            
-                            {/* The background track line */}
-                            <div className="absolute left-1/2 top-0 bottom-0 w-1 -translate-x-1/2 bg-white/5 rounded-full overflow-hidden z-0">
-                                {/* The glowing foreground fill line tied to global scroll */}
-                                <motion.div 
-                                    style={{ height: lineHeight }}
-                                    className="w-full bg-gradient-to-b from-brand-500/50 via-brand-400 to-brand-500/50 rounded-full"
-                                />
-                            </div>
-
-                            <div className="relative z-20">
-                                {TIMELINE_DATA.map((item, i) => (
-                                    <TimelineItem key={i} item={item} index={i} />
-                                ))}
-                            </div>
-                        </div>
-                        
-                        {/* Padding at bottom */}
-                        <div className="h-[40vh] w-full"></div>
-                    </div>
-                </div>
-            );
-        };
-
-        const root = createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+      <div class="timeline-node">
+        <div class="node-dot"></div>
+        <div class="node-card">
+          <span class="node-year">2025 · EVOLUTION</span>
+          <h2 class="node-title">Spatial Hinge Framework</h2>
+          <p class="node-desc">Real-time depth parallax with instant spring damping and full accessibility.</p>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
-

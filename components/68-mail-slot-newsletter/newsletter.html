@@ -12,141 +12,120 @@
             box-shadow: inset 0 15px 25px rgba(0,0,0,0.8), inset 0 2px 2px rgba(0,0,0,0.9), 0 2px 0 rgba(255,255,255,0.05);
             background: #020617;
         }
+        
+        .form-container {
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.6s;
+            transform: rotateX(0deg) scale(1) translate3d(0,0,20px);
+        }
+        
+        .form-container.folding {
+            transform: rotateX(-80deg) scale(0.6) translate3d(0, 10px, -20px);
+        }
+        
+        .form-container.dropped {
+            transform: rotateX(-80deg) scale(0.4) translate3d(0, 80px, -100px);
+            opacity: 0;
+            transition-timing-function: ease-in;
+        }
+        
+        .envelope-flap {
+            transform-origin: top;
+            transform: rotateX(-180deg);
+            opacity: 0;
+            transition: transform 0.4s ease-out, opacity 0.4s;
+            backface-visibility: hidden;
+            clip-path: polygon(0 0, 100% 0, 50% 100%);
+        }
+        
+        .form-container.folding .envelope-flap, .form-container.dropped .envelope-flap {
+            transform: rotateX(0deg);
+            opacity: 1;
+        }
+        
+        .success-badge {
+            transform: translateY(-50px) rotateX(90deg) translateZ(-100px);
+            opacity: 0;
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s;
+        }
+        
+        .success-badge.show {
+            transform: translateY(0) rotateX(0deg) translateZ(20px);
+            opacity: 1;
+        }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-    <div id="root"></div>
+    <div class="w-full h-screen flex flex-col items-center justify-center p-8 preserve-3d">
+        <div class="text-center mb-16 relative z-10">
+            <h1 class="text-4xl font-black text-slate-100 mb-4 tracking-tighter drop-shadow-lg">Stay in the loop.</h1>
+            <p class="text-slate-400 font-medium max-w-sm">Enter your email below. Watch it physically fold into an envelope and drop straight into the central void.</p>
+        </div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useState } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, AnimatePresence } from 'framer-motion';
+        <div class="relative w-full max-w-md h-24 preserve-3d flex items-center justify-center">
+            
+            <div class="absolute inset-0 mail-slot rounded-2xl border border-white/5 border-t-black flex items-center justify-center overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-b from-black via-black/80 to-transparent pointer-events-none"></div>
+            </div>
 
-        const App = () => {
-            const [email, setEmail] = useState('');
-            // idle -> folding -> dropped -> complete
-            const [status, setStatus] = useState('idle');
+            <div id="form-wrapper" class="absolute inset-0 flex items-center justify-center px-2 preserve-3d h-full form-container">
+                <form id="newsletter-form" class="w-full h-16 bg-white rounded-xl shadow-[0_10px_20px_rgba(0,0,0,0.5)] border border-slate-200 flex items-center px-2 relative preserve-3d">
+                    <div class="absolute top-0 left-0 w-full h-1/2 bg-slate-100 border-b border-slate-300 pointer-events-none envelope-flap"></div>
 
-            const handleSubmit = (e) => {
-                e.preventDefault();
-                if (!email) return;
-                
-                setStatus('folding');
+                    <input id="email-input" type="email" placeholder="Enter your email address" required class="w-full h-full bg-transparent px-4 text-slate-800 font-semibold focus:outline-none disabled:opacity-50" />
+                    <button id="submit-btn" type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-lg font-bold transition-colors active:scale-95 disabled:scale-100 disabled:opacity-50 h-[calc(100%-12px)] shadow-[0_4px_10px_rgba(79,70,229,0.3)]">
+                        Subscribe
+                    </button>
+                </form>
+            </div>
+
+            <div id="success-badge" class="absolute w-full h-16 bg-emerald-500 rounded-xl shadow-[0_0_30px_rgba(52,211,153,0.5)] border border-emerald-400 flex items-center justify-center success-badge pointer-events-none">
+                <span class="text-white font-black text-xl tracking-wider uppercase">Subscribed!</span>
+                <svg class="w-6 h-6 ml-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+            </div>
+
+        </div>
+    </div>
+    
+    <script>
+        const form = document.getElementById('newsletter-form');
+        const formWrapper = document.getElementById('form-wrapper');
+        const emailInput = document.getElementById('email-input');
+        const submitBtn = document.getElementById('submit-btn');
+        const successBadge = document.getElementById('success-badge');
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if(!emailInput.value) return;
+
+            emailInput.disabled = true;
+            submitBtn.disabled = true;
+            
+            formWrapper.classList.add('folding');
+            
+            setTimeout(() => {
+                formWrapper.classList.remove('folding');
+                formWrapper.classList.add('dropped');
                 
                 setTimeout(() => {
-                    setStatus('dropped');
+                    successBadge.classList.add('show');
+                    
                     setTimeout(() => {
-                        setStatus('complete');
-                        // reset after some time
-                        setTimeout(() => {
-                            setEmail('');
-                            setStatus('idle');
-                        }, 4000);
-                    }, 500); // Wait for drop animation
-                }, 600); // Wait for folding animation
-            };
-
-            const isAnimating = status !== 'idle';
-
-            return (
-                <div className="w-full h-screen flex flex-col items-center justify-center p-8 preserve-3d">
-                    <div className="text-center mb-16 relative z-10">
-                        <h1 className="text-4xl font-black text-slate-100 mb-4 tracking-tighter drop-shadow-lg">Stay in the loop.</h1>
-                        <p className="text-slate-400 font-medium max-w-sm">Enter your email below. Watch it physically fold into an envelope and drop straight into the central void.</p>
-                    </div>
-
-                    <div className="relative w-full max-w-md h-24 preserve-3d flex items-center justify-center">
+                        successBadge.classList.remove('show');
                         
-                        {/* The physically recessed mail slot hole */}
-                        <div className="absolute inset-0 mail-slot rounded-2xl border border-white/5 border-t-black flex items-center justify-center overflow-hidden">
-                            {/* Darkness gradient inside the slot */}
-                            <div className="absolute inset-0 bg-gradient-to-b from-black via-black/80 to-transparent pointer-events-none"></div>
-                        </div>
-
-                        {/* Interactive Envelope / Input */}
-                        <AnimatePresence>
-                            {status !== 'complete' && status !== 'dropped' && (
-                                <motion.div 
-                                    className="absolute inset-0 flex items-center justify-center px-2 preserve-3d h-full"
-                                    initial={{ rotateX: 0, scale: 1, z: 20 }}
-                                    animate={{ 
-                                        rotateX: status === 'folding' ? -80 : 0, 
-                                        scale: status === 'folding' ? 0.6 : 1,
-                                        z: status === 'folding' ? -20 : 20,
-                                        y: status === 'folding' ? 10 : 0
-                                    }}
-                                    exit={{ y: 80, opacity: 0, z: -100, scale: 0.4 }} // drops into the darkness
-                                    transition={{ duration: 0.6, type: "spring", bounce: 0.3 }}
-                                >
-                                    <form 
-                                        onSubmit={handleSubmit}
-                                        className="w-full h-16 bg-white rounded-xl shadow-[0_10px_20px_rgba(0,0,0,0.5)] border border-slate-200 flex items-center px-2 relative preserve-3d"
-                                    >
-                                        {/* Envelope flap visual (only appears when folding) */}
-                                        <motion.div 
-                                            className="absolute top-0 left-0 w-full h-1/2 bg-slate-100 border-b border-slate-300 origin-top pointer-events-none"
-                                            initial={{ rotateX: -180, opacity: 0 }}
-                                            animate={{ 
-                                                rotateX: status === 'folding' ? 0 : -180,
-                                                opacity: status === 'folding' ? 1 : 0 
-                                            }}
-                                            transition={{ duration: 0.4 }}
-                                            style={{ backfaceVisibility: 'hidden', clipPath: 'polygon(0 0, 100% 0, 50% 100%)' }}
-                                        />
-
-                                        <input
-                                            type="email"
-                                            placeholder="Enter your email address"
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                            disabled={isAnimating}
-                                            className="w-full h-full bg-transparent px-4 text-slate-800 font-semibold focus:outline-none disabled:opacity-50"
-                                        />
-                                        <button 
-                                            type="submit"
-                                            disabled={isAnimating}
-                                            className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-lg font-bold transition-colors active:scale-95 disabled:scale-100 disabled:opacity-50 h-[calc(100%-12px)] shadow-[0_4px_10px_rgba(79,70,229,0.3)]"
-                                        >
-                                            Subscribe
-                                        </button>
-                                    </form>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-
-                        {/* Success Badge */}
-                        <AnimatePresence>
-                            {status === 'complete' && (
-                                <motion.div 
-                                    className="absolute w-full h-16 bg-emerald-500 rounded-xl shadow-[0_0_30px_rgba(52,211,153,0.5)] border border-emerald-400 flex items-center justify-center"
-                                    initial={{ y: -50, opacity: 0, rotateX: 90, z: -100 }}
-                                    animate={{ y: 0, opacity: 1, rotateX: 0, z: 20 }}
-                                    exit={{ opacity: 0, scale: 0.8 }}
-                                    transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                                >
-                                    <span className="text-white font-black text-xl tracking-wider uppercase">Subscribed!</span>
-                                    <svg className="w-6 h-6 ml-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-
-                    </div>
-                </div>
-            );
-        };
-
-        createRoot(document.getElementById('root')).render(<App />);
+                        setTimeout(() => {
+                            formWrapper.classList.remove('dropped');
+                            emailInput.value = '';
+                            emailInput.disabled = false;
+                            submitBtn.disabled = false;
+                        }, 600);
+                        
+                    }, 3000);
+                    
+                }, 500);
+                
+            }, 600);
+        });
     </script>
 </body>
 </html>

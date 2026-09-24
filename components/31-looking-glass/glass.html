@@ -1,180 +1,188 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Looking Glass Typography</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        'display': ['"Anton"', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body { margin: 0; background-color: #050505; color: white; overflow-x: hidden; }
-        
-        .hollow-text {
-            color: transparent;
-            -webkit-text-stroke: 2px rgba(255, 255, 255, 0.8);
-            /* Optional subtle glow */
-            filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.2));
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>31 - Optical Looking Glass Telescope</title>
+  <link rel="stylesheet" href="../../styles/shared.css" />
+  <style>
+    .demo-container {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      background: #020617;
+      font-family: var(--font-sans);
+    }
 
-        /* Prevent scroll jank during scale */
-        .will-change-transform {
-            will-change: transform;
-        }
-    </style>
+    #canvas-container {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+
+    .hero-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .hero-tag {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: var(--tracking-widest);
+      text-transform: uppercase;
+      color: #38bdf8;
+      margin-bottom: var(--space-2);
+    }
+
+    .hero-title {
+      font-size: var(--text-4xl);
+      font-weight: 800;
+      color: var(--text-heading);
+      letter-spacing: var(--tracking-tight);
+    }
+
+    .hero-sub {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      margin-top: var(--space-2);
+    }
+
+    .glass-toolbar {
+      position: absolute;
+      bottom: var(--space-6);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-full);
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      backdrop-filter: blur(16px);
+    }
+
+    .zoom-btn {
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius-full);
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .zoom-btn.is-active {
+      background: var(--surface-overlay);
+      border-color: var(--border-subtle);
+      color: var(--accent-base);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+  </style>
 </head>
 <body>
-    <div id="root"></div>
+  <div class="demo-container">
+    <div id="canvas-container"></div>
 
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@11.0.8?external=react,react-dom",
-            "three": "https://esm.sh/three@0.160.0",
-            "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.14?external=react,react-dom,three",
-            "@react-three/drei": "https://esm.sh/@react-three/drei@9.96.1?external=react,react-dom,three,@react-three/fiber"
-        }
+    <div class="hero-center">
+      <span class="hero-tag">OPTICAL SCOPE APERTURE</span>
+      <h1 class="hero-title">Looking Glass</h1>
+      <p class="hero-sub">Camera focal depth traversal with wireframe rings</p>
+    </div>
+
+    <div class="glass-toolbar" role="toolbar" aria-label="Aperture focal controls">
+      <button class="zoom-btn is-active" data-z="15">Wide Scope</button>
+      <button class="zoom-btn" data-z="6">Mid Aperture</button>
+      <button class="zoom-btn" data-z="-2">Through Vortex</button>
+    </div>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
     }
-    </script>
+  }
+  </script>
 
-    <script>
-        const origWarn = console.warn;
-        console.warn = function(...args) {
-            if (args[0] && typeof args[0] === 'string' && (args[0].includes('in-browser Babel transformer') || args[0].includes('cdn.tailwindcss.com should not be used in production'))) return;
-            origWarn.apply(console, args);
-        };
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script type="module">
+    import * as THREE from 'three';
 
-    <script type="text/babel" data-type="module">
-        import React, { useRef, Suspense } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
-        import * as THREE from 'three';
-        import { Canvas, useFrame } from '@react-three/fiber';
-        import { Text3D, Center } from '@react-three/drei';
+    const container = document.getElementById('canvas-container');
+    const W = container.clientWidth, H = container.clientHeight;
 
-        const CameraFly = ({ scrollProgress }) => {
-            useFrame((state) => {
-                // Fly the camera from z=15 (zoomed out) to z=-2 (passed completely through the text)
-                const startZ = 15;
-                const endZ = -2;
-                state.camera.position.z = startZ - scrollProgress.get() * (startZ - endZ);
-                
-                // Add a very subtle tracking sway
-                state.camera.position.x = Math.sin(scrollProgress.get() * Math.PI) * 0.5;
-                state.camera.position.y = Math.cos(scrollProgress.get() * Math.PI) * 0.2 - 0.2;
-                state.camera.lookAt(0, 0, endZ);
-            });
-            return null;
-        }
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.setSize(W, H);
+    container.appendChild(renderer.domElement);
 
-        const LookingGlass = () => {
-            const containerRef = useRef(null);
-            
-            const { scrollYProgress } = useScroll({
-                target: containerRef,
-                offset: ["start start", "end end"]
-            });
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100);
+    camera.position.z = 15;
 
-            const smoothProgress = useSpring(scrollYProgress, {
-                damping: 25,
-                stiffness: 120,
-                mass: 0.5
-            });
+    // Rings vortex
+    const ringGroup = new THREE.Group();
+    for (let i = 0; i < 20; i++) {
+      const geo = new THREE.TorusGeometry(3 + i * 0.3, 0.04, 8, 48);
+      const mat = new THREE.MeshBasicMaterial({
+        color: i % 2 === 0 ? 0x6366f1 : 0x38bdf8,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.35 + (i / 20) * 0.4
+      });
+      const ring = new THREE.Mesh(geo, mat);
+      ring.position.z = -i * 1.5;
+      ringGroup.add(ring);
+    }
+    scene.add(ringGroup);
 
-            // Fade in the background content perfectly as we pass through the hole
-            const contentOpacity = useTransform(smoothProgress, [0.85, 0.95], [0, 1]);
+    let targetZ = 15;
+    let mouseX = 0, mouseY = 0;
 
-            // Highly optimized lightweight font for Text3D
-            const FONT_URL = "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/fonts/helvetiker_bold.typeface.json";
+    window.addEventListener('mousemove', (e) => {
+      mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+      mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+    });
 
-            return (
-                <div ref={containerRef} className="relative w-full h-[300vh] bg-neutral-950">
-                    
-                    {/* The sticky 3D container that holds the pinned canvas */}
-                    <div className="sticky top-0 left-0 w-full h-screen overflow-hidden flex items-center justify-center bg-black z-20 pointer-events-none">
-                        <Canvas camera={{ position: [0, 0, 15], fov: 45 }}>
-                            <CameraFly scrollProgress={smoothProgress} />
-                            
-                            <Suspense fallback={null}>
-                                <Center>
-                                    <Text3D 
-                                        font={FONT_URL}
-                                        size={5}
-                                        height={0.5} 
-                                        curveSegments={4} // Super low for performance
-                                        bevelEnabled={false}
-                                    >
-                                        SCOPE
-                                        {/* Pure basic material constraints as requested */}
-                                        <meshBasicMaterial 
-                                            color="#ffffff" 
-                                            wireframe={true} 
-                                            transparent 
-                                            opacity={0.8}
-                                        />
-                                    </Text3D>
-                                </Center>
-                            </Suspense>
-                        </Canvas>
-                    </div>
+    const clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const t = clock.getElapsedTime();
 
-                    {/* The hidden content section revealed after zooming physically "Through" the text */}
-                    {/* Positioned fixed so when the canvas fades/passes, this is revealed fully visible underneath */}
-                    <motion.div 
-                        style={{ opacity: contentOpacity }}
-                        className="fixed top-0 left-0 w-full h-screen flex items-center justify-center z-10 bg-gradient-to-br from-indigo-950 to-neutral-950"
-                    >
-                        <div className="text-center max-w-2xl px-6">
-                            <h2 className="text-5xl md:text-7xl font-bold mb-6 tracking-tighter mix-blend-screen text-white">
-                                The Other Side
-                            </h2>
-                            <p className="text-xl text-indigo-200/60 leading-relaxed font-light">
-                                Pure hardware-accelerated WebGL spatial environments achieved through Frame Motion tied natively to the Three.js camera matrix.
-                            </p>
-                        </div>
-                    </motion.div>
-                </div>
-            );
-        };
+      camera.position.z += (targetZ - camera.position.z) * 0.05;
+      camera.position.x += (mouseX * 2 - camera.position.x) * 0.05;
+      camera.position.y += (mouseY * 2 - camera.position.y) * 0.05;
+      camera.lookAt(0, 0, -20);
 
-        const App = () => {
-            return (
-                <div className="w-full">
-                    {/* Intro Section before hitting the zoom track */}
-                    <div className="h-screen w-full flex items-center justify-center bg-neutral-900">
-                        <p className="text-neutral-500 uppercase tracking-widest text-sm animate-pulse">
-                            Scroll down to enter
-                        </p>
-                    </div>
+      ringGroup.rotation.z = t * 0.1;
 
-                    <LookingGlass />
+      renderer.render(scene, camera);
+    }
+    animate();
 
-                    {/* Footer Section */}
-                    <div className="h-[50vh] w-full bg-neutral-950 border-t border-white/5 flex items-center justify-center">
-                        <p className="text-neutral-600 font-mono text-xs">END OF SEQUENCE</p>
-                    </div>
-                </div>
-            );
-        };
+    window.addEventListener('resize', () => {
+      const W2 = container.clientWidth, H2 = container.clientHeight;
+      camera.aspect = W2 / H2;
+      camera.updateProjectionMatrix();
+      renderer.setSize(W2, H2);
+    });
 
-        const root = createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+    const zoomBtns = document.querySelectorAll('.zoom-btn');
+    zoomBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        zoomBtns.forEach((b) => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
+        targetZ = parseFloat(btn.dataset.z);
+      });
+    });
+  </script>
 </body>
 </html>
-

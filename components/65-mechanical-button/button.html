@@ -7,75 +7,46 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { margin: 0; background: #e2e8f0; min-height: 100vh; display: flex; align-items: center; justify-content: center; font-family: 'Inter', sans-serif; }
+        
+        .mech-btn {
+            transform: translateY(0);
+            box-shadow: 0 10px 0 #991b1b, 0 15px 20px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.5), inset 0 -2px 10px rgba(0,0,0,0.2);
+            background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+            transition: all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .mech-btn:hover {
+            background: linear-gradient(180deg, #f87171 0%, #ef4444 100%);
+            box-shadow: 0 10px 0 #991b1b, 0 20px 25px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.6), inset 0 -2px 10px rgba(0,0,0,0.2);
+            transform: translateY(-2px);
+        }
+        
+        .mech-btn:active {
+            transform: translateY(10px);
+            box-shadow: 0 0px 0 #991b1b, 0 2px 4px rgba(0,0,0,0.6), inset 0 5px 15px rgba(0,0,0,0.5), inset 0 0px 5px rgba(255,255,255,0.0);
+            background: linear-gradient(180deg, #dc2626 0%, #b91c1c 100%);
+            transition: all 0.05s ease-out; /* snappy press */
+        }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root">
+        <div class="flex flex-col items-center justify-center p-12">
+            <p class="text-slate-500 font-bold tracking-widest uppercase mb-12 text-sm">Industrial Interface Module</p>
+            
+            <div class="bg-slate-300 p-3 rounded-2xl shadow-[inset_0_4px_10px_rgba(0,0,0,0.2),_0_2px_0_white]">
+                
+                <button class="mech-btn relative px-16 py-6 rounded-xl font-black text-white text-2xl tracking-[0.2em] uppercase select-none active:outline-none focus:outline-none block">
+                    <span class="relative drop-shadow-[0_2px_2px_rgba(0,0,0,0.3)]">
+                        System Override
+                    </span>
+                </button>
 
-    <script type="text/babel" data-type="module">
-        import React from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion } from 'framer-motion';
-
-        const App = () => {
-            return (
-                <div className="flex flex-col items-center justify-center p-12">
-                    <p className="text-slate-500 font-bold tracking-widest uppercase mb-12 text-sm">Industrial Interface Module</p>
-                    
-                    {/* The mechanical key housing/receptacle */}
-                    <div className="bg-slate-300 p-3 rounded-2xl shadow-[inset_0_4px_10px_rgba(0,0,0,0.2),_0_2px_0_white]">
-                        
-                        {/* The Actual Button */}
-                        <motion.button
-                            className="relative px-16 py-6 rounded-xl font-black text-white text-2xl tracking-[0.2em] uppercase select-none active:outline-none focus:outline-none block"
-                            initial={{ 
-                                y: 0,
-                                // Outer physical shadow casting straight down 
-                                boxShadow: "0 10px 0 #991b1b, 0 15px 20px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.5), inset 0 -2px 10px rgba(0,0,0,0.2)",
-                                background: "linear-gradient(180deg, #ef4444 0%, #dc2626 100%)"
-                            }}
-                            whileHover={{
-                                background: "linear-gradient(180deg, #f87171 0%, #ef4444 100%)",
-                                boxShadow: "0 10px 0 #991b1b, 0 20px 25px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.6), inset 0 -2px 10px rgba(0,0,0,0.2)",
-                                y: -2
-                            }}
-                            whileTap={{ 
-                                y: 10, // Depress down physically
-                                // The red plastic bottom 3D lip shrinks to 0, outer shadow tightens
-                                boxShadow: "0 0px 0 #991b1b, 0 2px 4px rgba(0,0,0,0.6), inset 0 5px 15px rgba(0,0,0,0.5), inset 0 0px 5px rgba(255,255,255,0.0)",
-                                background: "linear-gradient(180deg, #dc2626 0%, #b91c1c 100%)"
-                            }}
-                            transition={{ 
-                                type: "spring", 
-                                stiffness: 500, 
-                                damping: 15,
-                                mass: 0.5 
-                            }}
-                        >
-                            <span className="relative drop-shadow-[0_2px_2px_rgba(0,0,0,0.3)]">
-                                System Override
-                            </span>
-                        </motion.button>
-
-                    </div>
-                    
-                    <p className="mt-12 max-w-sm text-center text-slate-400 font-medium">CSS boxShadow manipulation perfectly simulates the travel of an industrial mechanical switch.</p>
-                </div>
-            );
-        };
-
-        createRoot(document.getElementById('root')).render(<App />);
-    </script>
+            </div>
+            
+            <p class="mt-12 max-w-sm text-center text-slate-400 font-medium">CSS boxShadow manipulation perfectly simulates the travel of an industrial mechanical switch.</p>
+        </div>
+    </div>
 </body>
 </html>

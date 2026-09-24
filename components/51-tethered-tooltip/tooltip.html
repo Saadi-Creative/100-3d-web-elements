@@ -3,256 +3,306 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Physics Tethered Tooltip</title>
-    <script>
-        const origWarn = console.warn;
-        console.warn = function(...args) {
-            const msg = args[0];
-            if (typeof msg === 'string' && (msg.includes('Babel') || msg.includes('Tailwind') || msg.includes('tailwindcss'))) return;
-            origWarn.apply(console, args);
-        };
-    </script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Physics Tethered Elastic Tooltip</title>
+    <link rel="stylesheet" href="../../styles/shared.css">
     <style>
-        body { margin: 0; background: #06070d; min-height: 100vh; overflow: hidden; font-family: 'Inter', sans-serif; color: white; }
-        #root { width: 100%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5rem; }
-    </style>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
+        body {
+            background: radial-gradient(circle at center, #101426 0%, #05070e 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            user-select: none;
+            perspective: 1200px;
+            gap: 40px;
         }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+        #tether-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .hud-header {
+            text-align: center;
+            z-index: 10;
+        }
+
+        .hud-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            padding: 4px 14px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-family: var(--font-mono, monospace);
+            color: #818cf8;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .hud-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #f8fafc;
+            letter-spacing: -0.02em;
+        }
+
+        /* Targets Row */
+        .targets-row {
+            display: flex;
+            gap: 28px;
+            z-index: 10;
+        }
+
+        .target-node {
+            position: relative;
+            width: 90px;
+            height: 90px;
+            border-radius: 24px;
+            background: rgba(18, 24, 38, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            transform-style: preserve-3d;
+        }
+
+        .target-node:hover,
+        .target-node.active {
+            border-color: var(--node-accent, #818cf8);
+            box-shadow: 0 0 30px var(--node-glow, rgba(129, 140, 248, 0.4));
+            transform: scale(1.08) translateZ(15px);
+        }
+
+        .node-icon {
+            font-size: 26px;
+        }
+
+        .node-label {
+            font-size: 11px;
+            font-family: var(--font-mono, monospace);
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        /* Physics Tethered Floating Card */
+        .tethered-card {
+            position: absolute;
+            width: 260px;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 18px;
+            padding: 18px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7);
+            z-index: 20;
+            pointer-events: none;
+            opacity: 0;
+            transform-origin: center center;
+            transform-style: preserve-3d;
+            will-change: transform, opacity;
+            transition: opacity 0.25s ease;
+        }
+
+        .tethered-card.visible {
+            opacity: 1;
+        }
+
+        .card-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .card-tag {
+            font-size: 10px;
+            font-family: var(--font-mono, monospace);
+            padding: 2px 7px;
+            border-radius: 9999px;
+            background: rgba(99, 102, 241, 0.2);
+            color: #818cf8;
+            border: 1px solid rgba(99, 102, 241, 0.4);
+        }
+
+        .card-desc {
+            font-size: 12.5px;
+            color: #cbd5e1;
+            line-height: 1.5;
+        }
+
+        .card-metric {
+            margin-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 8px;
+            display: flex;
+            justify-content: space-between;
+            font-family: var(--font-mono, monospace);
+            font-size: 10px;
+            color: #64748b;
+        }
+    </style>
 </head>
 <body>
-    <div id="root"></div>
-    <script type="text/babel" data-type="module">
-        import React, { useState, useRef, useCallback, useEffect } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, AnimatePresence, useSpring, useMotionValue } from 'framer-motion';
 
-        const TetheredTooltip = ({ children, tooltip, icon, color = '#6366f1' }) => {
-            const [visible, setVisible] = useState(false);
-            const targetRef = useRef(null);
-            const lastPos = useRef({ x: 0, y: 0, time: Date.now() });
-            const velRef = useRef({ x: 0, y: 0 });
+    <canvas id="tether-canvas"></canvas>
 
-            // Spring values for position and tilt
-            const tooltipX = useMotionValue(0);
-            const tooltipY = useMotionValue(0);
-            const rotateX = useSpring(0, { stiffness: 180, damping: 15 });
-            const rotateY = useSpring(0, { stiffness: 180, damping: 15 });
-            const tx = useSpring(tooltipX, { stiffness: 120, damping: 18 });
-            const ty = useSpring(tooltipY, { stiffness: 120, damping: 18 });
+    <div class="hud-header">
+        <div class="hud-badge">
+            <span>🪢</span>
+            <span>Verlet Spring Tendon Tether</span>
+        </div>
+        <div class="hud-title">Hover targets to draw elastic kinetic ligaments</div>
+    </div>
 
-            const handleMouseMove = useCallback((e) => {
-                const rect = targetRef.current?.getBoundingClientRect();
-                if (!rect) return;
+    <div class="targets-row">
+        <div class="target-node" data-title="Neural Compiler" data-desc="Optimizes tensor graphs into bare-metal WASM assembly with SIMD acceleration." data-metric="Latency: 0.14ms" style="--node-accent: #818cf8; --node-glow: rgba(129, 140, 248, 0.4);">
+            <span class="node-icon">🧠</span>
+            <span class="node-label">Compiler</span>
+        </div>
 
-                const now = Date.now();
-                const dt = Math.max(1, now - lastPos.current.time);
+        <div class="target-node" data-title="Vector Cache L1" data-desc="In-memory HNSW spatial index serving 400k vector embeddings per second." data-metric="Hit Rate: 99.8%" style="--node-accent: #34d399; --node-glow: rgba(52, 211, 153, 0.4);">
+            <span class="node-icon">⚡</span>
+            <span class="node-label">Cache</span>
+        </div>
 
-                // Compute velocity (pixels per ms)
-                const vx = (e.clientX - lastPos.current.x) / dt;
-                const vy = (e.clientY - lastPos.current.y) / dt;
-                velRef.current = { x: vx, y: vy };
+        <div class="target-node" data-title="Quantum Key Ring" data-desc="Post-quantum cryptographic key encapsulation with continuous entropy seeding." data-metric="Entropy: 100%" style="--node-accent: #f43f5e; --node-glow: rgba(244, 63, 94, 0.4);">
+            <span class="node-icon">🛡️</span>
+            <span class="node-label">Vault</span>
+        </div>
 
-                lastPos.current = { x: e.clientX, y: e.clientY, time: now };
+        <div class="target-node" data-title="Spatial Telemetry" data-desc="Multi-region real-time stream aggregation across 340 global edge PoPs." data-metric="Bandwidth: 14 TB/s" style="--node-accent: #fbbf24; --node-glow: rgba(251, 191, 36, 0.4);">
+            <span class="node-icon">◈</span>
+            <span class="node-label">Mesh</span>
+        </div>
+    </div>
 
-                // Offset relative to element center
-                const cx = rect.left + rect.width / 2;
-                const cy = rect.top + rect.height / 2;
-                const dx = e.clientX - cx; // -half..+half
-                const dy = e.clientY - cy;
+    <div class="tethered-card" id="card">
+        <div class="card-head">
+            <span style="font-weight: 700; color: #f8fafc; font-size: 13px;" id="card-title">Module Info</span>
+            <span class="card-tag">ACTIVE</span>
+        </div>
+        <div class="card-desc" id="card-desc">Tether description placeholder.</div>
+        <div class="card-metric">
+            <span>TELEMETRY</span>
+            <span style="color: #38bdf8;" id="card-metric">OK</span>
+        </div>
+    </div>
 
-                // Clamp to element bounds for offset
-                const clampedDx = Math.max(-rect.width / 2, Math.min(rect.width / 2, dx));
-                const clampedDy = Math.max(-rect.height / 2, Math.min(rect.height / 2, dy));
+    <script>
+        const canvas = document.getElementById('tether-canvas');
+        const ctx = canvas.getContext('2d');
+        const card = document.getElementById('card');
+        const cardTitle = document.getElementById('card-title');
+        const cardDesc = document.getElementById('card-desc');
+        const cardMetric = document.getElementById('card-metric');
+        const nodes = document.querySelectorAll('.target-node');
 
-                tooltipX.set(clampedDx * 0.7);
-                // Tilt the tooltip based on direction of movement, velocity adds momentum
-                rotateY.set(clampedDx / (rect.width / 2) * 22 + vx * 120);
-                rotateX.set(-clampedDy / (rect.height / 2) * 14 + vy * 80);
-            }, [tooltipX, tooltipY, rotateX, rotateY]);
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
 
-            const handleMouseEnter = useCallback(() => {
-                setVisible(true);
-                tooltipY.set(-2);
-            }, [tooltipY]);
+        let activeNode = null;
+        let cardPos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+        let cardVel = { x: 0, y: 0 };
+        let mousePos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
 
-            const handleMouseLeave = useCallback(() => {
-                setVisible(false);
-                rotateX.set(0);
-                rotateY.set(0);
-                tooltipX.set(0);
-                tooltipY.set(0);
-            }, [rotateX, rotateY, tooltipX, tooltipY]);
+        window.addEventListener('mousemove', (e) => {
+            mousePos.x = e.clientX;
+            mousePos.y = e.clientY;
+        });
 
-            return (
-                <div
-                    ref={targetRef}
-                    className="relative inline-flex items-center justify-center cursor-pointer"
-                    style={{ userSelect: 'none' }}
-                    onMouseEnter={handleMouseEnter}
-                    onMouseLeave={handleMouseLeave}
-                    onMouseMove={handleMouseMove}
-                >
-                    {children}
+        nodes.forEach(node => {
+            node.addEventListener('mouseenter', () => {
+                activeNode = node;
+                node.classList.add('active');
+                cardTitle.textContent = node.dataset.title;
+                cardDesc.textContent = node.dataset.desc;
+                cardMetric.textContent = node.dataset.metric;
+                card.classList.add('visible');
+            });
 
-                    <AnimatePresence>
-                        {visible && (
-                            <motion.div
-                                style={{
-                                    position: 'absolute',
-                                    bottom: 'calc(100% + 18px)',
-                                    left: '50%',
-                                    x: tx,
-                                    y: ty,
-                                    marginLeft: '-50%',
-                                    rotateX,
-                                    rotateY,
-                                    transformPerspective: 600,
-                                    zIndex: 100,
-                                    originX: '50%',
-                                    originY: '100%',
-                                    transformStyle: 'preserve-3d',
-                                }}
-                                initial={{ opacity: 0, y: 12, scale: 0.88, rotateX: -10 }}
-                                animate={{ opacity: 1, y: 0, scale: 1, rotateX: 0 }}
-                                exit={{ opacity: 0, y: 8, scale: 0.9 }}
-                                transition={{ type: 'spring', stiffness: 350, damping: 22 }}
-                            >
-                                {/* Tether line */}
-                                <div style={{
-                                    position: 'absolute',
-                                    bottom: -16, left: '50%', marginLeft: -1,
-                                    width: 2, height: 18,
-                                    background: `linear-gradient(to bottom, ${color}80, transparent)`,
-                                    borderRadius: 1,
-                                }} />
+            node.addEventListener('mouseleave', () => {
+                node.classList.remove('active');
+                activeNode = null;
+                card.classList.remove('visible');
+            });
+        });
 
-                                {/* Glassmorphic tooltip card */}
-                                <div
-                                    style={{
-                                        background: 'rgba(12, 15, 28, 0.88)',
-                                        border: `1px solid ${color}40`,
-                                        borderRadius: 16,
-                                        padding: '14px 18px',
-                                        backdropFilter: 'blur(20px)',
-                                        boxShadow: `0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06) inset, 0 4px 20px ${color}25`,
-                                        minWidth: 200,
-                                        maxWidth: 280,
-                                    }}
-                                >
-                                    {/* Glassmorphic sheen */}
-                                    <div style={{
-                                        position: 'absolute', top: 0, left: '10%', right: '10%',
-                                        height: 1,
-                                        background: `linear-gradient(to right, transparent, ${color}60, transparent)`,
-                                    }} />
-                                    {tooltip}
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
-            );
-        };
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Demo tooltip contents
-        const TooltipContent1 = () => (
-            <div>
-                <div className="flex items-center gap-2 mb-2">
-                    <span className="text-base">🧲</span>
-                    <span className="text-sm font-semibold text-white">Magnetic Physics</span>
-                </div>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                    This tooltip swings and tilts like a physical luggage tag, responding to mouse momentum with real spring physics.
-                </p>
-            </div>
-        );
+            if (activeNode) {
+                const rect = activeNode.getBoundingClientRect();
+                const nodeCenter = {
+                    x: rect.left + rect.width / 2,
+                    y: rect.top + rect.height / 2
+                };
 
-        const TooltipContent2 = () => (
-            <div>
-                <div className="flex items-center gap-2 mb-2">
-                    <span className="text-base">⚡</span>
-                    <span className="text-sm font-semibold text-white">Zero Canvas</span>
-                </div>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                    Pure CSS 3D transforms + Framer Motion springs. No WebGL or canvas elements. 100% accessible and SEO-safe.
-                </p>
-                <div className="mt-2 flex items-center gap-2">
-                    <span className="text-xs bg-violet-900/50 text-violet-300 px-2 py-0.5 rounded-full">Framer Motion</span>
-                    <span className="text-xs bg-slate-800/50 text-slate-300 px-2 py-0.5 rounded-full">CSS 3D</span>
-                </div>
-            </div>
-        );
+                // Target position offset above/side cursor
+                const targetX = mousePos.x + 30;
+                const targetY = mousePos.y - 120;
 
-        const TooltipContent3 = () => (
-            <div>
-                <div className="flex items-center gap-2 mb-2.5">
-                    <span className="text-base">📊</span>
-                    <span className="text-sm font-semibold text-white">Performance</span>
-                </div>
-                <div className="flex items-center justify-between text-xs mb-1.5">
-                    <span className="text-slate-500">CPU Usage</span>
-                    <span className="text-emerald-400 font-medium">~0.2%</span>
-                </div>
-                <div className="h-1 rounded-full bg-slate-800 overflow-hidden mb-2">
-                    <div className="h-full rounded-full w-[2%] bg-emerald-400" />
-                </div>
-                <div className="flex items-center justify-between text-xs mb-1.5">
-                    <span className="text-slate-500">Canvas Overhead</span>
-                    <span className="text-sky-400 font-medium">Zero</span>
-                </div>
-                <div className="h-1 rounded-full bg-slate-800 overflow-hidden">
-                    <div className="h-full rounded-full w-0 bg-sky-400" />
-                </div>
-            </div>
-        );
+                // Spring physics towards target
+                const k = 0.12;
+                const damping = 0.78;
 
-        const App = () => (
-            <>
-                <div className="text-center">
-                    <p className="text-xs uppercase tracking-[0.3em] text-slate-600 mb-2">Physics-Based Interaction</p>
-                    <h1 className="text-4xl font-bold text-white mb-1">Tethered Tooltip</h1>
-                    <p className="text-slate-500 text-sm">Hover the badges below — move your mouse fast for extra swing</p>
-                </div>
+                cardVel.x += (targetX - cardPos.x) * k;
+                cardVel.y += (targetY - cardPos.y) * k;
+                cardVel.x *= damping;
+                cardVel.y *= damping;
 
-                <div className="flex flex-wrap items-center justify-center gap-6">
-                    <TetheredTooltip color="#6366f1" tooltip={<TooltipContent1 />}>
-                        <div className="flex items-center gap-2.5 px-5 py-3 rounded-2xl cursor-pointer"
-                            style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)' }}>
-                            <span className="text-xl">🧲</span>
-                            <span className="font-semibold text-indigo-300 text-sm">Hover me</span>
-                        </div>
-                    </TetheredTooltip>
+                cardPos.x += cardVel.x;
+                cardPos.y += cardVel.y;
 
-                    <TetheredTooltip color="#a855f7" tooltip={<TooltipContent2 />}>
-                        <div className="flex items-center gap-2.5 px-5 py-3 rounded-2xl cursor-pointer"
-                            style={{ background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.3)' }}>
-                            <span className="text-xl">⚡</span>
-                            <span className="font-semibold text-purple-300 text-sm">Zero Canvas</span>
-                        </div>
-                    </TetheredTooltip>
+                // Dynamic 3D tilt based on velocity
+                const tiltX = -cardVel.y * 0.8;
+                const tiltY = cardVel.x * 0.8;
 
-                    <TetheredTooltip color="#22c55e" tooltip={<TooltipContent3 />}>
-                        <div className="flex items-center gap-2.5 px-5 py-3 rounded-2xl cursor-pointer"
-                            style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)' }}>
-                            <span className="text-xl">📊</span>
-                            <span className="font-semibold text-emerald-300 text-sm">Performance</span>
-                        </div>
-                    </TetheredTooltip>
-                </div>
-            </>
-        );
+                card.style.transform = `translate3d(${cardPos.x}px, ${cardPos.y}px, 30px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
 
-        createRoot(document.getElementById('root')).render(<App />);
+                // Draw elastic bezier ligament tendon between node and card
+                const cardCenter = {
+                    x: cardPos.x + card.offsetWidth / 2,
+                    y: cardPos.y + card.offsetHeight / 2
+                };
+
+                const midX = (nodeCenter.x + cardCenter.x) / 2 + cardVel.x * 2;
+                const midY = (nodeCenter.y + cardCenter.y) / 2 + cardVel.y * 2;
+
+                ctx.beginPath();
+                ctx.moveTo(nodeCenter.x, nodeCenter.y);
+                ctx.quadraticCurveTo(midX, midY, cardCenter.x, cardCenter.y);
+                ctx.strokeStyle = activeNode.style.getPropertyValue('--node-accent') || '#818cf8';
+                ctx.lineWidth = 2.5;
+                ctx.shadowColor = activeNode.style.getPropertyValue('--node-accent') || '#818cf8';
+                ctx.shadowBlur = 12;
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
     </script>
 </body>
 </html>

@@ -4,182 +4,308 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Magnetic Glass Dock Navbar</title>
-    <script>
-        const origWarn = console.warn;
-        console.warn = function(...args) {
-            const msg = args[0];
-            if (typeof msg === 'string' && (msg.includes('Babel') || msg.includes('Tailwind') || msg.includes('tailwindcss'))) return;
-            origWarn.apply(console, args);
-        };
-    </script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../../styles/shared.css">
     <style>
-        body { margin: 0; background: linear-gradient(160deg, #0a0a1a 0%, #0f172a 40%, #1a1040 100%); min-height: 100vh; overflow: hidden; font-family: 'Inter', sans-serif; }
-        #root { width: 100%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 40px; }
+        body {
+            background: radial-gradient(circle at 50% 20%, #151828 0%, #080a12 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            user-select: none;
+            perspective: 1000px;
+        }
+
+        .preview-content {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .preview-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #f8fafc;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        .preview-desc {
+            font-size: 13px;
+            color: #94a3b8;
+            font-family: var(--font-mono, monospace);
+        }
+
+        /* Magnetic Dock Root */
+        .dock-wrapper {
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .dock-bar {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(18, 24, 38, 0.7);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 9999px;
+            box-shadow: 
+                0 30px 60px rgba(0, 0, 0, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2),
+                0 0 0 1px rgba(0, 0, 0, 0.4);
+            transform-style: preserve-3d;
+        }
+
+        /* Iridescent Edge Sheen */
+        .dock-bar::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: 9999px;
+            background: linear-gradient(90deg, 
+                rgba(56, 189, 248, 0.4), 
+                rgba(168, 85, 247, 0.4), 
+                rgba(244, 114, 182, 0.4), 
+                rgba(56, 189, 248, 0.4));
+            z-index: -1;
+            opacity: 0.3;
+            filter: blur(4px);
+            transition: opacity 0.3s ease;
+        }
+
+        .dock-bar:hover::before {
+            opacity: 0.8;
+        }
+
+        /* Active Sliding Pill Indicator */
+        .active-indicator {
+            position: absolute;
+            top: 8px;
+            bottom: 8px;
+            left: 12px;
+            width: 80px;
+            border-radius: 9999px;
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(99, 102, 241, 0.25));
+            border: 1px solid rgba(56, 189, 248, 0.5);
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+            pointer-events: none;
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                        width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 1;
+        }
+
+        /* Dock Item */
+        .dock-item {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border-radius: 9999px;
+            color: #94a3b8;
+            font-size: 13.5px;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            z-index: 2;
+            transition: color 0.2s ease, transform 0.15s ease;
+            transform-style: preserve-3d;
+        }
+
+        .dock-item:hover {
+            color: #f8fafc;
+        }
+
+        .dock-item.active {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .item-icon {
+            font-size: 16px;
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .dock-item:hover .item-icon {
+            transform: scale(1.25) translateZ(10px);
+        }
+
+        .item-badge {
+            font-size: 9px;
+            font-family: var(--font-mono, monospace);
+            padding: 2px 6px;
+            border-radius: 9999px;
+            background: rgba(56, 189, 248, 0.2);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.4);
+        }
+
+        /* Tooltip */
+        .dock-tooltip {
+            position: absolute;
+            bottom: calc(100% + 14px);
+            left: 50%;
+            transform: translateX(-50%) translateY(6px) scale(0.9);
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-family: var(--font-mono, monospace);
+            color: #e2e8f0;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            white-space: nowrap;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        .dock-item:hover .dock-tooltip {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0) scale(1);
+        }
+
+        .dock-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 4px solid transparent;
+            border-top-color: rgba(15, 23, 42, 0.95);
+        }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div id="root"></div>
 
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
+    <div class="preview-content">
+        <div class="preview-title" id="active-title">Workspace Command Center</div>
+        <div class="preview-desc" id="active-desc">Hover over navbar pills to experience magnetic spring displacement</div>
+    </div>
+
+    <div class="dock-wrapper" id="dock-wrapper">
+        <nav class="dock-bar" id="dock-bar">
+            <div class="active-indicator" id="indicator"></div>
+
+            <a class="dock-item active" data-title="System Overview" data-desc="Live CPU, bandwidth, and edge cluster telemetry">
+                <span class="item-icon">⌂</span>
+                <span class="item-label">Home</span>
+                <div class="dock-tooltip">Dashboard (⌘1)</div>
+            </a>
+
+            <a class="dock-item" data-title="Neural Canvas" data-desc="Real-time multi-agent flow editor and spatial blueprints">
+                <span class="item-icon">◈</span>
+                <span class="item-label">Studio</span>
+                <div class="dock-tooltip">Agent Studio (⌘2)</div>
+            </a>
+
+            <a class="dock-item" data-title="Distributed Database" data-desc="Multi-region replication nodes and vector indexes">
+                <span class="item-icon">◉</span>
+                <span class="item-label">Vault</span>
+                <span class="item-badge">PRO</span>
+                <div class="dock-tooltip">Spatial DB (⌘3)</div>
+            </a>
+
+            <a class="dock-item" data-title="Telemetry & Logs" data-desc="Sub-millisecond stream aggregation and anomaly alerts">
+                <span class="item-icon">✦</span>
+                <span class="item-label">Pulse</span>
+                <div class="dock-tooltip">Telemetry (⌘4)</div>
+            </a>
+
+            <a class="dock-item" data-title="Cluster Settings" data-desc="Security policies, API keys, and IAM credentials">
+                <span class="item-icon">✉</span>
+                <span class="item-label">Comms</span>
+                <div class="dock-tooltip">Channels (⌘5)</div>
+            </a>
+        </nav>
+    </div>
+
+    <script>
+        const dockWrapper = document.getElementById('dock-wrapper');
+        const dockBar = document.getElementById('dock-bar');
+        const indicator = document.getElementById('indicator');
+        const items = document.querySelectorAll('.dock-item');
+        const activeTitle = document.getElementById('active-title');
+        const activeDesc = document.getElementById('active-desc');
+
+        function updateIndicator(item) {
+            const barRect = dockBar.getBoundingClientRect();
+            const itemRect = item.getBoundingClientRect();
+            const leftOffset = itemRect.left - barRect.left;
+            
+            indicator.style.transform = `translateX(${leftOffset - 12}px)`;
+            indicator.style.width = `${itemRect.width}px`;
         }
-    }
-    </script>
 
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+        // Initialize indicator position
+        const activeItem = document.querySelector('.dock-item.active');
+        if (activeItem) {
+            updateIndicator(activeItem);
+        }
 
-    <script type="text/babel" data-type="module">
-        import React, { useState, useRef, useCallback } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, useMotionValue, useTransform, useSpring, AnimatePresence } from 'framer-motion';
+        // Click selection
+        items.forEach((item) => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                items.forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                updateIndicator(item);
 
-        const NAV_ITEMS = [
-            { label: 'Home', icon: '⌂' },
-            { label: 'Work', icon: '◈' },
-            { label: 'About', icon: '◉' },
-            { label: 'Blog', icon: '✦' },
-            { label: 'Contact', icon: '✉' },
-        ];
+                activeTitle.textContent = item.getAttribute('data-title');
+                activeDesc.textContent = item.getAttribute('data-desc');
+            });
+        });
 
-        const NavItem = ({ item, isActive, onClick }) => {
-            const ref = useRef(null);
-            const spotlightX = useMotionValue(0);
-            const spotlightY = useMotionValue(0);
-            const spotlightOpacity = useMotionValue(0);
+        // Magnetic Attraction & 3D Spatial Tilt
+        const MAGNETIC_RADIUS = 160;
 
-            const handleMouseMove = useCallback((e) => {
-                const rect = ref.current?.getBoundingClientRect();
-                if (!rect) return;
-                spotlightX.set(e.clientX - rect.left);
-                spotlightY.set(e.clientY - rect.top);
-            }, []);
+        document.addEventListener('mousemove', (e) => {
+            const barRect = dockBar.getBoundingClientRect();
+            const barCenterX = barRect.left + barRect.width / 2;
+            const barCenterY = barRect.top + barRect.height / 2;
 
-            return (
-                <motion.button
-                    ref={ref}
-                    onClick={onClick}
-                    onMouseMove={handleMouseMove}
-                    onHoverStart={() => spotlightOpacity.set(1)}
-                    onHoverEnd={() => spotlightOpacity.set(0)}
-                    className="relative px-5 py-2.5 rounded-xl text-sm font-medium transition-colors cursor-pointer overflow-hidden"
-                    style={{ color: isActive ? '#e0e7ff' : '#94a3b8' }}
-                    whileHover={{ color: '#e0e7ff', scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-                >
-                    <motion.div
-                        className="absolute inset-0 rounded-xl pointer-events-none"
-                        style={{
-                            background: useTransform(
-                                [spotlightX, spotlightY],
-                                ([x, y]) => `radial-gradient(120px circle at ${x}px ${y}px, rgba(139,92,246,0.35), transparent 70%)`
-                            ),
-                            opacity: useSpring(spotlightOpacity, { stiffness: 300, damping: 30 }),
-                        }}
-                    />
-                    {isActive && (
-                        <motion.div
-                            layoutId="activeTab"
-                            className="absolute inset-0 rounded-xl"
-                            style={{ background: 'rgba(139, 92, 246, 0.15)', border: '1px solid rgba(139, 92, 246, 0.3)' }}
-                            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                        />
-                    )}
-                    <span className="relative z-10 flex items-center gap-2">
-                        <span className="text-base">{item.icon}</span>
-                        <span>{item.label}</span>
-                    </span>
-                </motion.button>
-            );
-        };
+            const dist = Math.hypot(e.clientX - barCenterX, e.clientY - barCenterY);
 
-        const MagneticDock = () => {
-            const [activeIndex, setActiveIndex] = useState(0);
-            const dockRef = useRef(null);
-            const mouseX = useMotionValue(0);
-            const mouseY = useMotionValue(0);
+            if (dist < MAGNETIC_RADIUS) {
+                const pull = (1 - dist / MAGNETIC_RADIUS);
+                const deltaX = (e.clientX - barCenterX) * pull * 0.18;
+                const deltaY = (e.clientY - barCenterY) * pull * 0.18;
+                const tiltX = -(e.clientY - barCenterY) * pull * 0.08;
+                const tiltY = (e.clientX - barCenterX) * pull * 0.08;
 
-            const rotateX = useSpring(useTransform(mouseY, [-200, 200], [8, -8]), { stiffness: 200, damping: 30 });
-            const rotateY = useSpring(useTransform(mouseX, [-400, 400], [-12, 12]), { stiffness: 200, damping: 30 });
-            const translateZ = useSpring(useTransform(mouseY, [-200, 200], [15, -5]), { stiffness: 200, damping: 30 });
+                dockWrapper.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 20px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+            } else {
+                dockWrapper.style.transform = 'translate3d(0, 0, 0) rotateX(0deg) rotateY(0deg)';
+            }
 
-            const handleMouseMove = useCallback((e) => {
-                const rect = dockRef.current?.getBoundingClientRect();
-                if (!rect) return;
-                mouseX.set(e.clientX - rect.left - rect.width / 2);
-                mouseY.set(e.clientY - rect.top - rect.height / 2);
-            }, []);
+            // Magnetic individual item scaling
+            items.forEach((item) => {
+                const rect = item.getBoundingClientRect();
+                const itemCenterX = rect.left + rect.width / 2;
+                const itemCenterY = rect.top + rect.height / 2;
+                const itemDist = Math.hypot(e.clientX - itemCenterX, e.clientY - itemCenterY);
 
-            const handleMouseLeave = useCallback(() => { mouseX.set(0); mouseY.set(0); }, []);
+                if (itemDist < 80) {
+                    const scale = 1 + (1 - itemDist / 80) * 0.15;
+                    const itemPullX = (e.clientX - itemCenterX) * 0.2;
+                    const itemPullY = (e.clientY - itemCenterY) * 0.2;
+                    item.style.transform = `translate3d(${itemPullX}px, ${itemPullY}px, 15px) scale(${scale})`;
+                } else {
+                    item.style.transform = 'translate3d(0, 0, 0) scale(1)';
+                }
+            });
+        });
 
-            return (
-                <div className="w-full flex flex-col items-center" style={{ perspective: '1200px' }}>
-                    <motion.nav
-                        ref={dockRef}
-                        onMouseMove={handleMouseMove}
-                        onMouseLeave={handleMouseLeave}
-                        className="relative flex items-center gap-1 px-3 py-2.5 rounded-2xl"
-                        style={{
-                            background: 'rgba(255, 255, 255, 0.06)',
-                            backdropFilter: 'blur(20px) saturate(180%)',
-                            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.1)',
-                            rotateX, rotateY, translateZ,
-                            transformStyle: 'preserve-3d',
-                        }}
-                        initial={{ y: -60, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ type: 'spring', stiffness: 200, damping: 25, delay: 0.2 }}
-                    >
-                        <div className="absolute -inset-4 rounded-3xl pointer-events-none -z-10" style={{ background: 'radial-gradient(ellipse at center, rgba(139,92,246,0.15) 0%, transparent 70%)', filter: 'blur(20px)' }} />
-                        {NAV_ITEMS.map((item, i) => (
-                            <NavItem key={i} item={item} isActive={activeIndex === i} onClick={() => setActiveIndex(i)} />
-                        ))}
-                        <motion.button
-                            className="ml-2 px-5 py-2.5 rounded-xl text-sm font-semibold relative overflow-hidden cursor-pointer"
-                            style={{ background: 'linear-gradient(135deg, #8b5cf6, #6366f1)', color: '#fff', border: '1px solid rgba(255,255,255,0.15)', boxShadow: '0 4px 15px rgba(139,92,246,0.4)' }}
-                            whileHover={{ scale: 1.08, boxShadow: '0 6px 25px rgba(139,92,246,0.6)' }}
-                            whileTap={{ scale: 0.95 }}
-                            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-                        >
-                            Get Started →
-                        </motion.button>
-                    </motion.nav>
-
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={activeIndex}
-                            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: -20, scale: 0.95 }}
-                            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                            className="mt-16 text-center px-8"
-                        >
-                            <div className="text-5xl mb-4">{NAV_ITEMS[activeIndex].icon}</div>
-                            <h2 className="text-2xl font-bold text-white mb-2">{NAV_ITEMS[activeIndex].label}</h2>
-                            <p className="text-slate-400 text-sm max-w-xs mx-auto">
-                                Navigate to the <span className="text-violet-400 font-medium">{NAV_ITEMS[activeIndex].label}</span> section. The dock magnetically responds to your cursor in 3D space.
-                            </p>
-                        </motion.div>
-                    </AnimatePresence>
-
-                    <div className="fixed inset-0 -z-20 pointer-events-none overflow-hidden">
-                        <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full" style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.08), transparent 70%)' }} />
-                        <div className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full" style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.06), transparent 70%)' }} />
-                    </div>
-                </div>
-            );
-        };
-
-        const root = createRoot(document.getElementById('root'));
-        root.render(<MagneticDock />);
+        window.addEventListener('resize', () => {
+            const currActive = document.querySelector('.dock-item.active');
+            if (currActive) updateIndicator(currActive);
+        });
     </script>
 </body>
 </html>

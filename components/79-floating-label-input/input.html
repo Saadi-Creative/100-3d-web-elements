@@ -8,7 +8,6 @@
     <style>
         body { margin: 0; background: #020617; min-height: 100vh; display: flex; align-items: center; justify-content: center; font-family: 'Inter', sans-serif; overflow: hidden; }
         
-        /* The magical rotating border effect */
         .ai-border-wrapper {
             position: relative;
             border-radius: 9999px;
@@ -20,10 +19,14 @@
             inset: -50%;
             background: conic-gradient(from 0deg, transparent 60%, #8b5cf6 80%, #ec4899 100%);
             animation: spin 3s linear infinite;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .is-focused .ai-border-spin {
+            opacity: 1;
         }
         @keyframes spin { 100% { transform: rotate(360deg); } }
         
-        /* Text Shimmer */
         .shimmer-text {
             background: linear-gradient(90deg, #94a3b8 0%, #ffffff 50%, #94a3b8 100%);
             background-size: 200% auto;
@@ -33,158 +36,175 @@
             animation: shimmer 3s linear infinite;
         }
         @keyframes shimmer { 100% { background-position: 200% center; } }
+        
+        /* Static border fade out */
+        .static-border {
+            transition: opacity 0.3s;
+        }
+        .is-focused .static-border {
+            opacity: 0;
+        }
+        
+        /* Floor glow */
+        .floor-glow {
+            transition: opacity 0.5s, transform 0.5s;
+            opacity: 0;
+            transform: scale(0.9);
+        }
+        .is-focused .floor-glow {
+            opacity: 0.8;
+            transform: scale(1.1);
+        }
+
+        /* Submit Button transition */
+        .btn-active {
+            background-color: #c026d3;
+            color: white;
+            box-shadow: 0 0 20px rgba(192,38,211,0.5);
+        }
+        .btn-active:hover {
+            background-color: #d946ef;
+        }
+        .btn-inactive {
+            background-color: #1e293b;
+            color: #64748b;
+        }
+
+        /* Sparkle Animation */
+        @keyframes sparkle-anim {
+            0% { transform: scale(0) rotate(0deg) translateY(0) translateX(0); opacity: 1; }
+            50% { transform: scale(1.5) rotate(90deg) translateY(-20px) translateX(var(--tx)); opacity: 1; }
+            100% { transform: scale(0) rotate(180deg) translateY(-40px) translateX(calc(var(--tx) * 2)); opacity: 0; }
+        }
+        
+        .sparkle-el {
+            position: absolute;
+            pointer-events: none;
+            z-index: 50;
+            mix-blend-mode: screen;
+            animation: sparkle-anim var(--dur, 1s) ease-out forwards;
+        }
     </style>
-    <script type="importmap">{"imports":{"react":"https://esm.sh/react@18.2.0","react-dom/client":"https://esm.sh/react-dom@18.2.0/client","framer-motion":"https://esm.sh/framer-motion@10.16.4?external=react,react-dom"}}</script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-    <div id="root"></div>
-    <script type="text/babel" data-type="module">
-        import React, { useState, useRef, useEffect } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, AnimatePresence } from 'framer-motion';
+    <div id="root">
+        <div class="flex flex-col items-center">
+            
+            <div class="text-center mb-16 pointer-events-none z-10">
+                <h1 class="text-6xl font-black text-white tracking-tighter mb-4">Neural Field</h1>
+                <p class="text-slate-400 font-medium text-lg leading-relaxed max-w-lg mx-auto">
+                    The definitive AI input pattern. Focus the field to trigger an infinitely rotating conic-gradient mask. Typing spawns physically tracked DOM SVG stars that erupt from your cursor.
+                </p>
+            </div>
 
-        const Sparkle = ({ id, x, y, onComplete }) => {
-            const size = Math.random() * 10 + 10;
-            return (
-                <motion.div
-                    className="absolute pointer-events-none z-50 mix-blend-screen"
-                    style={{ left: x, top: y, width: size, height: size }}
-                    initial={{ scale: 0, opacity: 1, rotate: 0 }}
-                    animate={{ 
-                        scale: [0, 1.5, 0], 
-                        opacity: [1, 1, 0], 
-                        y: [-10, -30], 
-                        x: [0, (Math.random() - 0.5) * 40],
-                        rotate: [0, 180] 
-                    }}
-                    transition={{ duration: 0.8 + Math.random() * 0.4, ease: "easeOut" }}
-                    onAnimationComplete={() => onComplete(id)}
-                >
-                    <svg viewBox="0 0 24 24" fill="none" className="text-fuchsia-400 drop-shadow-[0_0_8px_rgba(232,121,249,0.8)]">
-                        <path d="M12 0L14 10L24 12L14 14L12 24L10 14L0 12L10 10L12 0Z" fill="currentColor"/>
-                    </svg>
-                </motion.div>
-            );
-        };
-
-        const App = () => {
-            const [value, setValue] = useState("");
-            const [isFocused, setIsFocused] = useState(false);
-            const [sparkles, setSparkles] = useState([]);
-            const inputRef = useRef(null);
-
-            const handleType = (e) => {
-                setValue(e.target.value);
+            <div id="input-container" class="relative w-full max-w-2xl px-4 z-20 w-[600px]">
                 
-                // Spawn a sparkle at an estimated cursor position
-                if (!inputRef.current) return;
-                const rect = inputRef.current.getBoundingClientRect();
-                
-                // Rough estimation of cursor X based on string length (assuming mono or rough px tracking)
-                // A true caret track is complex, so we simulate it drifting rightward
-                const estimatedX = 40 + Math.min(e.target.value.length * 10, rect.width - 100);
-                
-                setSparkles(prev => [...prev, {
-                    id: Date.now(),
-                    x: estimatedX,
-                    y: 10 + (Math.random() * 10 - 5)
-                }]);
-            };
+                <div class="floor-glow absolute inset-0 bg-fuchsia-600/20 blur-[60px] rounded-full z-[-1]"></div>
 
-            const removeSparkle = (id) => {
-                setSparkles(prev => prev.filter(s => s.id !== id));
-            };
-
-            return (
-                <div className="flex flex-col items-center">
+                <div class="ai-border-wrapper shadow-2xl relative w-full group">
                     
-                    <div className="text-center mb-16 pointer-events-none z-10">
-                        <h1 className="text-6xl font-black text-white tracking-tighter mb-4">Neural Field</h1>
-                        <p className="text-slate-400 font-medium text-lg leading-relaxed max-w-lg mx-auto">
-                            The definitive AI input pattern. Focus the field to trigger an infinitely rotating conic-gradient mask. Typing spawns physically tracked DOM SVG stars that erupt from your cursor.
-                        </p>
-                    </div>
+                    <div class="ai-border-spin"></div>
 
-                    <div className="relative w-full max-w-2xl px-4 z-20">
+                    <div class="static-border absolute inset-0 rounded-full border border-slate-700/50"></div>
+
+                    <div class="relative w-full bg-slate-900 rounded-full flex items-center p-2 z-10 shadow-inner">
                         
-                        {/* Floor Glow */}
-                        <motion.div 
-                            className="absolute inset-0 bg-fuchsia-600/20 blur-[60px] rounded-full z-[-1]"
-                            animate={{ opacity: isFocused ? 0.8 : 0, scale: isFocused ? 1.1 : 0.9 }}
-                            transition={{ duration: 0.5 }}
-                        />
+                        <div class="p-3 pl-4">
+                            <svg class="w-6 h-6 text-fuchsia-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                        </div>
 
-                        {/* The Magic Masking Wrapper */}
-                        <div className="ai-border-wrapper shadow-2xl relative w-full group">
+                        <div class="relative flex-1 h-full flex items-center">
                             
-                            {/* The rotating gradient (only visible if focused) */}
-                            <AnimatePresence>
-                                {isFocused && (
-                                    <motion.div 
-                                        className="ai-border-spin"
-                                        initial={{ opacity: 0 }} 
-                                        animate={{ opacity: 1 }} 
-                                        exit={{ opacity: 0 }}
-                                    />
-                                )}
-                            </AnimatePresence>
-
-                            {/* Default Static Border (when un-focused) */}
-                            <div className={`absolute inset-0 rounded-full border border-slate-700/50 transition-opacity duration-300 ${isFocused ? 'opacity-0' : 'opacity-100'}`}></div>
-
-                            {/* The Inner Dark Input Body */}
-                            <div className="relative w-full bg-slate-900 rounded-full flex items-center p-2 z-10 shadow-inner">
-                                
-                                <div className="p-3 pl-4">
-                                    <svg className="w-6 h-6 text-fuchsia-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                    </svg>
-                                </div>
-
-                                <div className="relative flex-1 h-full flex items-center">
-                                    
-                                    {/* Placeholder Shimmer (only when empty) */}
-                                    {!value && (
-                                        <div className="absolute inset-x-0 ml-1 pointer-events-none shimmer-text font-bold text-lg select-none">
-                                            Ask the neural engine anything...
-                                        </div>
-                                    )}
-
-                                    <input 
-                                        ref={inputRef}
-                                        type="text" 
-                                        className="w-full h-full bg-transparent text-white font-bold text-lg focus:outline-none py-3 px-1 relative z-10"
-                                        value={value}
-                                        onChange={handleType}
-                                        onFocus={() => setIsFocused(true)}
-                                        onBlur={() => setIsFocused(false)}
-                                    />
-
-                                    {/* Star Sparks Container attached to the input overlay */}
-                                    <div className="absolute inset-0 pointer-events-none overflow-visible">
-                                        {sparkles.map(s => (
-                                            <Sparkle key={s.id} id={s.id} x={s.x} y={s.y} onComplete={removeSparkle} />
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Submit Button */}
-                                <button className={`ml-2 mr-1 p-3 rounded-full flex items-center justify-center transition-all ${value.length > 0 ? 'bg-fuchsia-600 hover:bg-fuchsia-500 text-white shadow-[0_0_20px_rgba(192,38,211,0.5)]' : 'bg-slate-800 text-slate-500'}`}>
-                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                                    </svg>
-                                </button>
+                            <div id="placeholder" class="absolute inset-x-0 ml-1 pointer-events-none shimmer-text font-bold text-lg select-none">
+                                Ask the neural engine anything...
                             </div>
 
+                            <input 
+                                id="ai-input"
+                                type="text" 
+                                class="w-full h-full bg-transparent text-white font-bold text-lg focus:outline-none py-3 px-1 relative z-10"
+                            />
+
+                            <div id="sparkle-container" class="absolute inset-0 pointer-events-none overflow-visible"></div>
                         </div>
+
+                        <button id="submit-btn" class="btn-inactive ml-2 mr-1 p-3 rounded-full flex items-center justify-center transition-all">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                            </svg>
+                        </button>
                     </div>
 
                 </div>
-            );
-        };
+            </div>
 
-        createRoot(document.getElementById('root')).render(<App />);
+        </div>
+    </div>
+    <script>
+        const container = document.getElementById('input-container');
+        const input = document.getElementById('ai-input');
+        const placeholder = document.getElementById('placeholder');
+        const submitBtn = document.getElementById('submit-btn');
+        const sparkleContainer = document.getElementById('sparkle-container');
+
+        input.addEventListener('focus', () => {
+            container.classList.add('is-focused');
+        });
+
+        input.addEventListener('blur', () => {
+            container.classList.remove('is-focused');
+        });
+
+        input.addEventListener('input', (e) => {
+            const val = e.target.value;
+            
+            // Toggle placeholder and btn states
+            if (val.length > 0) {
+                placeholder.style.display = 'none';
+                submitBtn.classList.remove('btn-inactive');
+                submitBtn.classList.add('btn-active');
+            } else {
+                placeholder.style.display = 'block';
+                submitBtn.classList.add('btn-inactive');
+                submitBtn.classList.remove('btn-active');
+            }
+
+            // Spawn Sparkle
+            spawnSparkle(val.length);
+        });
+
+        function spawnSparkle(len) {
+            const rect = input.getBoundingClientRect();
+            // Estimate x pos
+            const estimatedX = 40 + Math.min(len * 10, rect.width - 100);
+            const size = Math.random() * 10 + 10;
+            const tx = (Math.random() - 0.5) * 40; // random drift
+            
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle-el';
+            sparkle.style.left = `${estimatedX}px`;
+            sparkle.style.top = `${10 + (Math.random() * 10 - 5)}px`;
+            sparkle.style.width = `${size}px`;
+            sparkle.style.height = `${size}px`;
+            sparkle.style.setProperty('--tx', `${tx}px`);
+            sparkle.style.setProperty('--dur', `${0.8 + Math.random() * 0.4}s`);
+            
+            sparkle.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" class="text-fuchsia-400 drop-shadow-[0_0_8px_rgba(232,121,249,0.8)]">
+                    <path d="M12 0L14 10L24 12L14 14L12 24L10 14L0 12L10 10L12 0Z" fill="currentColor"/>
+                </svg>
+            `;
+            
+            sparkleContainer.appendChild(sparkle);
+            
+            sparkle.addEventListener('animationend', () => {
+                if (sparkleContainer.contains(sparkle)) {
+                    sparkleContainer.removeChild(sparkle);
+                }
+            });
+        }
     </script>
 </body>
 </html>

@@ -1,221 +1,211 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Authentic 3D Crystal Snow Background</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        navy: {
-                            900: '#070b19', // Deep winter night sky
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body { margin: 0; background-color: #070b19; color: white; overflow: hidden; font-family: 'Inter', sans-serif; }
-        #root { width: 100vw; height: 100vh; position: relative; }
-    </style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>19 - Spatial Crystalline Snow Canopy</title>
+  <link rel="stylesheet" href="../../styles/shared.css" />
+  <style>
+    .demo-container {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 30%, #0c1427 0%, #030712 100%);
+      font-family: var(--font-sans);
+    }
+
+    #canvas-container {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+
+    /* Spatial Overlay Header */
+    .hero-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .hero-title {
+      font-size: var(--text-3xl);
+      font-weight: 800;
+      color: var(--text-heading);
+      letter-spacing: var(--tracking-widest);
+      text-transform: uppercase;
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+    }
+
+    .hero-sub {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      letter-spacing: var(--tracking-wider);
+      text-transform: uppercase;
+      margin-top: var(--space-2);
+    }
+
+    /* Density Controls Toolbar */
+    .snow-toolbar {
+      position: absolute;
+      bottom: var(--space-6);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-full);
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      backdrop-filter: blur(16px);
+    }
+
+    .density-btn {
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius-full);
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .density-btn.is-active {
+      background: var(--surface-overlay);
+      border-color: var(--border-subtle);
+      color: var(--accent-base);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+  </style>
 </head>
 <body>
-    <div id="root"></div>
+  <div class="demo-container">
+    <div class="hero-center">
+      <h1 class="hero-title">Winter Mute</h1>
+      <p class="hero-sub">Atmospheric Crystalline Particles</p>
+    </div>
 
-    <!-- Imports -->
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "three": "https://esm.sh/three@0.160.0",
-            "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.14?external=react,react-dom,three"
-        }
+    <div id="canvas-container"></div>
+
+    <div class="snow-toolbar" role="toolbar" aria-label="Snow intensity settings">
+      <button class="density-btn is-active" data-speed="1.0" data-wind="0.5">Gentle Flurry</button>
+      <button class="density-btn" data-speed="2.2" data-wind="1.5">Alpine Drift</button>
+      <button class="density-btn" data-speed="4.0" data-wind="3.0">Blizzard Storm</button>
+    </div>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
     }
-    </script>
+  }
+  </script>
 
-    <script>
-        // Suppress warnings for clean devtools
-        const origWarn = console.warn;
-        console.warn = function(...args) {
-            if (args[0] && typeof args[0] === 'string' && (args[0].includes('in-browser Babel transformer') || args[0].includes('cdn.tailwindcss.com should not be used in production'))) return;
-            origWarn.apply(console, args);
-        };
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script type="module">
+    import * as THREE from 'three';
 
-    <script type="text/babel" data-type="module">
-        import React, { useRef, useMemo } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import * as THREE from 'three';
-        import { Canvas, useFrame, useThree } from '@react-three/fiber';
+    const container = document.getElementById('canvas-container');
+    const W = container.clientWidth, H = container.clientHeight;
 
-        // Official high-resolution transparent Snowflake Crystal textures from Three.js repo hosted on jsdelivr CDN
-        const CRYSTAL_TEXTURES = [
-            'https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/sprites/snowflake1.png',
-            'https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/sprites/snowflake2.png',
-            'https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/sprites/snowflake3.png',
-            'https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/sprites/snowflake4.png',
-            'https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/sprites/snowflake5.png'
-        ];
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.setSize(W, H);
+    container.appendChild(renderer.domElement);
 
-        // 5 layers of 2000 crystals each = 10,000 real crystal particles total
-        const FLAKES_PER_LAYER = 2000; 
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, W / H, 0.1, 100);
+    camera.position.z = 15;
 
-        const CrystalLayer = ({ textureUrl }) => {
-            const meshRef = useRef();
+    // 2,500 Snow Flakes Instance
+    const COUNT = 2500;
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(COUNT * 3);
+    const velocities = new Float32Array(COUNT * 3);
 
-            // Load texture and ensure high-quality sampling natively
-            const texture = useMemo(() => {
-                const tex = new THREE.TextureLoader().load(textureUrl);
-                tex.colorSpace = THREE.SRGBColorSpace;
-                return tex;
-            }, [textureUrl]);
+    for (let i = 0; i < COUNT; i++) {
+      positions[i * 3]     = (Math.random() - 0.5) * 40;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 40;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 40;
 
-            // Setup memory buffers safely outside the render loop
-            const { positions, velocities, scales, rotations, dummy } = useMemo(() => {
-                const pos = new Float32Array(FLAKES_PER_LAYER * 3);
-                const vel = new Float32Array(FLAKES_PER_LAYER * 3); // x=drift, y=fall speed, z=swirl
-                const scl = new Float32Array(FLAKES_PER_LAYER);
-                const rot = new Float32Array(FLAKES_PER_LAYER); // Initial unique Z-spin angles
-                
-                for(let i = 0; i < FLAKES_PER_LAYER; i++) {
-                    // Spread flakes across a huge 100x100x100 volume
-                    pos[i*3] = (Math.random() - 0.5) * 100;
-                    pos[i*3+1] = (Math.random() - 0.5) * 100;
-                    pos[i*3+2] = (Math.random() - 0.5) * 100;
-                    
-                    // Fall speed and drift
-                    vel[i*3] = (Math.random() - 0.5) * 0.5; // X drift
-                    vel[i*3+1] = 0.5 + Math.random() * 1.5; // Y fall speed
-                    vel[i*3+2] = (Math.random() - 0.5) * 0.5; // Z swirl
-                    
-                    // Random crystal sizing
-                    scl[i] = 0.5 + Math.random() * 2.5;
+      velocities[i * 3]     = (Math.random() - 0.5) * 0.2;
+      velocities[i * 3 + 1] = 0.5 + Math.random() * 1.2;
+      velocities[i * 3 + 2] = (Math.random() - 0.5) * 0.2;
+    }
 
-                    // Initial random rotation so they don't all align
-                    rot[i] = Math.random() * Math.PI * 2;
-                }
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
-                return { positions: pos, velocities: vel, scales: scl, rotations: rot, dummy: new THREE.Object3D() };
-            }, []);
+    const material = new THREE.PointsMaterial({
+      color: 0xffffff,
+      size: 0.12,
+      transparent: true,
+      opacity: 0.8,
+      blending: THREE.AdditiveBlending
+    });
 
-            useFrame((state, delta) => {
-                const time = state.clock.elapsedTime;
-                
-                // Directly mutate Float32Arrays for extreme integrated graphics performance
-                for(let i = 0; i < FLAKES_PER_LAYER; i++) {
-                    const i3 = i * 3;
-                    
-                    // Apply downward velocity
-                    positions[i3+1] -= velocities[i3+1] * delta * 5;
-                    
-                    // Add wind/oscillation drifting based on time and unique speeds
-                    const windX = Math.sin(time * 0.5 + positions[i3+1] * 0.05) * velocities[i3];
-                    const windZ = Math.cos(time * 0.5 + positions[i3+1] * 0.05) * velocities[i3+2];
-                    
-                    positions[i3] += windX * delta * 15;
-                    positions[i3+2] += windZ * delta * 15;
+    const snowPoints = new THREE.Points(geometry, material);
+    scene.add(snowPoints);
 
-                    // Floor collision -> Teleport back to sky seamlessly
-                    if (positions[i3+1] < -50) {
-                        positions[i3+1] = 50;
-                        positions[i3] = (Math.random() - 0.5) * 100;
-                        positions[i3+2] = (Math.random() - 0.5) * 100;
-                    }
+    let speedFactor = 1.0;
+    let windFactor = 0.5;
+    const clock = new THREE.Clock();
 
-                    // Authentic Billboarding Technique:
-                    dummy.position.set(positions[i3], positions[i3+1], positions[i3+2]);
-                    
-                    // 1. Force the crystal plane to face the camera so it never looks like a flat paper edge
-                    dummy.quaternion.copy(state.camera.quaternion);
-                    
-                    // 2. Rotate the crystal locally on its own Z-axis so the snowflake actually spins beautifully as it falls
-                    dummy.rotateZ(rotations[i] + (time * velocities[i3+1] * 0.5));
-                    
-                    dummy.scale.setScalar(scales[i] * 0.5); // Size tuning
-                    dummy.updateMatrix();
-                    
-                    meshRef.current.setMatrixAt(i, dummy.matrix);
-                }
+    let mouseX = 0, mouseY = 0;
+    window.addEventListener('mousemove', (e) => {
+      mouseX = (e.clientX / window.innerWidth) - 0.5;
+      mouseY = (e.clientY / window.innerHeight) - 0.5;
+    });
 
-                meshRef.current.instanceMatrix.needsUpdate = true;
-            });
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = clock.getDelta();
 
-            return (
-                <instancedMesh ref={meshRef} args={[null, null, FLAKES_PER_LAYER]}>
-                    <planeGeometry args={[1, 1]} />
-                    {/* Additive blending makes the snow crystals catch light beautifully over dark colors */}
-                    <meshBasicMaterial 
-                        map={texture}
-                        color="#ffffff" 
-                        transparent 
-                        opacity={0.8} 
-                        blending={THREE.AdditiveBlending} 
-                        depthWrite={false} 
-                    />
-                </instancedMesh>
-            );
-        };
+      const posArr = geometry.attributes.position.array;
+      for (let i = 0; i < COUNT; i++) {
+        const i3 = i * 3;
+        posArr[i3 + 1] -= velocities[i3 + 1] * dt * 4 * speedFactor;
+        posArr[i3]     += Math.sin(clock.getElapsedTime() + i) * dt * windFactor;
 
-        const Scene = () => {
-            const { camera, pointer } = useThree();
+        if (posArr[i3 + 1] < -20) {
+          posArr[i3 + 1] = 20;
+          posArr[i3] = (Math.random() - 0.5) * 40;
+        }
+      }
+      geometry.attributes.position.needsUpdate = true;
 
-            // Gently tie camera rotation to mouse coordinates for immersive looking around
-            useFrame(() => {
-                camera.rotation.y += (pointer.x * 0.5 - camera.rotation.y) * 0.05;
-                camera.rotation.x += (-pointer.y * 0.2 - camera.rotation.x) * 0.05;
-            });
+      // Parallax camera sway
+      camera.position.x += (mouseX * 4 - camera.position.x) * 0.05;
+      camera.position.y += (-mouseY * 4 - camera.position.y) * 0.05;
+      camera.lookAt(0, 0, 0);
 
-            return (
-                <group>
-                    {CRYSTAL_TEXTURES.map((url, index) => (
-                        <CrystalLayer key={index} textureUrl={url} />
-                    ))}
-                </group>
-            );
-        };
+      renderer.render(scene, camera);
+    }
+    animate();
 
-        const App = () => {
-            return (
-                <div className="w-full h-screen bg-navy-900 flex flex-col items-center justify-center relative touch-none">
-                    {/* Minimalist Watermark/Aesthetic Text */}
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10 flex flex-col items-center select-none text-center">
-                        <h1 className="text-white/90 tracking-[0.4em] text-4xl md:text-6xl font-light mb-4 drop-shadow-lg" style={{textShadow: '0 0 20px rgba(255,255,255,0.3)'}}>
-                            WINTER <span className="font-bold">MUTE</span>
-                        </h1>
-                        <div className="w-16 h-[1px] bg-white/40 mb-4"></div>
-                        <p className="text-white/50 font-mono text-xs tracking-[0.3em] uppercase">10,000 Authentic Crystals</p>
-                    </div>
+    window.addEventListener('resize', () => {
+      const W2 = container.clientWidth, H2 = container.clientHeight;
+      camera.aspect = W2 / H2;
+      camera.updateProjectionMatrix();
+      renderer.setSize(W2, H2);
+    });
 
-                    <div className="w-full h-full cursor-crosshair">
-                        {/* 
-                          Important Performance Setup: 
-                          - camera=[0,0,0] sits INSIDE the storm.
-                          - dpr capped to 1.5 prevents integrated GPUs from choking on high-res Macbook/Windows screens.
-                          - alpha=false prevents expensive frame-clears.
-                        */}
-                        <Canvas dpr={Math.min(window.devicePixelRatio, 1.5)} camera={{ position: [0, 0, 0], fov: 60, near: 0.1, far: 80 }} gl={{ antialias: false, alpha: false }}>
-                            {/* Deep indigo/navy background color */}
-                            <color attach="background" args={['#070b19']} />
-                            
-                            {/* Fog hides the flakes popping out at the top/bottom bounds wrapping edges */}
-                            <fog attach="fog" args={['#070b19', 10, 50]} />
-                            
-                            <Scene />
-                        </Canvas>
-                    </div>
-                </div>
-            );
-        };
+    const densityBtns = document.querySelectorAll('.density-btn');
+    densityBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        densityBtns.forEach((b) => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
 
-        const root = createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+        speedFactor = parseFloat(btn.dataset.speed);
+        windFactor = parseFloat(btn.dataset.wind);
+      });
+    });
+  </script>
 </body>
 </html>

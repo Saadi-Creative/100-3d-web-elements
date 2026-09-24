@@ -9,7 +9,6 @@
         body { margin: 0; background: #0f172a; min-height: 100vh; overflow: hidden; font-family: 'Inter', sans-serif; }
         .preserve-3d { transform-style: preserve-3d; perspective: 1800px; }
         
-        /* The infinite moving texture */
         .conveyor-belt {
             background: repeating-linear-gradient(
                 0deg,
@@ -23,135 +22,105 @@
 
         @keyframes moveBelt {
             0% { background-position: 0px 0px; }
-            100% { background-position: 0px 80px; } /* Must perfectly match the tile size */
+            100% { background-position: 0px 80px; }
         }
         
+        .block-element {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            left: calc(50% - 40px);
+            transform: translateZ(200px) translateY(0px);
+            opacity: 0;
+            animation: dropAndMove 3s linear forwards;
+        }
+        
+        @keyframes dropAndMove {
+            0% { transform: translateZ(200px) translateY(0px); opacity: 0; }
+            15% { transform: translateZ(0px) translateY(82.5px); opacity: 1; }
+            80% { transform: translateZ(0px) translateY(440px); opacity: 1; }
+            90% { transform: translateZ(0px) translateY(495px); opacity: 1; }
+            100% { transform: translateZ(0px) translateY(550px); opacity: 0; }
+        }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-    <div id="root"></div>
+    <div class="w-full h-screen relative preserve-3d flex items-center justify-center">
+        
+        <div class="absolute top-12 left-12 z-20">
+            <h1 class="text-4xl font-black text-white mb-4 tracking-tighter">Physical Pipeline.</h1>
+            <p class="text-slate-400 max-w-sm font-medium leading-relaxed mb-8">CSS Isometric Planes coupled with linear keyframes creates a fully faked 3D rendering of a conveyor belt, processing DOM objects.</p>
+            <button 
+                id="upload-btn"
+                class="bg-sky-500 text-white px-8 py-4 font-bold rounded-full drop-shadow-[0_0_20px_rgba(56,189,248,0.4)] disabled:opacity-50 transition-transform active:scale-95"
+            >
+                Initiate Upload Sequence
+            </button>
+        </div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useState, useEffect } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, AnimatePresence } from 'framer-motion';
+        <div class="preserve-3d w-[300px] h-[600px] absolute" style="transform: rotateX(60deg) rotateZ(-45deg); top: 20%;">
+            <div id="belt" class="absolute inset-0 conveyor-belt rounded-b-3xl border-x-[12px] border-b-[12px] border-slate-700 shadow-2xl"></div>
 
-        const Block = ({ id, onComplete }) => {
-            // Drop from above, land, then move along Y
-            return (
-                <motion.div
-                    className="absolute w-20 h-20 preserve-3d"
-                    // Isometric coordinate logic mapping:
-                    // The belt is an isometric plane. We drop exactly on spot (y=0) and slide to y=500.
-                    initial={{ z: 200, y: 0, opacity: 0, rotateZ: 0 }}
-                    animate={{ z: 0, y: 550, opacity: [0, 1, 1, 1, 0] }}
-                    transition={{
-                        duration: 3, 
-                        // Start fast drop, then linear moving along the belt, then fade out
-                        times: [0, 0.15, 0.8, 0.9, 1],
-                        ease: "linear"
-                    }}
-                    onAnimationComplete={() => onComplete(id)}
-                    style={{ left: 'calc(50% - 40px)' }}
-                >
-                    {/* Make it an isometric 3D box physically */}
-                    {/* Top */}
-                    <div className="absolute inset-0 bg-sky-400 border border-sky-300 flex items-center justify-center font-bold text-sky-900 drop-shadow-[0_0_15px_rgba(56,189,248,0.8)]">PKG</div>
-                    {/* Front edge */}
-                    <div className="absolute inset-0 bg-sky-600 border border-sky-500 origin-bottom" style={{ transform: 'rotateX(-90deg) translateZ(80px)', height: '20px', top: 'calc(100% - 20px)' }}></div>
-                    {/* Right edge */}
-                    <div className="absolute inset-0 bg-sky-500 border border-sky-400 origin-right" style={{ transform: 'rotateY(90deg) translateZ(80px)', width: '20px', left: 'calc(100% - 20px)' }}></div>
-                </motion.div>
-            );
-        };
+            <div class="absolute top-[-20px] left-0 right-0 h-10 bg-[radial-gradient(ellipse_at_center,rgba(56,189,248,0.8)_0%,transparent_100%)] blur-[20px] z-10"></div>
 
-        const App = () => {
-            const [blocks, setBlocks] = useState([]);
-            const [progress, setProgress] = useState(0);
-            const [isUploading, setIsUploading] = useState(false);
+            <div id="blocks-container" class="absolute inset-0 preserve-3d">
+                <!-- Blocks spawned here -->
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const btn = document.getElementById('upload-btn');
+        const belt = document.getElementById('belt');
+        const container = document.getElementById('blocks-container');
+        
+        let progress = 0;
+        let isUploading = false;
+        let intervalId = null;
 
-            useEffect(() => {
-                if (!isUploading) return;
+        btn.addEventListener('click', () => {
+            if (isUploading || progress === 100) return;
+            
+            progress = 0;
+            isUploading = true;
+            btn.textContent = `Uploading ${progress}%`;
+            btn.disabled = true;
+            belt.style.animation = 'moveBelt 1s linear infinite';
+            
+            intervalId = setInterval(() => {
+                spawnBlock();
+                progress = Math.min(progress + 5, 100);
+                btn.textContent = progress === 100 ? "Processing Complete" : `Uploading ${progress}%`;
                 
-                const intervalId = setInterval(() => {
-                    setBlocks(prev => [...prev, Date.now() + Math.random()]);
-                    setProgress(p => Math.min(p + 5, 100)); // fake progress
-                }, 400);
-
-                if (progress >= 100) {
-                    setIsUploading(false);
+                if(progress >= 100) {
+                    isUploading = false;
                     clearInterval(intervalId);
+                    setTimeout(() => {
+                        belt.style.animation = 'none';
+                    }, 3000); // wait for last block to finish
                 }
+            }, 400);
+        });
 
-                return () => clearInterval(intervalId);
-            }, [isUploading, progress]);
-
-            const removeBlock = (id) => {
-                setBlocks(prev => prev.filter(b => b !== id));
-            };
-
-            const startUpload = () => {
-                setProgress(0);
-                setIsUploading(true);
-            };
-
-            return (
-                <div className="w-full h-screen relative preserve-3d flex items-center justify-center">
-                    
-                    <div className="absolute top-12 left-12 z-20">
-                        <h1 className="text-4xl font-black text-white mb-4 tracking-tighter">Physical Pipeline.</h1>
-                        <p className="text-slate-400 max-w-sm font-medium leading-relaxed mb-8">CSS Isometric Planes coupled with linear keyframes creates a fully faked 3D rendering of a conveyor belt, processing DOM objects.</p>
-                        <button 
-                            onClick={startUpload}
-                            disabled={isUploading || progress === 100}
-                            className="bg-sky-500 text-white px-8 py-4 font-bold rounded-full drop-shadow-[0_0_20px_rgba(56,189,248,0.4)] disabled:opacity-50 transition-transform active:scale-95"
-                        >
-                            {progress === 100 ? "Processing Complete" : isUploading ? `Uploading ${progress}%` : "Initiate Upload Sequence"}
-                        </button>
-                    </div>
-
-                    {/* The Conveyor Belt Container */}
-                    <motion.div 
-                        className="preserve-3d w-[300px] h-[600px] absolute"
-                        style={{ rotateX: 60, rotateZ: -45, top: '20%' }}
-                    >
-                        {/* The Belt Texture */}
-                        <div 
-                            className="absolute inset-0 conveyor-belt rounded-b-3xl border-x-[12px] border-b-[12px] border-slate-700 shadow-2xl"
-                            style={{ 
-                                animation: isUploading ? 'moveBelt 1s linear infinite' : 'none' 
-                            }}
-                        />
-
-                        {/* Start Portal Glow */}
-                        <div className="absolute top-[-20px] left-0 right-0 h-10 bg-[radial-gradient(ellipse_at_center,rgba(56,189,248,0.8)_0%,transparent_100%)] blur-[20px] z-10"></div>
-
-                        {/* Active blocks dropping onto the belt */}
-                        <div className="absolute inset-0 preserve-3d">
-                            <AnimatePresence>
-                                {blocks.map(block => (
-                                    <Block key={block} id={block} onComplete={removeBlock} />
-                                ))}
-                            </AnimatePresence>
-                        </div>
-
-                    </motion.div>
-                </div>
-            );
-        };
-
-        createRoot(document.getElementById('root')).render(<App />);
+        function spawnBlock() {
+            const block = document.createElement('div');
+            block.className = 'block-element preserve-3d';
+            block.innerHTML = `
+                <div class="absolute inset-0 bg-sky-400 border border-sky-300 flex items-center justify-center font-bold text-sky-900 drop-shadow-[0_0_15px_rgba(56,189,248,0.8)]">PKG</div>
+                <div class="absolute inset-0 bg-sky-600 border border-sky-500 origin-bottom" style="transform: rotateX(-90deg) translateZ(80px); height: 20px; top: calc(100% - 20px);"></div>
+                <div class="absolute inset-0 bg-sky-500 border border-sky-400 origin-right" style="transform: rotateY(90deg) translateZ(80px); width: 20px; left: calc(100% - 20px);"></div>
+            `;
+            
+            container.appendChild(block);
+            
+            // Remove after animation completes
+            setTimeout(() => {
+                if(container.contains(block)) {
+                    container.removeChild(block);
+                }
+            }, 3000);
+        }
     </script>
 </body>
 </html>

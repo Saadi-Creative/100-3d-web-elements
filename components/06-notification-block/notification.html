@@ -1,536 +1,222 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cinematic 3D Notification</title>
+    <title>Holographic Notification Tile</title>
+    <link rel="stylesheet" href="../../styles/shared.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
+        .stage {
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-end;
             align-items: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #0a0a14 0%, #12121f 50%, #1a1a2e 100%);
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            gap: 40px;
-            perspective: 1500px;
-            overflow: hidden;
+            height: 100vh;
+            padding-bottom: var(--space-24);
+            perspective: 1000px;
         }
 
-        .notification-container {
-            position: relative;
-            width: 100%;
-            max-width: 500px;
-            padding: 20px;
-        }
+        /* Glass Tile */
+        .notification-tile {
+            position: absolute;
+            width: 380px;
+            padding: var(--space-4) var(--space-6);
+            display: flex;
+            align-items: center;
+            gap: var(--space-4);
+            border-radius: var(--radius-xl);
+            
+            /* Glass material */
+            background: linear-gradient(135deg, 
+                oklch(95% 0.01 var(--hue-base) / 0.1), 
+                oklch(95% 0.01 var(--hue-base) / 0.05)
+            );
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-subtle);
+            box-shadow: 
+                0 20px 40px rgba(0,0,0,0.4),
+                inset 0 1px 1px rgba(255,255,255,0.1);
 
-        /* Particle Canvas */
-        #particleCanvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 1000;
-        }
-
-        /* CINEMATIC 3D NOTIFICATION BLOCK */
-        .notification {
-            position: relative;
-            width: 100%;
-            padding: 26px 30px;
-            background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #1e293b 100%);
-            border-radius: 20px;
-            border: 2px solid rgba(255, 255, 255, 0.15);
-            cursor: pointer;
             transform-style: preserve-3d;
-
-            /* Ultra-thick 3D block with dramatic shadows */
-            box-shadow:
-                0 10px 0 0 #1a2332,
-                0 15px 0 0 #141d28,
-                0 20px 0 0 #0e151e,
-                0 25px 0 0 #080b10,
-                0 30px 0 0 #030406,
-                0 35px 60px rgba(0, 0, 0, 0.8),
-                0 0 60px rgba(59, 130, 246, 0.1),
-                inset 0 3px 6px rgba(255, 255, 255, 0.1),
-                inset 0 -6px 12px rgba(0, 0, 0, 0.4);
-
-            /* Hidden by default */
+            
+            /* Hidden State */
             opacity: 0;
-            transform: translateZ(-400px) rotateX(-45deg) scale(0.6);
             pointer-events: none;
-            transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+            /* Suspended high up and tilted back */
+            transform: translate3d(0, -60px, -100px) rotateX(15deg);
+            
+            transition: all 0.8s var(--ease-spring);
         }
 
-        /* Cinematic arrival - dramatic rotation and zoom */
-        .notification.show {
+        /* Arrived State */
+        .notification-tile.show {
             opacity: 1;
-            transform: translateZ(50px) rotateX(5deg) scale(1.08);
             pointer-events: auto;
+            /* Settles flat */
+            transform: translate3d(0, 0, 0) rotateX(0deg);
         }
 
-        /* Settled state - gentle hover */
-        .notification.settled {
-            transform: translateZ(10px) rotateX(0deg) scale(1);
-            animation: gentleFloat 6s ease-in-out infinite;
-        }
-
-        @keyframes gentleFloat {
-
-            0%,
-            100% {
-                transform: translateZ(10px) rotateX(0deg) translateY(0);
-            }
-
-            50% {
-                transform: translateZ(15px) rotateX(2deg) translateY(-5px);
-            }
-        }
-
-        /* Cinematic dismissal - spin and collapse */
-        .notification.dismissing {
+        /* Dismissed State */
+        .notification-tile.dismissed {
             opacity: 0;
-            transform: translateZ(-400px) rotateX(-30deg) rotateY(20deg) scale(0.3);
-            box-shadow:
-                0 5px 0 0 #1a2332,
-                0 8px 20px rgba(0, 0, 0, 0.6);
-        }
-
-        /* Ambient glow overlay */
-        .notification::before {
-            content: '';
-            position: absolute;
-            inset: -2px;
-            background: linear-gradient(135deg,
-                    rgba(59, 130, 246, 0.3) 0%,
-                    transparent 50%,
-                    rgba(139, 92, 246, 0.3) 100%);
-            border-radius: 20px;
-            opacity: 0;
-            transition: opacity 0.5s ease;
             pointer-events: none;
-            filter: blur(20px);
-            z-index: -1;
+            /* Falls down and away */
+            transform: translate3d(0, 40px, 100px) rotateX(-10deg);
+            transition: all 0.4s var(--ease-in);
         }
 
-        .notification.settled::before {
-            opacity: 1;
-            animation: glowPulse 3s ease-in-out infinite;
+        /* Ambient subtle float when idle */
+        .notification-tile.show.idle {
+            animation: float 4s ease-in-out infinite;
         }
 
-        @keyframes glowPulse {
-
-            0%,
-            100% {
-                opacity: 0.5;
-                filter: blur(20px);
-            }
-
-            50% {
-                opacity: 0.8;
-                filter: blur(30px);
-            }
+        @keyframes float {
+            0%, 100% { transform: translate3d(0, 0, 0) rotateX(0deg); }
+            50% { transform: translate3d(0, -6px, 10px) rotateX(2deg); }
         }
 
-        /* Content layout */
-        .notification-content {
-            display: flex;
-            align-items: flex-start;
-            gap: 18px;
-        }
-
-        /* Animated icon with bounce */
-        .notification-icon {
+        /* Icon Container */
+        .icon-container {
             flex-shrink: 0;
-            width: 52px;
-            height: 52px;
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-full);
+            background: var(--surface-interactive);
+            border: 1px solid var(--border-strong);
             display: flex;
-            align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #3b82f6, #2563eb, #1e40af);
-            border-radius: 14px;
-            font-size: 28px;
-            box-shadow:
-                0 6px 0 0 #1e40af,
-                0 8px 0 0 #1e3a8a,
-                0 10px 20px rgba(59, 130, 246, 0.5),
-                inset 0 2px 4px rgba(255, 255, 255, 0.3);
-            transform: translateZ(20px);
-            transition: all 0.3s ease;
+            align-items: center;
+            color: var(--success);
+            box-shadow: 
+                inset 0 2px 4px rgba(255,255,255,0.1),
+                0 0 15px oklch(70% 0.15 150 / 0.3);
         }
 
-        .notification.show .notification-icon {
-            animation: iconBounce 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        .icon-container svg {
+            width: 20px;
+            height: 20px;
+            stroke-width: 2.5;
         }
 
-        @keyframes iconBounce {
-            0% {
-                transform: translateZ(20px) scale(0) rotate(-180deg);
-            }
-
-            60% {
-                transform: translateZ(30px) scale(1.2) rotate(10deg);
-            }
-
-            100% {
-                transform: translateZ(20px) scale(1) rotate(0deg);
-            }
+        /* Content */
+        .content {
+            flex-grow: 1;
         }
 
-        .notification-body {
-            flex: 1;
-            transform: translateZ(10px);
+        .title {
+            font-size: var(--text-base);
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2px;
         }
 
-        .notification-title {
-            font-size: 18px;
-            font-weight: 800;
-            color: #f8fafc;
-            margin-bottom: 8px;
-            letter-spacing: 0.5px;
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        .message {
+            font-size: var(--text-sm);
+            color: var(--text-secondary);
         }
 
-        .notification.show .notification-title {
-            animation: slideInRight 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
-        }
-
-        @keyframes slideInRight {
-            from {
-                opacity: 0;
-                transform: translateX(-30px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        .notification-message {
-            font-size: 14px;
-            color: #cbd5e1;
-            line-height: 1.6;
-            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-        }
-
-        .notification.show .notification-message {
-            animation: slideInRight 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
-        }
-
-        /* Progress bar at bottom */
-        .notification-progress {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 0 0 18px 18px;
-            overflow: hidden;
-        }
-
-        .notification-progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
-            width: 100%;
-            transform-origin: left;
-            animation: progressShrink 4s linear;
-            box-shadow: 0 0 10px rgba(59, 130, 246, 0.8);
-        }
-
-        @keyframes progressShrink {
-            from {
-                width: 100%;
-            }
-
-            to {
-                width: 0%;
-            }
-        }
-
-        /* Close button with 3D effect */
-        .notification-close {
+        /* Dismiss button */
+        .dismiss-btn {
             flex-shrink: 0;
-            width: 36px;
-            height: 36px;
+            width: 28px;
+            height: 28px;
+            border-radius: var(--radius-full);
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-muted);
             display: flex;
-            align-items: center;
             justify-content: center;
-            background: rgba(255, 255, 255, 0.08);
-            border: 2px solid rgba(255, 255, 255, 0.15);
-            border-radius: 10px;
-            font-size: 18px;
-            color: #94a3b8;
+            align-items: center;
             cursor: pointer;
-            transition: all 0.2s ease;
-            transform: translateZ(15px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: all var(--time-fast) var(--ease-out);
         }
 
-        .notification-close:hover {
-            background: rgba(239, 68, 68, 0.2);
-            border-color: rgba(239, 68, 68, 0.5);
-            color: #ef4444;
-            transform: translateZ(25px) scale(1.1) rotate(90deg);
-            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+        .dismiss-btn:hover {
+            background: var(--surface-interactive);
+            border-color: var(--border-subtle);
+            color: var(--text-primary);
         }
 
-        .notification.show .notification-close {
-            animation: slideInRight 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both;
-        }
-
-        /* Controls */
-        .controls {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
+        /* Trigger for preview */
+        .trigger-btn {
+            padding: var(--space-3) var(--space-6);
+            background: var(--surface-interactive);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            font-weight: 500;
+            transition: all var(--time-base) var(--ease-out);
             z-index: 10;
         }
 
-        .btn {
-            padding: 14px 28px;
-            border: none;
-            border-radius: 14px;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: white;
-            transform-style: preserve-3d;
-
-            box-shadow:
-                0 6px 0 0 rgba(0, 0, 0, 0.3),
-                0 8px 20px rgba(0, 0, 0, 0.4);
-        }
-
-        .btn-show {
-            background: linear-gradient(135deg, #10b981, #059669, #047857);
-        }
-
-        .btn-show:hover {
-            transform: translateY(-4px) translateZ(10px);
-            box-shadow:
-                0 10px 0 0 rgba(0, 0, 0, 0.3),
-                0 12px 30px rgba(16, 185, 129, 0.5);
-        }
-
-        .btn-show:active {
+        .trigger-btn:hover {
+            background: var(--surface-elevated);
             transform: translateY(-2px);
         }
 
-        .hint {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.35);
-            text-align: center;
-        }
     </style>
 </head>
-
 <body>
-    <canvas id="particleCanvas"></canvas>
+    <div class="stage">
+        
+        <button class="trigger-btn" id="triggerBtn">Trigger Event</button>
 
-    <div class="notification-container">
-        <!-- CINEMATIC 3D NOTIFICATION BLOCK -->
-        <div class="notification" id="notification">
-            <div class="notification-content">
-                <div class="notification-icon">🎉</div>
-                <div class="notification-body">
-                    <div class="notification-title">Success!</div>
-                    <div class="notification-message">Your changes have been saved successfully to the database.</div>
-                </div>
-                <div class="notification-close" id="closeBtn">✕</div>
+        <div class="notification-tile" id="notification">
+            <div class="icon-container">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
             </div>
-            <div class="notification-progress">
-                <div class="notification-progress-bar"></div>
+            <div class="content">
+                <div class="title">System Synchronized</div>
+                <div class="message">All nodes updated successfully.</div>
             </div>
+            <button class="dismiss-btn" id="dismissBtn" aria-label="Dismiss">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
         </div>
-    </div>
 
-    <div class="controls">
-        <button class="btn btn-show" id="showBtn">Show Notification</button>
     </div>
-
-    <div class="hint">Cinematic entrance • Particle effects • Auto-dismiss in 4s</div>
 
     <script>
         const notification = document.getElementById('notification');
-        const showBtn = document.getElementById('showBtn');
-        const closeBtn = document.getElementById('closeBtn');
-        const canvas = document.getElementById('particleCanvas');
-        const ctx = canvas.getContext('2d');
+        const triggerBtn = document.getElementById('triggerBtn');
+        const dismissBtn = document.getElementById('dismissBtn');
+        let autoDismissTimer;
 
-        // Setup canvas
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-
-        let isVisible = false;
-        let settleTimeout = null;
-        let autoDismissTimeout = null;
-        let particles = [];
-
-        // ========== PARTICLE SYSTEM ==========
-        class Particle {
-            constructor(x, y, color) {
-                this.x = x;
-                this.y = y;
-                this.vx = (Math.random() - 0.5) * 10;
-                this.vy = (Math.random() - 0.5) * 10 - 3;
-                this.life = 1;
-                this.decay = Math.random() * 0.02 + 0.01;
-                this.size = Math.random() * 5 + 2;
-                this.color = color;
-                this.rotation = Math.random() * Math.PI * 2;
-                this.rotationSpeed = (Math.random() - 0.5) * 0.3;
-            }
-
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.vy += 0.2; // Gravity
-                this.vx *= 0.98;
-                this.life -= this.decay;
-                this.rotation += this.rotationSpeed;
-            }
-
-            draw() {
-                ctx.save();
-                ctx.globalAlpha = this.life;
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.rotation);
-
-                const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size);
-                gradient.addColorStop(0, this.color);
-                gradient.addColorStop(1, 'transparent');
-
-                ctx.fillStyle = gradient;
-                ctx.fillRect(-this.size, -this.size, this.size * 2, this.size * 2);
-
-                ctx.restore();
-            }
-        }
-
-        function emitParticles(x, y, count, color) {
-            for (let i = 0; i < count; i++) {
-                particles.push(new Particle(x, y, color));
-            }
-        }
-
-        function animateParticles() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles = particles.filter(p => p.life > 0);
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
-            requestAnimationFrame(animateParticles);
-        }
-        animateParticles();
-
-        // ========== SHOW NOTIFICATION ==========
         function showNotification() {
-            if (isVisible) return;
-            isVisible = true;
-
-            // Clear timeouts
-            if (settleTimeout) clearTimeout(settleTimeout);
-            if (autoDismissTimeout) clearTimeout(autoDismissTimeout);
-
-            // Emit particles at notification position
-            const rect = notification.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-
-            emitParticles(centerX, centerY, 40, 'rgba(59, 130, 246, 0.8)');
-            emitParticles(centerX, centerY, 30, 'rgba(139, 92, 246, 0.8)');
-
-            // Reset states
-            notification.classList.remove('settled', 'dismissing');
+            // Reset state
+            notification.classList.remove('dismissed', 'idle');
+            // Force reflow
             void notification.offsetWidth;
-
-            // Cinematic entrance
+            
+            // Show
             notification.classList.add('show');
 
-            // Settle after dramatic entrance
-            settleTimeout = setTimeout(() => {
-                notification.classList.remove('show');
-                notification.classList.add('settled');
-
-                // Emit settle particles
-                emitParticles(centerX, centerY, 20, 'rgba(16, 185, 129, 0.6)');
-            }, 800);
-
-            // Auto-dismiss after 4 seconds
-            autoDismissTimeout = setTimeout(() => {
-                dismissNotification();
-            }, 4000);
-        }
-
-        // ========== DISMISS NOTIFICATION ==========
-        function dismissNotification() {
-            if (!isVisible) return;
-
-            // Emit dismissal particles
-            const rect = notification.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-            emitParticles(centerX, centerY, 25, 'rgba(239, 68, 68, 0.6)');
-
-            if (settleTimeout) clearTimeout(settleTimeout);
-            if (autoDismissTimeout) clearTimeout(autoDismissTimeout);
-
-            notification.classList.remove('show', 'settled');
-            notification.classList.add('dismissing');
-
+            // Add ambient idle floating after it settles
             setTimeout(() => {
-                notification.classList.remove('dismissing');
-                isVisible = false;
+                if(notification.classList.contains('show')) {
+                    notification.classList.add('idle');
+                }
             }, 800);
+
+            // Auto dismiss
+            clearTimeout(autoDismissTimer);
+            autoDismissTimer = setTimeout(dismissNotification, 5000);
         }
 
-        // ========== EVENT LISTENERS ==========
-        showBtn.addEventListener('click', showNotification);
-        closeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            dismissNotification();
-        });
+        function dismissNotification() {
+            clearTimeout(autoDismissTimer);
+            notification.classList.remove('show', 'idle');
+            notification.classList.add('dismissed');
+        }
 
-        notification.addEventListener('click', dismissNotification);
-        notification.querySelector('.notification-content').addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
-
-        // Resize canvas
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        });
-
-        // Exposed API
-        window.CinematicNotification = {
-            show: showNotification,
-            dismiss: dismissNotification,
-            isVisible: () => isVisible,
-            setContent: (title, message, icon = '🎉') => {
-                notification.querySelector('.notification-title').textContent = title;
-                notification.querySelector('.notification-message').textContent = message;
-                notification.querySelector('.notification-icon').textContent = icon;
-            }
-        };
+        triggerBtn.addEventListener('click', showNotification);
+        dismissBtn.addEventListener('click', dismissNotification);
     </script>
 </body>
-
 </html>

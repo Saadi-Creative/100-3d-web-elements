@@ -9,129 +9,147 @@
         body { margin: 0; background: #000; min-height: 100vh; overflow: hidden; font-family: 'Inter', sans-serif; }
         .preserve-3d { transform-style: preserve-3d; }
         .perspective-container { perspective: 1500px; }
+        
+        .page-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+        }
+
+        .venetian-slice {
+            position: absolute;
+            width: 100%;
+            overflow: hidden;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            transform-origin: top center;
+            opacity: 1;
+            transform: rotateX(0deg);
+            transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.8s;
+            backface-visibility: hidden;
+        }
+        
+        .venetian-slice.hide {
+            transform: rotateX(90deg);
+            opacity: 0;
+        }
+        
+        .venetian-slice.enter-start {
+            transform: rotateX(-90deg);
+            opacity: 0;
+            transition: none;
+        }
+        
+        .venetian-slice.enter-end {
+            transform: rotateX(0deg);
+            opacity: 1;
+            transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.8s;
+        }
+
+        .slice-content-wrapper {
+            position: absolute;
+            width: 100%;
+            height: 100vh;
+        }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root" class="w-full h-screen relative perspective-container bg-black preserve-3d">
+        <!-- Base Page B Container (Hidden initially) -->
+        <div id="page-b" class="page-content bg-rose-950 text-white p-12 overflow-hidden flex-col items-center justify-center hidden z-0">
+            <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,rgba(244,63,94,0.2)_0%,transparent_50%)] pointer-events-none"></div>
+            <h1 class="text-7xl font-black mb-6 tracking-tighter drop-shadow-xl text-rose-300">Welcome to Sector B.</h1>
+            <p class="text-rose-200/50 text-xl max-w-lg text-center mb-12">The old DOM has completely unmounted. Notice how the previous page sliced itself perfectly in 3D space during unmount.</p>
+            <button id="btn-b" class="px-8 py-4 bg-rose-500 hover:bg-rose-400 text-white font-bold rounded-full transition-colors shadow-[0_0_20px_rgba(244,63,94,0.4)]">
+                Return to Void
+            </button>
+            <div class="absolute bottom-10 left-10 text-rose-500 font-bold tracking-widest uppercase">Sector B</div>
+        </div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useState } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, AnimatePresence } from 'framer-motion';
+        <!-- Base Page A Container -->
+        <div id="page-a" class="page-content bg-slate-900 text-white p-12 overflow-hidden flex flex-col items-center justify-center z-10">
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.1)_0%,transparent_50%)] pointer-events-none"></div>
+            <h1 class="text-7xl font-black mb-6 tracking-tighter drop-shadow-xl">Discover the Void.</h1>
+            <p class="text-slate-400 text-xl max-w-lg text-center mb-12">Click below to trigger a hardware-accelerated venetian blind exit transition to unmount the current DOM page entirely.</p>
+            <button id="btn-a" class="px-8 py-4 bg-sky-500 hover:bg-sky-400 text-white font-bold rounded-full transition-colors shadow-[0_0_20px_rgba(56,189,248,0.4)]">
+                Transition to Sector B
+            </button>
+            <div class="absolute bottom-10 left-10 text-slate-600 font-bold tracking-widest uppercase">Sector A</div>
+        </div>
 
-        // Content for Page A
-        const PageA = ({ onClick }) => (
-            <div className="w-full h-screen bg-slate-900 flex flex-col items-center justify-center text-white relative p-12 overflow-hidden">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.1)_0%,transparent_50%)] pointer-events-none"></div>
-                <h1 className="text-7xl font-black mb-6 tracking-tighter drop-shadow-xl">Discover the Void.</h1>
-                <p className="text-slate-400 text-xl max-w-lg text-center mb-12">Click below to trigger a hardware-accelerated venetian blind exit transition to unmount the current DOM page entirely.</p>
-                
-                <button 
-                    onClick={onClick}
-                    className="px-8 py-4 bg-sky-500 hover:bg-sky-400 text-white font-bold rounded-full transition-colors shadow-[0_0_20px_rgba(56,189,248,0.4)]"
-                >
-                    Transition to Sector B
-                </button>
-                
-                <div className="absolute bottom-10 left-10 text-slate-600 font-bold tracking-widest uppercase">Sector A</div>
-            </div>
-        );
+        <!-- Transition Overlay -->
+        <div id="transition-overlay" class="absolute inset-0 w-full h-full preserve-3d pointer-events-none z-20"></div>
+    </div>
 
-        // Content for Page B
-        const PageB = ({ onClick }) => (
-            <div className="w-full h-screen bg-rose-950 flex flex-col items-center justify-center text-white relative p-12 overflow-hidden">
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,rgba(244,63,94,0.2)_0%,transparent_50%)] pointer-events-none"></div>
-                <h1 className="text-7xl font-black mb-6 tracking-tighter drop-shadow-xl text-rose-300">Welcome to Sector B.</h1>
-                <p className="text-rose-200/50 text-xl max-w-lg text-center mb-12">The old DOM has completely unmounted. Notice how the previous page sliced itself perfectly in 3D space during unmount.</p>
-                
-                <button 
-                    onClick={onClick}
-                    className="px-8 py-4 bg-rose-500 hover:bg-rose-400 text-white font-bold rounded-full transition-colors shadow-[0_0_20px_rgba(244,63,94,0.4)]"
-                >
-                    Return to Void
-                </button>
+    <script>
+        const pageA = document.getElementById('page-a');
+        const pageB = document.getElementById('page-b');
+        const btnA = document.getElementById('btn-a');
+        const btnB = document.getElementById('btn-b');
+        const overlay = document.getElementById('transition-overlay');
+        
+        const SLICES = 6;
+        let isTransitioning = false;
 
-                <div className="absolute bottom-10 left-10 text-rose-500 font-bold tracking-widest uppercase">Sector B</div>
-            </div>
-        );
-
-        const App = () => {
-            const [currentPage, setCurrentPage] = useState('A');
-
-            // The trick to the Venetian blinds transition is that the "Component" 
-            // inside AnimatePresence handles its OWN unmount animation by rendering 
-            // 5 distinct panels that "unwrap" to reveal whatever has instantly rendered behind it.
+        function transition(fromPage, toPage) {
+            if(isTransitioning) return;
+            isTransitioning = true;
             
-            return (
-                <div className="w-full h-screen relative perspective-container bg-black">
-                    <AnimatePresence mode="popLayout">
-                        {currentPage === 'A' && (
-                            <VenetianTransitionPanel key="pageA">
-                                <PageA onClick={() => setCurrentPage('B')} />
-                            </VenetianTransitionPanel>
-                        )}
-                        {currentPage === 'B' && (
-                            <VenetianTransitionPanel key="pageB">
-                                <PageB onClick={() => setCurrentPage('A')} />
-                            </VenetianTransitionPanel>
-                        )}
-                    </AnimatePresence>
-                </div>
-            );
-        };
-
-        // This wrapper intercepts the raw children component and, upon exiting, 
-        // slices them visually. Wait, React can't easily "slice" dynamic DOM elements into 5 pieces natively.
-        // The standard 100% stable approach without WebGL or Canvas rendering is overlaying solid divs 
-        // that match the outgoing page's background and spinning them out. 
-        // Actually, you CAN slice DOM if you render the exact same child 5 times, but put it inside overflow:hidden containers!
-
-        const VenetianTransitionPanel = ({ children }) => {
-            const SLICES = 6;
+            overlay.innerHTML = '';
+            const sliceHeight = 100 / SLICES;
             
-            // Generate array of slices
-            return (
-                <motion.div className="absolute inset-0 w-full h-full flex flex-col preserve-3d pointer-events-auto">
-                    {Array.from({ length: SLICES }).map((_, i) => (
-                        <motion.div 
-                            key={i}
-                            className="relative w-full overflow-hidden flex-1 border-b border-white/5"
-                            style={{ 
-                                // Origin center is normal, but origin-top makes it swing like window blinds
-                                transformOrigin: 'top center' 
-                            }}
-                            initial={{ rotateX: -90, opacity: 0 }}
-                            animate={{ rotateX: 0, opacity: 1 }}
-                            exit={{ rotateX: 90, opacity: 0 }}
-                            transition={{ 
-                                duration: 0.8, 
-                                // Stagger entrance and exit
-                                delay: i * 0.1, 
-                                ease: [0.25, 1, 0.5, 1] // Custom easing
-                            }}
-                        >
-                            {/* To slice the content, we push the children upward by the exact height index */}
-                            <div className="absolute w-full h-screen" style={{ top: `-${i * (100 / SLICES)}vh` }}>
-                                {children}
-                            </div>
-                        </motion.div>
-                    ))}
-                </motion.div>
-            );
-        };
+            // Create slices of the "fromPage"
+            for(let i=0; i<SLICES; i++) {
+                const slice = document.createElement('div');
+                slice.className = 'venetian-slice';
+                slice.style.height = `${sliceHeight}vh`;
+                slice.style.top = `${i * sliceHeight}vh`;
+                slice.style.transitionDelay = `${i * 0.1}s`;
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'slice-content-wrapper';
+                wrapper.style.top = `-${i * sliceHeight}vh`;
+                wrapper.innerHTML = fromPage.innerHTML;
+                
+                slice.appendChild(wrapper);
+                overlay.appendChild(slice);
+            }
+            
+            fromPage.classList.remove('flex');
+            fromPage.classList.add('hidden');
+            
+            toPage.classList.remove('hidden');
+            toPage.classList.add('flex');
+            toPage.style.zIndex = 0;
+            overlay.style.zIndex = 10;
+            
+            // Force reflow
+            void overlay.offsetWidth;
+            
+            const slices = overlay.querySelectorAll('.venetian-slice');
+            slices.forEach(slice => {
+                slice.classList.add('hide');
+            });
+            
+            setTimeout(() => {
+                overlay.innerHTML = '';
+                isTransitioning = false;
+                toPage.style.zIndex = 10;
+            }, 800 + (SLICES * 100)); // wait for max duration
+        }
 
-        createRoot(document.getElementById('root')).render(<App />);
+        btnA.addEventListener('click', () => {
+            transition(pageA, pageB);
+            // Re-bind B button within pageB because innerHTML copying doesn't copy listeners
+            // Wait, we didn't copy listeners to slices, which is fine they are unclickable anyway
+            // But we need to ensure btnB in pageB works. It always works since we didn't modify pageB innerHTML.
+        });
+
+        btnB.addEventListener('click', () => {
+            transition(pageB, pageA);
+        });
     </script>
 </body>
 </html>

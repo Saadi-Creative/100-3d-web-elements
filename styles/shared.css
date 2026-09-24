@@ -1,0 +1,73 @@
+/* ==========================================================================
+   SHARED PRIMITIVES - COMPONENT SCOPE
+   ========================================================================== */
+
+/* 
+ * This file is intended to be included inside each individual component iframe
+ * to provide a consistent baseline and access to the design system. 
+ */
+
+@import url('design-system.css');
+
+body {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: transparent; /* Rely on iframe parent for background or explicit component bg */
+    font-family: var(--font-sans);
+    color: var(--text-primary);
+    overflow: hidden; /* Avoid scrollbars in preview */
+    perspective: 1000px; /* Default 3D context */
+    -webkit-font-smoothing: antialiased;
+}
+
+/* 
+ * UTILITIES 
+ */
+
+.flex-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.text-fluid-h1 {
+    font-size: var(--text-3xl);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.text-fluid-body {
+    font-size: var(--text-base);
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* 
+ * COMMON INTERACTIVE STATES
+ * Graceful degradation for touch
+ */
+@media (hover: hover) {
+    .hover-lift {
+        transition: transform var(--time-base) var(--ease-out);
+    }
+    .hover-lift:hover {
+        transform: translateY(-4px);
+    }
+}
+
+/* Base button reset */
+.btn-reset {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    outline: none;
+}

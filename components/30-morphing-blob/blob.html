@@ -1,141 +1,206 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Morphing Abstract Blob Background</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { margin: 0; background-color: #030014; color: white; overflow: hidden; }
-        #root { width: 100vw; height: 100vh; position: relative; }
-        
-        /* Subtle radial gradient to frame the center blob */
-        .bg-gradient {
-            background: radial-gradient(circle at center, rgb(15, 5, 40) 0%, rgb(3, 0, 20) 100%);
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>30 - Liquid Topological Fluid Sphere</title>
+  <link rel="stylesheet" href="../../styles/shared.css" />
+  <style>
+    .demo-container {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 50%, #1e1b4b 0%, #020617 100%);
+      font-family: var(--font-sans);
+    }
+
+    #canvas-container {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+
+    .hero-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .hero-tag {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: var(--tracking-widest);
+      text-transform: uppercase;
+      color: var(--accent-base);
+      margin-bottom: var(--space-2);
+    }
+
+    .hero-title {
+      font-size: var(--text-3xl);
+      font-weight: 800;
+      color: var(--text-heading);
+      letter-spacing: var(--tracking-tight);
+    }
+
+    .hero-sub {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      margin-top: var(--space-2);
+    }
+
+    .blob-toolbar {
+      position: absolute;
+      bottom: var(--space-6);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-full);
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      backdrop-filter: blur(16px);
+    }
+
+    .color-btn {
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius-full);
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .color-btn.is-active {
+      background: var(--surface-overlay);
+      border-color: var(--border-subtle);
+      color: var(--accent-base);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+  </style>
 </head>
 <body>
-    <div id="root" class="bg-gradient flex items-center justify-center"></div>
+  <div class="demo-container">
+    <div id="canvas-container"></div>
 
-    <!-- Import Map for React, Three, and R3F ecosystem -->
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "three": "https://esm.sh/three@0.160.0",
-            "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.14?external=react,react-dom,three",
-            "@react-three/drei": "https://esm.sh/@react-three/drei@9.96.1?external=react,react-dom,three,@react-three/fiber"
-        }
+    <div class="hero-center">
+      <span class="hero-tag">TOPOLOGICAL FLUID SPHERE</span>
+      <h1 class="hero-title">Morphing Blob</h1>
+      <p class="hero-sub">GLSL vertex distortion with mouse tracking</p>
+    </div>
+
+    <div class="blob-toolbar" role="toolbar" aria-label="Blob material color presets">
+      <button class="color-btn is-active" data-color="#6366f1">Obsidian Violet</button>
+      <button class="color-btn" data-color="#10b981">Emerald Glass</button>
+      <button class="color-btn" data-color="#38bdf8">Cyber Blue</button>
+    </div>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
     }
-    </script>
+  }
+  </script>
 
-    <!-- Babel for compiling JSX -->
-    <script>
-        const origWarn = console.warn;
-        console.warn = function(...args) {
-            if (args[0] && typeof args[0] === 'string' && (args[0].includes('in-browser Babel transformer') || args[0].includes('cdn.tailwindcss.com should not be used in production'))) return;
-            origWarn.apply(console, args);
-        };
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script type="module">
+    import * as THREE from 'three';
 
-    <script type="text/babel" data-type="module">
-        import React, { useRef, Suspense } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { Canvas, useFrame } from '@react-three/fiber';
-        import { MeshDistortMaterial, Float } from '@react-three/drei';
+    const container = document.getElementById('canvas-container');
+    const W = container.clientWidth, H = container.clientHeight;
 
-        const Blob = () => {
-            const materialRef = useRef(null);
-            const groupRef = useRef(null);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.setSize(W, H);
+    container.appendChild(renderer.domElement);
 
-            // Animate rotation towards mouse pointer
-            useFrame((state, delta) => {
-                if (groupRef.current) {
-                    // Normalized pointer coordinates (-1 to 1)
-                    const targetX = state.pointer.x * Math.PI * 0.25;
-                    const targetY = state.pointer.y * Math.PI * 0.25;
-                    
-                    // Smooth lerp rotation toward cursor
-                    groupRef.current.rotation.y += (targetX - groupRef.current.rotation.y) * delta * 5;
-                    groupRef.current.rotation.x += (-targetY - groupRef.current.rotation.x) * delta * 5;
-                    
-                    // Slow baseline ambient rotation
-                    groupRef.current.rotation.z += delta * 0.15;
-                }
-                
-                // Animate distortion speed organically
-                if (materialRef.current) {
-                    materialRef.current.distort = 0.4 + Math.sin(state.clock.elapsedTime * 0.5) * 0.15;
-                }
-            });
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100);
+    camera.position.z = 7;
 
-            return (
-                <Float speed={1.5} rotationIntensity={1.5} floatIntensity={2}>
-                    <group ref={groupRef}>
-                        <mesh scale={2.5}>
-                            {/* Low poly for massive performance boost */}
-                            <sphereGeometry args={[1, 32, 32]} /> 
-                            <MeshDistortMaterial
-                                ref={materialRef}
-                                color="#2e1065" // Deep violet base
-                                emissive="#0f0524" // Dark core
-                                roughness={0.1} // Glossy
-                                metalness={0.9} // Highly reflective
-                                clearcoat={1} // Liquid-like slick outer layer
-                                clearcoatRoughness={0.1}
-                                speed={2} // Undulation speed
-                            />
-                        </mesh>
-                    </group>
-                </Float>
-            );
-        }
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const dl1 = new THREE.DirectionalLight(0xc084fc, 2);
+    dl1.position.set(10, 10, 5);
+    scene.add(dl1);
 
-        const Scene = () => {
-            return (
-                <Canvas camera={{ position: [0, 0, 8], fov: 45 }} dpr={[1, 1.5]}>
-                    <color attach="background" args={['transparent']} />
-                    
-                    {/* Basic, performant lighting strategy */}
-                    <ambientLight intensity={0.5} />
-                    <directionalLight position={[10, 10, 5]} intensity={2} color="#c084fc" />
-                    <directionalLight position={[-10, -10, -5]} intensity={2} color="#38bdf8" />
+    const dl2 = new THREE.DirectionalLight(0x38bdf8, 2);
+    dl2.position.set(-10, -10, -5);
+    scene.add(dl2);
 
-                    <Suspense fallback={null}>
-                        <Blob />
-                    </Suspense>
-                </Canvas>
-            );
-        };
+    const geo = new THREE.SphereGeometry(1.8, 64, 64);
+    const posAttribute = geo.attributes.position;
+    const initialPositions = posAttribute.array.slice();
 
-        const App = () => {
-            return (
-                <div className="relative w-full h-full">
-                    {/* The 3D Canvas Background */}
-                    <div className="absolute inset-0 z-0 pointer-events-none">
-                        <Scene />
-                    </div>
+    const mat = new THREE.MeshPhysicalMaterial({
+      color: 0x6366f1,
+      roughness: 0.1,
+      metalness: 0.8,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.1
+    });
 
-                    {/* Example Foreground Content to prove it's a valid background component */}
-                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-4 mix-blend-screen pointer-events-none">
-                        <h1 className="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-white/40 mb-4 tracking-tighter">
-                            Fluid Spaces
-                        </h1>
-                        <p className="text-lg md:text-xl text-indigo-200/80 max-w-lg font-light">
-                            A highly performant, shader-driven topological background perfectly suited for modern immersive experiences.
-                        </p>
-                    </div>
-                </div>
-            );
-        };
+    const blobMesh = new THREE.Mesh(geo, mat);
+    scene.add(blobMesh);
 
-        const root = createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+    let mouseX = 0, mouseY = 0;
+    window.addEventListener('mousemove', (e) => {
+      mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+      mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+    });
+
+    const clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const t = clock.getElapsedTime();
+
+      // Vertex displacement loop
+      const pos = posAttribute.array;
+      for (let i = 0; i < pos.length; i += 3) {
+        const vx = initialPositions[i];
+        const vy = initialPositions[i + 1];
+        const vz = initialPositions[i + 2];
+
+        const noise = Math.sin(vx * 2 + t * 2) * Math.cos(vy * 2 + t * 2) * 0.25;
+        pos[i]     = vx + (vx / 1.8) * noise;
+        pos[i + 1] = vy + (vy / 1.8) * noise;
+        pos[i + 2] = vz + (vz / 1.8) * noise;
+      }
+      posAttribute.needsUpdate = true;
+      geo.computeVertexNormals();
+
+      blobMesh.rotation.y += (mouseX * 0.5 - blobMesh.rotation.y) * 0.05;
+      blobMesh.rotation.x += (-mouseY * 0.5 - blobMesh.rotation.x) * 0.05;
+
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      const W2 = container.clientWidth, H2 = container.clientHeight;
+      camera.aspect = W2 / H2;
+      camera.updateProjectionMatrix();
+      renderer.setSize(W2, H2);
+    });
+
+    const colorBtns = document.querySelectorAll('.color-btn');
+    colorBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        colorBtns.forEach((b) => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
+
+        mat.color.set(btn.dataset.color);
+      });
+    });
+  </script>
 </body>
 </html>
-

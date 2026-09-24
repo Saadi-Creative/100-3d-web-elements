@@ -1,191 +1,156 @@
 <!DOCTYPE html>
-
-<html lang="en"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Kinetic Typography Portal</title>
-<!-- Tailwind CSS CDN with Plugins -->
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<!-- Three.js CDN -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<!-- Tailwind Configuration for custom colors -->
-<script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            obsidian: '#0a0a0a',
-            electricCyan: '#00f5ff',
-            goldenYellow: '#ffdf00',
-          },
-          fontFamily: {
-            sans: ['Inter', 'system-ui', 'sans-serif'],
-          }
-        }
-      }
-    }
-  </script>
-<style data-purpose="global-layout">
-    body {
-      margin: 0;
-      padding: 0;
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>27 - Kinetic Data Nexus Portal</title>
+  <link rel="stylesheet" href="../../styles/shared.css" />
+  <style>
+    .demo-container {
+      position: relative;
+      width: 100%;
+      height: 100vh;
       overflow: hidden;
-      background-color: #0a0a0a;
-      font-family: 'Inter', sans-serif;
+      background: #020617;
+      font-family: var(--font-sans);
     }
-    canvas {
-      display: block;
+
+    #canvas-container {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
     }
-    /* Smooth transition for hover effects */
-    .transition-all-300 {
-      transition: all 0.3s ease-in-out;
+
+    .hero-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+      text-align: center;
+      pointer-events: none;
     }
-    /* Glow effect for the button */
-    .btn-glow:hover {
-      box-shadow: 0 0 20px rgba(0, 245, 255, 0.4);
+
+    .hero-tag {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: var(--tracking-widest);
+      text-transform: uppercase;
+      color: #38bdf8;
+      margin-bottom: var(--space-2);
+    }
+
+    .hero-title {
+      font-size: var(--text-3xl);
+      font-weight: 800;
+      color: var(--text-heading);
+      letter-spacing: var(--tracking-tight);
+    }
+
+    .hero-sub {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      margin-top: var(--space-2);
     }
   </style>
 </head>
-<body class="bg-obsidian text-white h-screen flex flex-col items-center justify-center overflow-hidden">
-<!-- BEGIN: Kinetic Typography Canvas Container -->
-<main class="relative w-full h-full flex flex-col items-center justify-center" data-purpose="portal-container">
-<!-- Three.js Canvas Area -->
-<div class="absolute inset-0 z-0" data-purpose="webgl-background" id="canvas-wrapper">
-<canvas id="kinetic-canvas"></canvas>
-</div>
-<!-- BEGIN: Interface Overlay -->
-<div class="relative z-10 flex flex-col items-center w-full max-w-md px-6 space-y-8" data-purpose="user-interface">
-<!-- Top Branding (Optional but adds to the portal feel) -->
-<div class="text-center mb-4" data-purpose="branding">
-<h1 class="text-xs uppercase tracking-[0.5em] text-electricCyan/60 font-medium">Kinetic Data Nexus</h1>
-</div>
-<!-- Removed Input Section per user request -->
-<!-- Footer Info -->
-<div class="text-[10px] text-white/20 uppercase tracking-widest mt-12" data-purpose="system-status">
-        System Status // Node: 20k_PARTICLES
-      </div>
-</div>
-<!-- END: Interface Overlay -->
-</main>
-<!-- END: Kinetic Typography Canvas Container -->
-<!-- BEGIN: Particle System Script -->
-<script data-purpose="kinetic-particles-logic">
-    (function() {
-      const canvas = document.getElementById('kinetic-canvas');
-      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-      renderer.setPixelRatio(window.devicePixelRatio);
-      renderer.setSize(window.innerWidth, window.innerHeight);
+<body>
+  <div class="demo-container">
+    <div id="canvas-container"></div>
 
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-      camera.position.z = 100;
+    <div class="hero-center">
+      <span class="hero-tag">20K KINETIC PARTICLES</span>
+      <h1 class="hero-title">Kinetic Data Nexus</h1>
+      <p class="hero-sub">Swirling particle portal with mouse interaction</p>
+    </div>
+  </div>
 
-      const particleCount = 20000;
-      const positions = new Float32Array(particleCount * 3);
-      const colors = new Float32Array(particleCount * 3);
-      const sizes = new Float32Array(particleCount);
-
-      const colorCyan = new THREE.Color(0x00f5ff);
-      const colorGold = new THREE.Color(0xffdf00);
-
-      // Initialize Particles
-      for (let i = 0; i < particleCount; i++) {
-        // Positions in a sphere
-        const r = 50 + Math.random() * 10;
-        const theta = Math.random() * Math.PI * 2;
-        const phi = Math.acos((Math.random() * 2) - 1);
-
-        const x = r * Math.sin(phi) * Math.cos(theta);
-        const y = r * Math.sin(phi) * Math.sin(theta);
-        const z = r * Math.cos(phi);
-
-        positions[i * 3] = x;
-        positions[i * 3 + 1] = y;
-        positions[i * 3 + 2] = z;
-
-        // Color Logic: Gold at the base (y < -30), Cyan elsewhere
-        if (y < -35 && Math.random() > 0.4) {
-          colors[i * 3] = colorGold.r;
-          colors[i * 3 + 1] = colorGold.g;
-          colors[i * 3 + 2] = colorGold.b;
-        } else {
-          colors[i * 3] = colorCyan.r;
-          colors[i * 3 + 1] = colorCyan.g;
-          colors[i * 3 + 2] = colorCyan.b;
-        }
-
-        sizes[i] = Math.random() * 1.5 + 0.5;
-      }
-
-      const geometry = new THREE.BufferGeometry();
-      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-      geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-
-      const material = new THREE.PointsMaterial({
-        size: 0.7,
-        vertexColors: true,
-        transparent: true,
-        opacity: 0.8,
-        blending: THREE.AdditiveBlending,
-      });
-
-      const particleSystem = new THREE.Points(geometry, material);
-      scene.add(particleSystem);
-
-      // Interaction State
-      let mouseX = 0;
-      let mouseY = 0;
-      window.addEventListener('mousemove', (e) => {
-        mouseX = (e.clientX - window.innerWidth / 2) / 100;
-        mouseY = (e.clientY - window.innerHeight / 2) / 100;
-      });
-
-      // Resize handling
-      window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-      });
-
-      // Animation Loop
-      function animate() {
-        requestAnimationFrame(animate);
-
-        const time = Date.now() * 0.0005;
-        
-        // Swirling motion
-        particleSystem.rotation.y = time * 0.2;
-        particleSystem.rotation.x = time * 0.1;
-
-        // Subtle reaction to mouse
-        particleSystem.position.x += (mouseX - particleSystem.position.x) * 0.05;
-        particleSystem.position.y += (-mouseY - particleSystem.position.y) * 0.05;
-
-        // Update particle positions for organic "breathing" effect
-        const posAttrib = geometry.attributes.position;
-        for (let i = 0; i < particleCount; i++) {
-          const ix = i * 3;
-          const iy = i * 3 + 1;
-          const iz = i * 3 + 2;
-
-          // Add a small sinus wave to the distance from center
-          const x = posAttrib.array[ix];
-          const y = posAttrib.array[iy];
-          const z = posAttrib.array[iz];
-          
-          const noise = Math.sin(time + i) * 0.02;
-          posAttrib.array[ix] += x * noise * 0.1;
-          posAttrib.array[iy] += y * noise * 0.1;
-          posAttrib.array[iz] += z * noise * 0.1;
-        }
-        posAttrib.needsUpdate = true;
-
-        renderer.render(scene, camera);
-      }
-
-      animate();
-    })();
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+    }
+  }
   </script>
-<!-- END: Particle System Script -->
-</body></html>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    const container = document.getElementById('canvas-container');
+    const W = container.clientWidth, H = container.clientHeight;
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.setSize(W, H);
+    container.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, W / H, 0.1, 1000);
+    camera.position.z = 80;
+
+    const COUNT = 15000;
+    const positions = new Float32Array(COUNT * 3);
+    const colors = new Float32Array(COUNT * 3);
+
+    const colorCyan = new THREE.Color(0x38bdf8);
+    const colorGold = new THREE.Color(0xf59e0b);
+
+    for (let i = 0; i < COUNT; i++) {
+      const r = 40 + Math.random() * 10;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos((Math.random() * 2) - 1);
+
+      positions[i * 3]     = r * Math.sin(phi) * Math.cos(theta);
+      positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+      positions[i * 3 + 2] = r * Math.cos(phi);
+
+      const c = (positions[i * 3 + 1] < -20 && Math.random() > 0.4) ? colorGold : colorCyan;
+      colors[i * 3]     = c.r;
+      colors[i * 3 + 1] = c.g;
+      colors[i * 3 + 2] = c.b;
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    const material = new THREE.PointsMaterial({
+      size: 0.8,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.8,
+      blending: THREE.AdditiveBlending
+    });
+
+    const particles = new THREE.Points(geometry, material);
+    scene.add(particles);
+
+    let mouseX = 0, mouseY = 0;
+    window.addEventListener('mousemove', (e) => {
+      mouseX = (e.clientX - window.innerWidth / 2) / 100;
+      mouseY = (e.clientY - window.innerHeight / 2) / 100;
+    });
+
+    const clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const t = clock.getElapsedTime();
+
+      particles.rotation.y = t * 0.2;
+      particles.rotation.x = t * 0.1;
+      particles.position.x += (mouseX - particles.position.x) * 0.05;
+      particles.position.y += (-mouseY - particles.position.y) * 0.05;
+
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      const W2 = container.clientWidth, H2 = container.clientHeight;
+      camera.aspect = W2 / H2;
+      camera.updateProjectionMatrix();
+      renderer.setSize(W2, H2);
+    });
+  </script>
+</body>
+</html>

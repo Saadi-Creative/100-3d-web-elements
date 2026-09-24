@@ -4,166 +4,338 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Ribbon Unfurl Dropdown</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../../styles/shared.css">
     <style>
-        body { margin: 0; background: linear-gradient(160deg, #0a0a1a 0%, #0f172a 40%, #1a1040 100%); min-height: 100vh; overflow: hidden; font-family: 'Inter', sans-serif; color: white; }
-        #root { width: 100%; height: 100vh; display: flex; align-items: center; justify-content: center; }
+        body {
+            background: radial-gradient(circle at 50% 30%, #131726 0%, #06080e 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 60px;
+            overflow: hidden;
+            user-select: none;
+            perspective: 1200px;
+        }
+
+        .dropdown-container {
+            position: relative;
+            width: 320px;
+            transform-style: preserve-3d;
+        }
+
+        /* Trigger Button */
+        .dropdown-trigger {
+            width: 100%;
+            height: 52px;
+            background: rgba(22, 29, 46, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 14px;
+            padding: 0 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: #f8fafc;
+            cursor: pointer;
+            box-shadow: 
+                0 15px 30px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            transform-style: preserve-3d;
+            z-index: 20;
+            position: relative;
+        }
+
+        .dropdown-trigger:hover {
+            border-color: rgba(56, 189, 248, 0.4);
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.6),
+                0 0 20px rgba(56, 189, 248, 0.2);
+        }
+
+        .dropdown-trigger.open {
+            border-color: #38bdf8;
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.3);
+            border-bottom-left-radius: 6px;
+            border-bottom-right-radius: 6px;
+        }
+
+        .trigger-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .trigger-icon {
+            font-size: 18px;
+        }
+
+        .trigger-label {
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        .trigger-chevron {
+            font-size: 11px;
+            color: #94a3b8;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .dropdown-trigger.open .trigger-chevron {
+            transform: rotate(180deg);
+            color: #38bdf8;
+        }
+
+        /* 3D Ribbon Accordion Cascade */
+        .ribbon-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            margin-top: 4px;
+            transform-style: preserve-3d;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .ribbon-menu.open {
+            pointer-events: auto;
+        }
+
+        .ribbon-item {
+            position: relative;
+            background: rgba(18, 24, 38, 0.95);
+            backdrop-filter: blur(24px);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transform-origin: top center;
+            transform: rotateX(-90deg) translateZ(0);
+            opacity: 0;
+            transition: 
+                transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 0.35s ease,
+                background 0.2s ease,
+                box-shadow 0.2s ease;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+        }
+
+        .ribbon-item:last-child {
+            border-bottom-left-radius: 14px;
+            border-bottom-right-radius: 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+        }
+
+        /* Staggered cascading opening */
+        .ribbon-menu.open .ribbon-item:nth-child(1) { transform: rotateX(0deg); opacity: 1; transition-delay: 0.02s; }
+        .ribbon-menu.open .ribbon-item:nth-child(2) { transform: rotateX(0deg); opacity: 1; transition-delay: 0.06s; }
+        .ribbon-menu.open .ribbon-item:nth-child(3) { transform: rotateX(0deg); opacity: 1; transition-delay: 0.10s; }
+        .ribbon-menu.open .ribbon-item:nth-child(4) { transform: rotateX(0deg); opacity: 1; transition-delay: 0.14s; }
+        .ribbon-menu.open .ribbon-item:nth-child(5) { transform: rotateX(0deg); opacity: 1; transition-delay: 0.18s; }
+        .ribbon-menu.open .ribbon-item:nth-child(6) { transform: rotateX(0deg); opacity: 1; transition-delay: 0.22s; }
+
+        /* Item Hover & Active */
+        .ribbon-item:hover {
+            background: linear-gradient(90deg, rgba(56, 189, 248, 0.15), rgba(18, 24, 38, 0.98));
+            border-left-color: #38bdf8;
+            transform: rotateX(0deg) translateZ(12px) scale(1.02);
+            box-shadow: 0 10px 30px rgba(56, 189, 248, 0.2);
+            z-index: 5;
+        }
+
+        .item-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .item-icon-box {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .item-title {
+            font-size: 13.5px;
+            font-weight: 500;
+            color: #f1f5f9;
+        }
+
+        .item-desc {
+            font-size: 10px;
+            color: #64748b;
+            font-family: var(--font-mono, monospace);
+        }
+
+        .item-check {
+            color: #38bdf8;
+            font-size: 14px;
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.2s ease;
+        }
+
+        .ribbon-item.selected .item-check {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Status Preview Card */
+        .status-display {
+            margin-top: 240px;
+            text-align: center;
+            font-family: var(--font-mono, monospace);
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        .selected-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 4px 12px;
+            border-radius: 9999px;
+            color: #38bdf8;
+            margin-top: 6px;
+        }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div id="root"></div>
 
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
+    <div class="dropdown-container">
+        <div class="dropdown-trigger" id="trigger">
+            <div class="trigger-left">
+                <span class="trigger-icon" id="current-icon">⚛️</span>
+                <span class="trigger-label" id="current-label">React Engine</span>
+            </div>
+            <span class="trigger-chevron">▼</span>
+        </div>
 
-    <script>
-        const origWarn = console.warn;
-        console.warn = function(...args) {
-            if (args[0] && typeof args[0] === 'string' && (args[0].includes('in-browser Babel transformer') || args[0].includes('cdn.tailwindcss.com should not be used in production'))) return;
-            origWarn.apply(console, args);
-        };
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-    <script type="text/babel" data-type="module">
-        import React, { useState, useRef, useEffect } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, AnimatePresence } from 'framer-motion';
-
-        const OPTIONS = [
-            { value: 'react', label: 'React', icon: '⚛️', desc: 'A JavaScript library for building UIs' },
-            { value: 'vue', label: 'Vue.js', icon: '💚', desc: 'The Progressive JavaScript Framework' },
-            { value: 'angular', label: 'Angular', icon: '🅰️', desc: 'Platform for building mobile & desktop apps' },
-            { value: 'svelte', label: 'Svelte', icon: '🔥', desc: 'Cybernetically enhanced web apps' },
-            { value: 'nextjs', label: 'Next.js', icon: '▲', desc: 'The React Framework for Production' },
-            { value: 'nuxt', label: 'Nuxt', icon: '💎', desc: 'The Intuitive Vue Framework' },
-        ];
-
-        const containerVariants = {
-            closed: { transition: { staggerChildren: 0.03, staggerDirection: -1 } },
-            open: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } }
-        };
-
-        const itemVariants = {
-            closed: { rotateX: -90, opacity: 0, y: -5, transition: { type: 'spring', stiffness: 400, damping: 30 } },
-            open: { rotateX: 0, opacity: 1, y: 0, transition: { type: 'spring', stiffness: 350, damping: 25 } }
-        };
-
-        const RibbonDropdown = () => {
-            const [isOpen, setIsOpen] = useState(false);
-            const [selected, setSelected] = useState(null);
-            const [hoveredIndex, setHoveredIndex] = useState(-1);
-            const dropdownRef = useRef(null);
-
-            useEffect(() => {
-                const handleClick = (e) => {
-                    if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setIsOpen(false);
-                };
-                document.addEventListener('mousedown', handleClick);
-                return () => document.removeEventListener('mousedown', handleClick);
-            }, []);
-
-            const handleSelect = (option) => { setSelected(option); setIsOpen(false); };
-
-            return (
-                <div className="flex flex-col items-center gap-6">
-                    <div className="text-center mb-2">
-                        <p className="text-xs uppercase tracking-[0.3em] text-slate-500 mb-2">Select Framework</p>
-                        <h2 className="text-2xl font-bold text-white">3D Ribbon Unfurl</h2>
-                    </div>
-
-                    <div ref={dropdownRef} className="relative w-80" style={{ perspective: '1000px' }}>
-                        <motion.button
-                            onClick={() => setIsOpen(!isOpen)}
-                            className="w-full flex items-center justify-between px-5 py-4 rounded-2xl text-left cursor-pointer"
-                            style={{
-                                background: 'rgba(255, 255, 255, 0.06)',
-                                backdropFilter: 'blur(20px)',
-                                border: `1px solid ${isOpen ? 'rgba(139, 92, 246, 0.4)' : 'rgba(255, 255, 255, 0.1)'}`,
-                                boxShadow: isOpen ? '0 8px 32px rgba(139, 92, 246, 0.15)' : '0 4px 16px rgba(0,0,0,0.2)',
-                                transition: 'border-color 0.3s, box-shadow 0.3s',
-                            }}
-                            whileTap={{ scale: 0.98 }}
-                        >
-                            <div className="flex items-center gap-3">
-                                {selected ? (
-                                    <>
-                                        <span className="text-xl">{selected.icon}</span>
-                                        <div>
-                                            <span className="text-white font-semibold text-sm">{selected.label}</span>
-                                            <p className="text-slate-500 text-xs mt-0.5">{selected.desc}</p>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <span className="text-slate-400 text-sm">Choose a framework...</span>
-                                )}
-                            </div>
-                            <motion.span animate={{ rotate: isOpen ? 180 : 0 }} transition={{ type: 'spring', stiffness: 300, damping: 25 }} className="text-slate-400 text-lg">▾</motion.span>
-                        </motion.button>
-
-                        <AnimatePresence>
-                            {isOpen && (
-                                <motion.ul
-                                    variants={containerVariants}
-                                    initial="closed"
-                                    animate="open"
-                                    exit="closed"
-                                    className="absolute top-full left-0 w-full mt-2 z-50 overflow-hidden rounded-2xl"
-                                    style={{
-                                        perspective: '1000px', transformStyle: 'preserve-3d',
-                                        background: 'rgba(15, 20, 35, 0.95)', backdropFilter: 'blur(20px)',
-                                        border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
-                                    }}
-                                >
-                                    {OPTIONS.map((option, i) => (
-                                        <motion.li
-                                            key={option.value}
-                                            variants={itemVariants}
-                                            onClick={() => handleSelect(option)}
-                                            onMouseEnter={() => setHoveredIndex(i)}
-                                            onMouseLeave={() => setHoveredIndex(-1)}
-                                            className="flex items-center gap-3 px-5 py-3.5 cursor-pointer transition-colors relative"
-                                            style={{
-                                                transformOrigin: 'top center', backfaceVisibility: 'hidden',
-                                                borderBottom: i < OPTIONS.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-                                                background: hoveredIndex === i ? 'rgba(139, 92, 246, 0.1)' : selected?.value === option.value ? 'rgba(139, 92, 246, 0.06)' : 'transparent',
-                                            }}
-                                        >
-                                            {hoveredIndex === i && (
-                                                <motion.div layoutId="hoverGlow" className="absolute left-0 top-0 bottom-0 w-1 rounded-r-full" style={{ background: 'linear-gradient(180deg, #8b5cf6, #6366f1)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15 }} />
-                                            )}
-                                            <span className="text-xl">{option.icon}</span>
-                                            <div className="flex-1">
-                                                <p className="text-sm font-semibold text-white">{option.label}</p>
-                                                <p className="text-xs text-slate-500 mt-0.5">{option.desc}</p>
-                                            </div>
-                                            {selected?.value === option.value && <span className="text-violet-400 text-sm">✓</span>}
-                                        </motion.li>
-                                    ))}
-                                </motion.ul>
-                            )}
-                        </AnimatePresence>
-                    </div>
-
-                    <div className="text-center mt-4">
-                        <p className="text-xs text-slate-600 font-mono tracking-wider">
-                            {selected ? `Selected: ${selected.label}` : 'No selection yet'}
-                        </p>
+        <div class="ribbon-menu" id="menu">
+            <div class="ribbon-item selected" data-value="react" data-label="React Engine" data-icon="⚛️">
+                <div class="item-content">
+                    <div class="item-icon-box">⚛️</div>
+                    <div>
+                        <div class="item-title">React Engine</div>
+                        <div class="item-desc">Component Graph &amp; Hooks</div>
                     </div>
                 </div>
-            );
-        };
+                <div class="item-check">✓</div>
+            </div>
 
-        const root = createRoot(document.getElementById('root'));
-        root.render(<RibbonDropdown />);
+            <div class="ribbon-item" data-value="vue" data-label="Vue Reactive" data-icon="💚">
+                <div class="item-content">
+                    <div class="item-icon-box">💚</div>
+                    <div>
+                        <div class="item-title">Vue Reactive</div>
+                        <div class="item-desc">Proxy-Driven Signals</div>
+                    </div>
+                </div>
+                <div class="item-check">✓</div>
+            </div>
+
+            <div class="ribbon-item" data-value="svelte" data-label="Svelte Compiler" data-icon="🔥">
+                <div class="item-content">
+                    <div class="item-icon-box">🔥</div>
+                    <div>
+                        <div class="item-title">Svelte Compiler</div>
+                        <div class="item-desc">Zero-Runtime Machinery</div>
+                    </div>
+                </div>
+                <div class="item-check">✓</div>
+            </div>
+
+            <div class="ribbon-item" data-value="rust" data-label="Rust WASM" data-icon="🦀">
+                <div class="item-content">
+                    <div class="item-icon-box">🦀</div>
+                    <div>
+                        <div class="item-title">Rust WASM</div>
+                        <div class="item-desc">Bare-Metal Memory Speed</div>
+                    </div>
+                </div>
+                <div class="item-check">✓</div>
+            </div>
+
+            <div class="ribbon-item" data-value="three" data-label="Three.js WebGL" data-icon="🧊">
+                <div class="item-content">
+                    <div class="item-icon-box">🧊</div>
+                    <div>
+                        <div class="item-title">Three.js WebGL</div>
+                        <div class="item-desc">Hardware Spatial Shaders</div>
+                    </div>
+                </div>
+                <div class="item-check">✓</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="status-display">
+        <div>CURRENT ENVIRONMENT RUNTIME</div>
+        <div class="selected-pill" id="status-pill">
+            <span>●</span> <span id="status-text">React Engine v19.0</span>
+        </div>
+    </div>
+
+    <script>
+        const trigger = document.getElementById('trigger');
+        const menu = document.getElementById('menu');
+        const currentIcon = document.getElementById('current-icon');
+        const currentLabel = document.getElementById('current-label');
+        const statusText = document.getElementById('status-text');
+        const items = document.querySelectorAll('.ribbon-item');
+
+        let isOpen = false;
+
+        function toggleDropdown(state) {
+            isOpen = typeof state === 'boolean' ? state : !isOpen;
+            trigger.classList.toggle('open', isOpen);
+            menu.classList.toggle('open', isOpen);
+        }
+
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleDropdown();
+        });
+
+        items.forEach((item) => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                items.forEach(i => i.classList.remove('selected'));
+                item.classList.add('selected');
+
+                const label = item.getAttribute('data-label');
+                const icon = item.getAttribute('data-icon');
+
+                currentLabel.textContent = label;
+                currentIcon.textContent = icon;
+                statusText.textContent = `${label} Active`;
+
+                toggleDropdown(false);
+            });
+        });
+
+        // Close on outside click
+        document.addEventListener('click', (e) => {
+            if (!trigger.contains(e.target) && !menu.contains(e.target)) {
+                toggleDropdown(false);
+            }
+        });
     </script>
 </body>
 </html>

@@ -3,216 +3,247 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Fluid Aurora Background</title>
+  <title>21 - Procedural Aurora Solar Wind Nebula</title>
+  <link rel="stylesheet" href="../../styles/shared.css" />
   <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body {
-      background:#050508; width:100%; height:100vh;
-      overflow:hidden; display:flex; align-items:center; justify-content:center;
-      font-family:'Inter', sans-serif;
+    .demo-container {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      background: #020617;
+      font-family: var(--font-sans);
     }
-    #canvas-container { position:absolute; inset:0; z-index:1; }
-    canvas { display:block; }
-    
-    .overlay {
-      position:relative; z-index:10; pointer-events:none;
-      text-align:center;
+
+    #canvas-container {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
     }
-    .eyebrow { font-size:10px; letter-spacing:6px; color:rgba(255,255,255,0.4); text-transform:uppercase; margin-bottom:16px; }
-    h1 { font-size:clamp(3rem, 8vw, 6rem); font-weight:900; letter-spacing:-2px; color:#fff; line-height:1; margin-bottom:20px; }
-    p { font-size:15px; color:rgba(255,255,255,0.6); max-width:400px; margin:0 auto; line-height:1.6; }
-    
-    .cursor-hint {
-      position:absolute; bottom:24px; left:50%; transform:translateX(-50%);
-      font-size:9px; letter-spacing:3px; color:rgba(255,255,255,0.2); text-transform:uppercase; z-index:10; pointer-events:none;
+
+    .hero-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .hero-tag {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: var(--tracking-widest);
+      text-transform: uppercase;
+      color: var(--accent-base);
+      margin-bottom: var(--space-3);
+    }
+
+    .hero-title {
+      font-size: var(--text-4xl);
+      font-weight: 800;
+      color: var(--text-heading);
+      letter-spacing: var(--tracking-tight);
+      line-height: var(--leading-tight);
+    }
+
+    .hero-sub {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      margin-top: var(--space-3);
+    }
+
+    /* Aurora Theme Toolbar */
+    .aurora-toolbar {
+      position: absolute;
+      bottom: var(--space-6);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-full);
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      backdrop-filter: blur(16px);
+    }
+
+    .theme-btn {
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius-full);
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .theme-btn.is-active {
+      background: var(--surface-overlay);
+      border-color: var(--border-subtle);
+      color: var(--accent-base);
+      box-shadow: 0 0 12px var(--accent-glow);
     }
   </style>
 </head>
 <body>
+  <div class="demo-container">
+    <div id="canvas-container"></div>
 
-<div id="canvas-container"></div>
+    <div class="hero-center">
+      <div class="hero-tag">GLSL PROCEDURAL NEBULA</div>
+      <h1 class="hero-title">Aurora Solar Wind</h1>
+      <p class="hero-sub">Multi-octave fractional Brownian motion fluid dynamics</p>
+    </div>
 
-<div class="overlay">
-  <div class="eyebrow">Interactive GLSL</div>
-  <h1>Aurora</h1>
-  <p>A procedural fluid nebula driven by gradient noise and fragment shaders.</p>
-</div>
-<div class="cursor-hint">move cursor to swirl</div>
+    <div class="aurora-toolbar" role="toolbar" aria-label="Aurora palette controls">
+      <button class="theme-btn is-active" data-theme="violet">Obsidian Violet</button>
+      <button class="theme-btn" data-theme="cyan">Cyber Cyan</button>
+      <button class="theme-btn" data-theme="emerald">Emerald Solar</button>
+    </div>
+  </div>
 
-<script type="importmap">
-{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
-</script>
-
-<script type="module">
-import * as THREE from 'three';
-
-const container = document.getElementById('canvas-container');
-const W = container.clientWidth || window.innerWidth;
-const H = container.clientHeight || window.innerHeight;
-
-const renderer = new THREE.WebGLRenderer({ antialias: false });
-// Crucial for integrated GPUs (Intel HD etc): Cap DPR to 0.75 for this heavy fragment shader
-// The CSS scales it back up, acting as a free performance multiplier.
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 0.75));
-renderer.setSize(W, H);
-container.appendChild(renderer.domElement);
-
-const scene  = new THREE.Scene();
-const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 10);
-camera.position.z = 1;
-
-// ── FLUID NOISE SHADER ───────────────────────────
-const fragmentShader = `
-// Force high precision for older Intel HD drivers to prevent noise artifacts
-precision highp float;
-
-uniform float uTime;
-uniform vec2 uResolution;
-uniform vec2 uMouse;
-varying vec2 vUv;
-
-// 2D Random (Bulletproof version with lowered constants to prevent float overflow on mobile/integrated GPUs)
-vec2 random2(vec2 st){
-    st = vec2( dot(st, vec2(127.1, 311.7)), dot(st, vec2(269.5, 183.3)) );
-    return -1.0 + 2.0 * fract(sin(st) * 4375.854); 
-}
-
-// 2D Noise
-float noise(vec2 st) {
-    vec2 i = floor(st);
-    vec2 f = fract(st);
-    vec2 u = f * f * (3.0 - 2.0 * f);
-
-    return mix( mix( dot( random2(i + vec2(0.0, 0.0)), f - vec2(0.0, 0.0) ),
-                     dot( random2(i + vec2(1.0, 0.0)), f - vec2(1.0, 0.0) ), u.x),
-                mix( dot( random2(i + vec2(0.0, 1.0)), f - vec2(0.0, 1.0) ),
-                     dot( random2(i + vec2(1.0, 1.0)), f - vec2(1.0, 1.0) ), u.x), u.y);
-}
-
-// FBM
-float fbm(vec2 st) {
-    float value = 0.0;
-    float amplitude = 0.5;
-    vec2 shift = vec2(100.0, 100.0);
-    // Pre-calculated rotation matrix
-    mat2 rot = mat2(0.87758, 0.47942, -0.47942, 0.87758); 
-    for (int i = 0; i < 3; ++i) {
-        value += amplitude * noise(st);
-        st = rot * st * 2.0 + shift;
-        amplitude *= 0.5;
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
     }
-    return value;
-}
+  }
+  </script>
 
-void main() {
-    vec2 st = vUv;
-    float aspect = uResolution.x / uResolution.y;
-    st.x *= aspect;
+  <script type="module">
+    import * as THREE from 'three';
 
-    vec2 mouse = uMouse;
-    mouse.x *= aspect;
-    
-    vec2 delta = st - mouse;
-    float dist = length(delta);
-    
-    // Swirl distortion based on mouse
-    float swirl = exp(-dist * 3.0);
-    // Avoid normalize(0,0) NaN bug by adding an epsilon
-    vec2 dir = normalize(delta + vec2(0.0001));
-    st += dir * swirl * 0.1 * sin(uTime * 2.0);
+    const container = document.getElementById('canvas-container');
+    const W = container.clientWidth, H = container.clientHeight;
 
-    // Primary motion fields
-    vec2 q = vec2(0.0);
-    q.x = fbm(st + 0.02 * uTime);
-    q.y = fbm(st + vec2(1.0));
+    const renderer = new THREE.WebGLRenderer({ antialias: false });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.0));
+    renderer.setSize(W, H);
+    container.appendChild(renderer.domElement);
 
-    vec2 r = vec2(0.0);
-    r.x = fbm(st + 1.0 * q + vec2(1.7, 9.2) + 0.15 * uTime);
-    r.y = fbm(st + 1.0 * q + vec2(8.3, 2.8) + 0.126 * uTime);
+    const scene = new THREE.Scene();
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
-    // FBM output is roughly -1 to 1. Map everything strictly to 0..1 to prevent negative math blackouts!
-    float f = fbm(st + r) * 0.5 + 0.5;
-    float lenQ = length(q);
-    float lenR = length(r);
+    const fragmentShader = `
+      precision highp float;
+      uniform float uTime;
+      uniform vec2 uResolution;
+      uniform vec2 uMouse;
+      uniform vec3 uColorA;
+      uniform vec3 uColorB;
+      varying vec2 vUv;
 
-    // Deep, subtle Aurora Colors (optimized for text readability)
-    vec3 colorBase = vec3(0.02, 0.04, 0.1);  // Very dark obsidian/blue base
-    vec3 colorTeal = vec3(0.0, 0.4, 0.5);    // More vibrant teal
-    vec3 colorBlue = vec3(0.0, 0.15, 0.7);   // Richer blue
-    
-    vec3 finalColor = mix(colorBase, colorTeal, clamp(f * 1.5, 0.0, 1.0)); // Boost contrast weight
-    finalColor = mix(finalColor, colorBlue, clamp(lenQ * 1.1, 0.0, 1.0));
-    finalColor = mix(finalColor, vec3(0.2, 0.0, 0.4), clamp(lenR * 0.8, 0.0, 1.0)); // Slightly stronger purple glow
+      vec2 random2(vec2 st){
+        st = vec2( dot(st, vec2(127.1, 311.7)), dot(st, vec2(269.5, 183.3)) );
+        return -1.0 + 2.0 * fract(sin(st) * 4375.854);
+      }
 
-    // Gentle global dimming so the white HTML text completely pops out - but with a bit more punch
-    finalColor *= (f + 0.3) * 1.0;
+      float noise(vec2 st) {
+        vec2 i = floor(st);
+        vec2 f = fract(st);
+        vec2 u = f * f * (3.0 - 2.0 * f);
+        return mix( mix( dot( random2(i + vec2(0.0, 0.0)), f - vec2(0.0, 0.0) ),
+                         dot( random2(i + vec2(1.0, 0.0)), f - vec2(1.0, 0.0) ), u.x),
+                    mix( dot( random2(i + vec2(0.0, 1.0)), f - vec2(0.0, 1.0) ),
+                         dot( random2(i + vec2(1.0, 1.0)), f - vec2(1.0, 1.0) ), u.x), u.y);
+      }
 
-    // Vignette mapped manually to center of UV
-    float distToCenter = length(vUv - vec2(0.5, 0.5));
-    float vignette = 1.0 - smoothstep(0.3, 1.0, distToCenter);
-    
-    gl_FragColor = vec4(finalColor * vignette, 1.0);
-}
-`;
+      float fbm(vec2 st) {
+        float value = 0.0;
+        float amplitude = 0.5;
+        mat2 rot = mat2(0.87, 0.47, -0.47, 0.87);
+        for (int i = 0; i < 3; ++i) {
+          value += amplitude * noise(st);
+          st = rot * st * 2.0;
+          amplitude *= 0.5;
+        }
+        return value;
+      }
 
-const uniforms = {
-  uTime: { value: 0 },
-  uResolution: { value: new THREE.Vector2(W, H) },
-  uMouse: { value: new THREE.Vector2(0.5, 0.5) }
-};
+      void main() {
+        vec2 st = vUv;
+        float aspect = uResolution.x / uResolution.y;
+        st.x *= aspect;
 
-const material = new THREE.ShaderMaterial({
-  vertexShader: `
-    varying vec2 vUv;
-    void main() {
-      vUv = uv;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        vec2 mouse = uMouse;
+        mouse.x *= aspect;
+        vec2 delta = st - mouse;
+        float dist = length(delta);
+        float swirl = exp(-dist * 3.0);
+        st += normalize(delta + vec2(0.0001)) * swirl * 0.1 * sin(uTime * 2.0);
+
+        vec2 q = vec2(fbm(st + 0.02 * uTime), fbm(st + vec2(1.0)));
+        vec2 r = vec2(fbm(st + q + vec2(1.7, 9.2) + 0.15 * uTime), fbm(st + q + vec2(8.3, 2.8) + 0.1 * uTime));
+
+        float f = fbm(st + r) * 0.5 + 0.5;
+        vec3 color = mix(vec3(0.02, 0.04, 0.1), uColorA, clamp(f * 1.4, 0.0, 1.0));
+        color = mix(color, uColorB, clamp(length(q), 0.0, 1.0));
+
+        gl_FragColor = vec4(color, 1.0);
+      }
+    `;
+
+    const uniforms = {
+      uTime: { value: 0 },
+      uResolution: { value: new THREE.Vector2(W, H) },
+      uMouse: { value: new THREE.Vector2(0.5, 0.5) },
+      uColorA: { value: new THREE.Color('#6366f1') },
+      uColorB: { value: new THREE.Color('#a855f7') }
+    };
+
+    const material = new THREE.ShaderMaterial({
+      vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position, 1.0); }`,
+      fragmentShader,
+      uniforms
+    });
+
+    scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material));
+
+    let mx = 0.5, my = 0.5;
+    window.addEventListener('mousemove', (e) => {
+      mx = e.clientX / window.innerWidth;
+      my = 1.0 - (e.clientY / window.innerHeight);
+    });
+
+    const clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      uniforms.uTime.value = clock.getElapsedTime();
+      uniforms.uMouse.value.lerp(new THREE.Vector2(mx, my), 0.05);
+      renderer.render(scene, camera);
     }
-  `,
-  fragmentShader,
-  uniforms
-});
+    animate();
 
-const plane = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
-scene.add(plane);
+    window.addEventListener('resize', () => {
+      const W2 = container.clientWidth, H2 = container.clientHeight;
+      renderer.setSize(W2, H2);
+      uniforms.uResolution.value.set(W2, H2);
+    });
 
-// ── MOUSE TRACKING ───────────────────────────────
-let targetMx = 0.5, targetMy = 0.5;
-let curMx = 0.5, curMy = 0.5;
+    const themeBtns = document.querySelectorAll('.theme-btn');
+    themeBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        themeBtns.forEach((b) => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
 
-renderer.domElement.addEventListener('mousemove', (e) => {
-  targetMx = e.clientX / window.innerWidth;
-  // GLSL Y is bottom-to-top
-  targetMy = 1.0 - (e.clientY / window.innerHeight);
-});
-
-renderer.domElement.addEventListener('mouseleave', () => {
-  targetMx = 0.5; targetMy = 0.5;
-});
-
-function lerp(a, b, t) { return a + (b - a) * t; }
-
-const clock = new THREE.Clock();
-
-function animate() {
-  requestAnimationFrame(animate);
-  
-  curMx = lerp(curMx, targetMx, 0.05);
-  curMy = lerp(curMy, targetMy, 0.05);
-  
-  uniforms.uTime.value = clock.getElapsedTime();
-  uniforms.uMouse.value.set(curMx, curMy);
-  
-  renderer.render(scene, camera);
-}
-
-animate();
-
-window.addEventListener('resize', () => {
-  const W2 = window.innerWidth, H2 = window.innerHeight;
-  renderer.setSize(W2, H2);
-  uniforms.uResolution.value.set(W2, H2);
-});
-</script>
+        const mode = btn.dataset.theme;
+        if (mode === 'violet') {
+          uniforms.uColorA.value.set('#6366f1');
+          uniforms.uColorB.value.set('#a855f7');
+        } else if (mode === 'cyan') {
+          uniforms.uColorA.value.set('#06b6d4');
+          uniforms.uColorB.value.set('#3b82f6');
+        } else if (mode === 'emerald') {
+          uniforms.uColorA.value.set('#10b981');
+          uniforms.uColorB.value.set('#eab308');
+        }
+      });
+    });
+  </script>
 </body>
 </html>

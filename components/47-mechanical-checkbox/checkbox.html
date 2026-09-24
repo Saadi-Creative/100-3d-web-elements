@@ -3,156 +3,218 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Mechanical Checkbox</title>
-    <script>
-        const origWarn = console.warn;
-        console.warn = function(...args) {
-            const msg = args[0];
-            if (typeof msg === 'string' && (msg.includes('Babel') || msg.includes('Tailwind') || msg.includes('tailwindcss'))) return;
-            origWarn.apply(console, args);
-        };
-    </script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>3D Mechanical Switch Checkbox</title>
+    <link rel="stylesheet" href="../../styles/shared.css">
     <style>
-        body { margin: 0; background: #0a0a0f; min-height: 100vh; overflow: hidden; font-family: 'Inter', sans-serif; color: white; }
-        #root { width: 100%; height: 100vh; display: flex; align-items: center; justify-content: center; }
-    </style>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
+        body {
+            background: radial-gradient(circle at center, #121524 0%, #060810 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            user-select: none;
+            perspective: 1000px;
+            gap: 32px;
         }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+        .switch-board {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background: rgba(18, 24, 38, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 32px 36px;
+            box-shadow: 
+                0 30px 60px rgba(0, 0, 0, 0.7),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        }
+
+        .switch-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 40px;
+            cursor: pointer;
+        }
+
+        .switch-meta {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .switch-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #f8fafc;
+            letter-spacing: -0.01em;
+        }
+
+        .switch-sub {
+            font-size: 11px;
+            font-family: var(--font-mono, monospace);
+            color: #64748b;
+        }
+
+        /* 3D Mechanical Keycap Housing */
+        .mech-chassis {
+            position: relative;
+            width: 72px;
+            height: 42px;
+            border-radius: 12px;
+            background: #0f172a;
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 
+                inset 0 4px 8px rgba(0, 0, 0, 0.8),
+                0 4px 10px rgba(0, 0, 0, 0.4);
+            transform-style: preserve-3d;
+            padding: 3px;
+        }
+
+        /* The Spring-Loaded Keycap Actuator */
+        .mech-cap {
+            position: relative;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: linear-gradient(145deg, #334155, #1e293b);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 
+                0 6px 12px rgba(0, 0, 0, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+            transform: translate3d(0, 0, 8px);
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                        background 0.25s ease,
+                        box-shadow 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Mechanical Stem Indicator Diode */
+        .stem-diode {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #475569;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
+            transition: all 0.25s ease;
+        }
+
+        /* Active / Checked State */
+        .switch-row.checked .mech-cap {
+            transform: translate3d(32px, 0, 4px);
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            border-color: var(--accent-color, #38bdf8);
+            box-shadow: 
+                0 2px 6px rgba(0, 0, 0, 0.8),
+                0 0 15px var(--accent-glow, rgba(56, 189, 248, 0.4));
+        }
+
+        .switch-row.checked .stem-diode {
+            background: var(--accent-color, #38bdf8);
+            box-shadow: 0 0 10px var(--accent-color, #38bdf8);
+        }
+
+        /* Colorways */
+        .switch-row[data-color="cyan"] { --accent-color: #38bdf8; --accent-glow: rgba(56, 189, 248, 0.5); }
+        .switch-row[data-color="emerald"] { --accent-color: #34d399; --accent-glow: rgba(52, 211, 153, 0.5); }
+        .switch-row[data-color="amber"] { --accent-color: #fbbf24; --accent-glow: rgba(251, 191, 36, 0.5); }
+        .switch-row[data-color="rose"] { --accent-color: #f43f5e; --accent-glow: rgba(244, 63, 94, 0.5); }
+
+        /* Actuation sound & click press */
+        .switch-row:active .mech-cap {
+            transform: translate3d(var(--press-x, 0px), 0, 0px);
+        }
+    </style>
 </head>
 <body>
-    <div id="root"></div>
-    <script type="text/babel" data-type="module">
-        import React, { useState } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, AnimatePresence } from 'framer-motion';
 
-        const MechanicalCheckbox = ({ label, color = 'cyan' }) => {
-            const [checked, setChecked] = useState(false);
-            const [ripple, setRipple] = useState(false);
-
-            const colors = {
-                cyan:   { glow: '#06b6d4', dim: '#0e7490', text: '#67e8f9', ring: '#164e63' },
-                green:  { glow: '#22c55e', dim: '#15803d', text: '#86efac', ring: '#14532d' },
-                violet: { glow: '#a855f7', dim: '#7e22ce', text: '#d8b4fe', ring: '#3b0764' },
-            };
-            const c = colors[color];
-
-            const handleClick = () => {
-                setChecked(v => !v);
-                setRipple(true);
-                setTimeout(() => setRipple(false), 600);
-            };
-
-            return (
-                <div className="flex items-center gap-5 select-none cursor-pointer" onClick={handleClick}>
-                    {/* The switch housing */}
-                    <div style={{ perspective: '300px' }}>
-                        <motion.div
-                            className="relative flex items-center justify-center rounded-xl"
-                            style={{
-                                width: 60, height: 60,
-                                background: checked
-                                    ? `linear-gradient(145deg, ${c.dim}, #0a0a0f)`
-                                    : 'linear-gradient(145deg, #1e1e2e, #111118)',
-                                boxShadow: checked
-                                    ? `inset 4px 4px 10px rgba(0,0,0,0.7), inset -2px -2px 6px rgba(255,255,255,0.04), 0 0 20px ${c.glow}55`
-                                    : '4px 4px 10px rgba(0,0,0,0.6), -2px -2px 8px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.08)',
-                                border: `2px solid ${checked ? c.ring : '#2a2a3a'}`,
-                            }}
-                            animate={{
-                                y: checked ? 4 : 0,
-                                rotateX: checked ? 8 : 0,
-                                scale: checked ? 0.96 : 1,
-                            }}
-                            transition={{ type: 'spring', stiffness: 600, damping: 25 }}
-                        >
-                            {/* Ripple */}
-                            <AnimatePresence>
-                                {ripple && (
-                                    <motion.div
-                                        className="absolute rounded-xl pointer-events-none"
-                                        style={{ background: `${c.glow}44`, inset: 0 }}
-                                        initial={{ scale: 1, opacity: 0.8 }}
-                                        animate={{ scale: 2.8, opacity: 0 }}
-                                        exit={{ opacity: 0 }}
-                                        transition={{ duration: 0.55, ease: 'easeOut' }}
-                                    />
-                                )}
-                            </AnimatePresence>
-
-                            {/* LED glow ring */}
-                            {checked && (
-                                <motion.div
-                                    className="absolute rounded-xl pointer-events-none"
-                                    style={{ inset: -2, border: `2px solid ${c.glow}`, borderRadius: 14 }}
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: [0, 1, 0.6] }}
-                                    transition={{ duration: 0.3 }}
-                                />
-                            )}
-
-                            {/* Checkmark SVG */}
-                            <motion.svg
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                style={{ width: 28, height: 28 }}
-                                animate={{ opacity: checked ? 1 : 0, scale: checked ? 1 : 0.4, rotateZ: checked ? 0 : -45 }}
-                                transition={{ type: 'spring', stiffness: 500, damping: 22 }}
-                            >
-                                <motion.path
-                                    d="M4 12.5L9.5 18L20 7"
-                                    stroke={c.glow}
-                                    strokeWidth="2.5"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    initial={{ pathLength: 0 }}
-                                    animate={{ pathLength: checked ? 1 : 0 }}
-                                    transition={{ duration: 0.25, delay: checked ? 0.05 : 0 }}
-                                    style={{ filter: `drop-shadow(0 0 6px ${c.glow})` }}
-                                />
-                            </motion.svg>
-                        </motion.div>
-                    </div>
-
-                    <div>
-                        <motion.p
-                            className="text-base font-semibold"
-                            animate={{ color: checked ? c.text : '#94a3b8' }}
-                        >
-                            {label}
-                        </motion.p>
-                        <p className="text-xs text-slate-600 mt-0.5">Click to toggle</p>
-                    </div>
+    <div class="switch-board">
+        <div class="switch-row checked" data-color="cyan">
+            <div class="switch-meta">
+                <div class="switch-title">Hardware Acceleration (GPU)</div>
+                <div class="switch-sub">Direct3D 12 · WebGPU Tier 1</div>
+            </div>
+            <div class="mech-chassis">
+                <div class="mech-cap">
+                    <div class="stem-diode"></div>
                 </div>
-            );
-        };
+            </div>
+        </div>
 
-        const App = () => {
-            return (
-                <div className="flex flex-col items-start gap-10 p-12 rounded-3xl"
-                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(10px)' }}>
-                    <div className="mb-2">
-                        <p className="text-xs uppercase tracking-[0.3em] text-slate-600 mb-1">Keyboard Switch UI</p>
-                        <h1 className="text-3xl font-bold text-white">Mechanical Checkbox</h1>
-                    </div>
-                    <MechanicalCheckbox label="Enable Real-Time Sync" color="cyan" />
-                    <MechanicalCheckbox label="Hardware Acceleration" color="green" />
-                    <MechanicalCheckbox label="Deep Focus Mode" color="violet" />
+        <div class="switch-row checked" data-color="emerald">
+            <div class="switch-meta">
+                <div class="switch-title">Zero-Latency Event Bus</div>
+                <div class="switch-sub">gRPC Socket Sub-Millisecond Stream</div>
+            </div>
+            <div class="mech-chassis">
+                <div class="mech-cap">
+                    <div class="stem-diode"></div>
                 </div>
-            );
-        };
+            </div>
+        </div>
 
-        createRoot(document.getElementById('root')).render(<App />);
+        <div class="switch-row" data-color="amber">
+            <div class="switch-meta">
+                <div class="switch-title">Autonomous Healing Daemon</div>
+                <div class="switch-sub">Auto-recovers dropped worker pods</div>
+            </div>
+            <div class="mech-chassis">
+                <div class="mech-cap">
+                    <div class="stem-diode"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="switch-row checked" data-color="rose">
+            <div class="switch-meta">
+                <div class="switch-title">Quantum Threat Shield</div>
+                <div class="switch-sub">Kyber-1024 Lattice Encryption</div>
+            </div>
+            <div class="mech-chassis">
+                <div class="mech-cap">
+                    <div class="stem-diode"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Synthesize Mechanical Cherry Click Audio using Web Audio API
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playMechanicalClick(pitch = 1.0) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(800 * pitch, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.04);
+
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.05);
+        }
+
+        const rows = document.querySelectorAll('.switch-row');
+        rows.forEach(row => {
+            row.addEventListener('click', () => {
+                const isChecked = row.classList.toggle('checked');
+                row.style.setProperty('--press-x', isChecked ? '32px' : '0px');
+                playMechanicalClick(isChecked ? 1.2 : 0.8);
+            });
+        });
     </script>
 </body>
 </html>

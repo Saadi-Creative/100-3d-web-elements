@@ -8,27 +8,89 @@
     <style>
         body { margin: 0; background: #030712; min-height: 100vh; overflow-x: hidden; font-family: 'Inter', sans-serif; display: flex; align-items: center; justify-content: center; }
         .preserve-3d { transform-style: preserve-3d; }
+        
+        .bento-card {
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.6s, filter 0.6s;
+            transform: translateZ(0);
+        }
+        
+        .bento-card:hover {
+            transform: translateZ(20px) scale(1.02);
+        }
+        
+        .grid-container.has-expanded .bento-card:not(.expanded) {
+            transform: translateZ(-200px);
+            opacity: 0.3;
+            filter: blur(8px);
+        }
+
+        /* The fullscreen expanded overlay */
+        #fullscreen-overlay {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease, background-color 0.4s ease;
+            background-color: rgba(3, 7, 18, 0);
+        }
+
+        #fullscreen-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+            background-color: rgba(3, 7, 18, 0.6);
+        }
+
+        #expanded-content {
+            opacity: 0;
+            transform: scale(0.9) translateY(20px);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        #expanded-content.show {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-    <div id="root"></div>
+    <div class="w-full h-full relative p-8 preserve-3d flex flex-col items-center justify-center max-w-5xl" style="perspective: 1800px">
+        
+        <div class="text-center mb-12 relative z-0 pointer-events-none">
+            <h1 class="text-4xl md:text-6xl font-black text-white tracking-tighter mb-4">Command Center.</h1>
+            <p class="text-slate-400 font-medium text-lg max-w-xl mx-auto">Click any module below to physically rip it out of the grid. Vanilla JS drives the layout transformations while unused components recede perfectly into the Z-axis void.</p>
+        </div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useState } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, AnimatePresence } from 'framer-motion';
+        <div id="grid-container" class="grid-container w-full grid grid-cols-1 md:grid-cols-3 grid-rows-2 gap-6 relative preserve-3d h-[500px]">
+            <!-- Cards rendered here via JS -->
+        </div>
 
+        <div id="fullscreen-overlay" class="fixed inset-0 z-50 flex items-center justify-center p-8 md:p-16 preserve-3d">
+            <div class="absolute inset-0" id="dismiss-bg"></div>
+            
+            <div id="expanded-card" class="relative z-10 w-full max-w-4xl h-[600px] rounded-[40px] overflow-hidden shadow-2xl preserve-3d">
+                <div id="expanded-bg" class="absolute inset-0"></div>
+                <div class="absolute inset-0 bg-slate-950/40 backdrop-blur-2xl"></div>
+                
+                <div id="expanded-icon-bg" class="absolute -right-20 -bottom-20 text-[300px] mix-blend-overlay opacity-20 pointer-events-none"></div>
+
+                <div class="relative z-10 p-12 md:p-20 h-full flex flex-col justify-center preserve-3d pointer-events-none">
+                    <div id="expanded-content">
+                        <div id="expanded-icon" class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 border border-white/20 shadow-xl backdrop-blur-md text-3xl mb-8"></div>
+                        <h2 id="expanded-title" class="text-5xl md:text-7xl font-black text-white tracking-tighter mb-2 drop-shadow-md"></h2>
+                        <p id="expanded-subtitle" class="text-2xl font-bold text-white/80 uppercase tracking-widest mb-10"></p>
+                        <p id="expanded-details" class="text-xl text-white/70 max-w-xl leading-relaxed"></p>
+                    </div>
+                </div>
+
+                <button id="close-btn" class="absolute top-8 right-8 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full border border-white/20 flex items-center justify-center text-white transition-colors">
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
         const BENTO_BOXES = [
             {
                 id: 'analytics',
@@ -72,148 +134,67 @@
             }
         ];
 
-        const App = () => {
-            const [expandedId, setExpandedId] = useState(null);
+        const gridContainer = document.getElementById('grid-container');
+        const overlay = document.getElementById('fullscreen-overlay');
+        const closeBtn = document.getElementById('close-btn');
+        const dismissBg = document.getElementById('dismiss-bg');
+        
+        const expBg = document.getElementById('expanded-bg');
+        const expIconBg = document.getElementById('expanded-icon-bg');
+        const expIcon = document.getElementById('expanded-icon');
+        const expTitle = document.getElementById('expanded-title');
+        const expSubtitle = document.getElementById('expanded-subtitle');
+        const expDetails = document.getElementById('expanded-details');
+        const expContent = document.getElementById('expanded-content');
 
-            const activeBox = BENTO_BOXES.find(b => b.id === expandedId);
-
-            return (
-                <div className="w-full h-full relative p-8 preserve-3d flex flex-col items-center justify-center max-w-5xl" style={{ perspective: 1800 }}>
-                    
-                    {/* Header */}
-                    <div className="text-center mb-12 relative z-0 pointer-events-none">
-                        <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter mb-4">Command Center.</h1>
-                        <p className="text-slate-400 font-medium text-lg max-w-xl mx-auto">Click any module below to physically rip it out of the grid. Framer Motion drives the layout transformations while unused components recede perfectly into the Z-axis void.</p>
-                    </div>
-
-                    {/* The Grid */}
-                    <div className="w-full grid grid-cols-1 md:grid-cols-3 grid-rows-2 gap-6 relative preserve-3d h-[500px]">
-                        {BENTO_BOXES.map((box) => {
-                            const isExpanded = expandedId === box.id;
-                            const isOthersExpanded = expandedId !== null && expandedId !== box.id;
-
-                            // We render a placeholder locally when expanded so the grid physically doesn't collapse!
-                            // But wait, Framer Motion's layout prop handles it magically usually. 
-                            // However, we are moving it to a completely different DOM node via AnimatePresence overlay. 
-                            // So we render a transparent blank div here when expanded.
-
-                            if (isExpanded) {
-                                return (
-                                    <div key={`${box.id}-active`} className={`${box.colSpan} ${box.rowSpan}`}></div>
-                                );
-                            }
-
-                            return (
-                                <motion.div
-                                    key={box.id}
-                                    layoutId={box.id}
-                                    onClick={() => setExpandedId(box.id)}
-                                    className={`
-                                        ${box.colSpan} ${box.rowSpan} 
-                                        relative group cursor-pointer preserve-3d rounded-3xl overflow-hidden
-                                    `}
-                                    animate={{ 
-                                        // If another box is open, push this one far back, dim it, and blur it
-                                        z: isOthersExpanded ? -200 : 0,
-                                        opacity: isOthersExpanded ? 0.3 : 1,
-                                        filter: isOthersExpanded ? "blur(8px)" : "blur(0px)" 
-                                    }}
-                                    whileHover={{
-                                        // Parallax pop forward on hover
-                                        z: isOthersExpanded ? -200 : 20,
-                                        scale: isOthersExpanded ? 1 : 1.02
-                                    }}
-                                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                                >
-                                    {/* The Background Gradient */}
-                                    <div className={`absolute inset-0 bg-gradient-to-br ${box.colors} opacity-80 backdrop-blur-3xl group-hover:opacity-100 transition-opacity duration-300`}></div>
-                                    
-                                    {/* Glassmorphic inner layer */}
-                                    <div className="absolute inset-0 bg-slate-900/30"></div>
-                                    
-                                    {/* Content */}
-                                    <div className="relative z-10 p-8 h-full flex flex-col justify-end pointer-events-none">
-                                        <div className="text-4xl absolute top-8 right-8 mix-blend-overlay opacity-80">{box.icon}</div>
-                                        <h3 className="text-2xl font-black text-white tracking-tight">{box.title}</h3>
-                                        <p className="text-white/70 font-bold uppercase tracking-widest text-sm mt-1">{box.subtitle}</p>
-                                    </div>
-                                    
-                                    {/* Corner highlights to fake glass light wrapping */}
-                                    <div className="absolute inset-0 border-[0.5px] border-white/20 rounded-3xl pointer-events-none"></div>
-                                    <div className="absolute inset-0 rounded-3xl shadow-[inset_0_0_30px_rgba(255,255,255,0.1)] pointer-events-none"></div>
-                                </motion.div>
-                            );
-                        })}
-                    </div>
-
-                    {/* The Fullscreen Overlay View */}
-                    <AnimatePresence>
-                        {expandedId && activeBox && (
-                            <motion.div 
-                                className="fixed inset-0 z-50 flex items-center justify-center p-8 md:p-16 preserve-3d"
-                                initial={{ backgroundColor: "rgba(3, 7, 18, 0)" }}
-                                animate={{ backgroundColor: "rgba(3, 7, 18, 0.6)" }}
-                                exit={{ backgroundColor: "rgba(3, 7, 18, 0)" }}
-                            >
-                                {/* Dismiss Backdrop */}
-                                <div className="absolute inset-0" onClick={() => setExpandedId(null)} />
-
-                                {/* The Expanded Box */}
-                                <motion.div
-                                    layoutId={activeBox.id}
-                                    className="relative z-10 w-full max-w-4xl h-[600px] rounded-[40px] overflow-hidden shadow-2xl preserve-3d"
-                                    transition={{ type: "spring", stiffness: 350, damping: 30 }}
-                                >
-                                    {/* Massive background */}
-                                    <div className={`absolute inset-0 bg-gradient-to-br ${activeBox.colors}`}></div>
-                                    
-                                    {/* Glass inner layer */}
-                                    <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-2xl"></div>
-
-                                    {/* Large decorative icon in background */}
-                                    <div className="absolute -right-20 -bottom-20 text-[300px] mix-blend-overlay opacity-20 pointer-events-none">
-                                        {activeBox.icon}
-                                    </div>
-
-                                    <div className="relative z-10 p-12 md:p-20 h-full flex flex-col justify-center preserve-3d pointer-events-none">
-                                        <motion.div
-                                            initial={{ opacity: 0, x: -30 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0 }}
-                                            transition={{ delay: 0.1, duration: 0.3 }}
-                                        >
-                                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 border border-white/20 shadow-xl backdrop-blur-md text-3xl mb-8">
-                                                {activeBox.icon}
-                                            </div>
-                                            <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter mb-2 drop-shadow-md">{activeBox.title}</h2>
-                                            <p className="text-2xl font-bold text-white/80 uppercase tracking-widest mb-10">{activeBox.subtitle}</p>
-                                            
-                                            <p className="text-xl text-white/70 max-w-xl leading-relaxed">
-                                                {activeBox.details}
-                                            </p>
-                                        </motion.div>
-                                    </div>
-
-                                    {/* Close Button */}
-                                    <motion.button 
-                                        className="absolute top-8 right-8 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full border border-white/20 flex items-center justify-center text-white transition-colors"
-                                        onClick={() => setExpandedId(null)}
-                                        initial={{ opacity: 0, scale: 0.5 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.5 }}
-                                    >
-                                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                    </motion.button>
-                                </motion.div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
+        BENTO_BOXES.forEach(box => {
+            const el = document.createElement('div');
+            el.className = `${box.colSpan} ${box.rowSpan} bento-card relative group cursor-pointer preserve-3d rounded-3xl overflow-hidden`;
+            el.innerHTML = `
+                <div class="absolute inset-0 bg-gradient-to-br ${box.colors} opacity-80 backdrop-blur-3xl group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div class="absolute inset-0 bg-slate-900/30"></div>
+                <div class="relative z-10 p-8 h-full flex flex-col justify-end pointer-events-none">
+                    <div class="text-4xl absolute top-8 right-8 mix-blend-overlay opacity-80">${box.icon}</div>
+                    <h3 class="text-2xl font-black text-white tracking-tight">${box.title}</h3>
+                    <p class="text-white/70 font-bold uppercase tracking-widest text-sm mt-1">${box.subtitle}</p>
                 </div>
-            );
-        };
+                <div class="absolute inset-0 border-[0.5px] border-white/20 rounded-3xl pointer-events-none"></div>
+                <div class="absolute inset-0 rounded-3xl shadow-[inset_0_0_30px_rgba(255,255,255,0.1)] pointer-events-none"></div>
+            `;
+            
+            el.addEventListener('click', () => {
+                gridContainer.classList.add('has-expanded');
+                el.classList.add('expanded');
+                
+                expBg.className = `absolute inset-0 bg-gradient-to-br ${box.colors}`;
+                expIconBg.textContent = box.icon;
+                expIcon.textContent = box.icon;
+                expTitle.textContent = box.title;
+                expSubtitle.textContent = box.subtitle;
+                expDetails.textContent = box.details;
+                
+                overlay.classList.add('active');
+                
+                setTimeout(() => {
+                    expContent.classList.add('show');
+                }, 100);
+            });
+            
+            gridContainer.appendChild(el);
+        });
 
-        createRoot(document.getElementById('root')).render(<App />);
+        function closeOverlay() {
+            expContent.classList.remove('show');
+            overlay.classList.remove('active');
+            gridContainer.classList.remove('has-expanded');
+            
+            const expanded = document.querySelector('.bento-card.expanded');
+            if (expanded) expanded.classList.remove('expanded');
+        }
+
+        closeBtn.addEventListener('click', closeOverlay);
+        dismissBg.addEventListener('click', closeOverlay);
+
     </script>
 </body>
 </html>

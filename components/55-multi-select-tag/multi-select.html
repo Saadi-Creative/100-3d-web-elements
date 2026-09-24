@@ -3,134 +3,218 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Physical Multi-Select Tags</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>3D Embossed Bas-Relief Multi-Select Tags</title>
+    <link rel="stylesheet" href="../../styles/shared.css">
     <style>
-        body { margin: 0; background: #0f172a; min-height: 100vh; overflow: hidden; font-family: 'Inter', sans-serif; }
-        #root { width: 100%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        
-        .hardware-accelerated {
-            transform: translateZ(0);
-            will-change: transform, box-shadow;
+        body {
+            background: radial-gradient(circle at center, #0f172a 0%, #080c18 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            user-select: none;
+            perspective: 1200px;
+            gap: 32px;
+            padding: 24px;
         }
 
-        /* Create a subtle grid background to establish the "desk" */
-        .bg-grid {
-            background-size: 40px 40px;
-            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-                              linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+        .tag-matrix-hud {
+            text-align: center;
+        }
+
+        .hud-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(56, 189, 248, 0.12);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            padding: 4px 14px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-family: var(--font-mono, monospace);
+            color: #38bdf8;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .hud-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #f8fafc;
+            letter-spacing: -0.02em;
+        }
+
+        /* 3D Embossed Board Container */
+        .tag-board {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            justify-content: center;
+            max-width: 580px;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 28px;
+            box-shadow: 
+                0 30px 60px rgba(0, 0, 0, 0.7),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            transform-style: preserve-3d;
+        }
+
+        /* 3D Tactile Tag Pill */
+        .embossed-tag {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 14px;
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #94a3b8;
+            font-size: 13.5px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 
+                0 8px 16px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transform: translate3d(0, 0, 10px);
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                        box-shadow 0.2s ease,
+                        border-color 0.2s ease,
+                        color 0.2s ease;
+            transform-style: preserve-3d;
+        }
+
+        .embossed-tag:hover {
+            color: #f1f5f9;
+            border-color: rgba(56, 189, 248, 0.4);
+            transform: translate3d(0, -2px, 16px);
+            box-shadow: 
+                0 12px 24px rgba(0, 0, 0, 0.6),
+                0 0 15px rgba(56, 189, 248, 0.2);
+        }
+
+        /* Active Pressed Embossed State */
+        .embossed-tag.selected {
+            background: linear-gradient(145deg, #0284c7, #0369a1);
+            border-color: #38bdf8;
+            color: #ffffff;
+            transform: translate3d(0, 2px, 2px);
+            box-shadow: 
+                0 2px 6px rgba(0, 0, 0, 0.8),
+                0 0 20px rgba(56, 189, 248, 0.5),
+                inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .tag-check {
+            font-size: 12px;
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .embossed-tag.selected .tag-check {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Status Footer */
+        .tag-status-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: var(--font-mono, monospace);
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        .active-pill {
+            background: rgba(56, 189, 248, 0.15);
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            color: #38bdf8;
+            padding: 3px 10px;
+            border-radius: 9999px;
+            font-weight: 700;
         }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body class="bg-grid">
-    <div id="root"></div>
+<body>
 
-    <script type="text/babel" data-type="module">
-        import React, { useState } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion } from 'framer-motion';
+    <div class="tag-matrix-hud">
+        <div class="hud-badge">
+            <span>🏷️</span>
+            <span>Bas-Relief Ceramic Tactile Tags</span>
+        </div>
+        <div class="hud-title">Select tech stack parameters to filter telemetry</div>
+    </div>
 
-        const filterCategories = [
-            "React", "3D UI", "Tailwind", "Framer Motion", 
-            "WebGL", "Physics", "Spatial Computing", "Embossed",
-            "Premium", "Interactions", "E-commerce"
+    <div class="tag-board" id="board">
+        <!-- Tags rendered dynamically -->
+    </div>
+
+    <div class="tag-status-bar">
+        <span>ACTIVE FILTERS:</span>
+        <span class="active-pill" id="counter-pill">2 SELECTED</span>
+    </div>
+
+    <script>
+        const TAGS = [
+            { id: 'react', label: 'React 19', icon: '⚛️' },
+            { id: 'webgl', label: 'Three.js WebGL', icon: '🔺' },
+            { id: 'wasm', label: 'Rust WASM', icon: '🦀' },
+            { id: 'css3d', label: 'CSS 3D Engine', icon: '💎' },
+            { id: 'spatial', label: 'Spatial Shaders', icon: '✨' },
+            { id: 'physics', label: 'Verlet Springs', icon: '⚡' },
+            { id: 'redis', label: 'Redis L1 Cache', icon: '🚀' },
+            { id: 'quantum', label: 'Zero-Trust IAM', icon: '🛡️' },
+            { id: 'grpc', label: 'gRPC Event Bus', icon: '◈' },
         ];
 
-        const App = () => {
-            const [selectedArgs, setSelectedArgs] = useState(['React', '3D UI']);
+        const board = document.getElementById('board');
+        const counterPill = document.getElementById('counter-pill');
+        const selected = new Set(['react', 'webgl']);
 
-            const toggleTag = (tag) => {
-                setSelectedArgs(prev => 
-                    prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
-                );
-            };
+        function renderTags() {
+            board.innerHTML = '';
+            TAGS.forEach(tag => {
+                const isSelected = selected.has(tag.id);
+                const btn = document.createElement('div');
+                btn.className = `embossed-tag ${isSelected ? 'selected' : ''}`;
+                btn.innerHTML = `
+                    <span>${tag.icon}</span>
+                    <span>${tag.label}</span>
+                    <span class="tag-check">✓</span>
+                `;
 
-            return (
-                <div className="w-full h-full flex flex-col items-center justify-center p-8 relative">
-                    {/* Atmospheric Lighting */}
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-blue-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+                btn.addEventListener('click', () => {
+                    if (selected.has(tag.id)) {
+                        selected.delete(tag.id);
+                    } else {
+                        selected.add(tag.id);
+                    }
+                    renderTags();
+                    counterPill.textContent = `${selected.size} SELECTED`;
+                });
 
-                    <div className="text-center mb-20 z-10">
-                        <h1 className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400 mb-6 drop-shadow-lg">Filter Technologies</h1>
-                        <p className="text-slate-400 font-medium tracking-wide">Select your stack. Witness tactile physics.</p>
-                    </div>
+                board.appendChild(btn);
+            });
+        }
 
-                    <div className="max-w-4xl flex flex-wrap gap-x-6 gap-y-8 justify-center z-10">
-                        {filterCategories.map((tag) => {
-                            const isSelected = selectedArgs.includes(tag);
-                            
-                            return (
-                                <motion.button
-                                    key={tag}
-                                    onClick={() => toggleTag(tag)}
-                                    layout
-                                    initial={false}
-                                    animate={{
-                                        y: isSelected ? 6 : 0, // Physically depresses by 6px
-                                        scale: isSelected ? 0.98 : 1,
-                                        color: isSelected ? "#38bdf8" : "#94a3b8", // Sky blue text when active
-                                    }}
-                                    whileHover={{
-                                        // Slight brightness pop on hover if NOT selected
-                                        scale: isSelected ? 0.98 : 1.02,
-                                        y: isSelected ? 6 : -2
-                                    }}
-                                    whileTap={{ 
-                                        // Harder physical bottom-out
-                                        scale: 0.95, 
-                                        y: 8 
-                                    }}
-                                    transition={{ 
-                                        type: "spring", 
-                                        stiffness: 500, 
-                                        damping: 25, 
-                                        mass: 0.5 
-                                    }}
-                                    className={`
-                                        relative px-8 py-4 rounded-[20px] font-bold tracking-wide text-lg outline-none cursor-pointer
-                                        hardware-accelerated transition-colors duration-300
-                                        ${isSelected ? 'bg-slate-900' : 'bg-slate-800'}
-                                    `}
-                                    style={{
-                                        // The magic is in the shadows switching from an outer drop shadow to an inner cavity shadow
-                                        boxShadow: isSelected 
-                                            ? `
-                                                inset 0 6px 15px rgba(0,0,0,0.8), /* Deep inside well */
-                                                inset 0 -2px 5px rgba(255,255,255,0.02), /* subtle bottom rim reflection */
-                                                inset 0 0 0 1.5px rgba(56, 189, 248, 0.4), /* Neon inset border */
-                                                0 0 30px rgba(56, 189, 248, 0.15) /* Outer glow on the desk */
-                                              `
-                                            : `
-                                                0 10px 20px -5px rgba(0,0,0,0.6), /* Standard drop shadow */
-                                                0 6px 10px -5px rgba(0,0,0,0.4),
-                                                inset 0 1.5px 1px rgba(255,255,255,0.1), /* Top rim highlight (plastic reflection) */
-                                                inset 0 -2px 6px rgba(0,0,0,0.4), /* Inner bottom shadow giving thickness */
-                                                inset 0 0 0 1px rgba(255,255,255,0.05) /* Subtle structural border */
-                                              `,
-                                        textShadow: isSelected ? "0 0 12px rgba(56,189,248,0.6)" : "none"
-                                    }}
-                                >
-                                    {tag}
-                                </motion.button>
-                            );
-                        })}
-                    </div>
-                </div>
-            );
-        };
+        renderTags();
 
-        createRoot(document.getElementById('root')).render(<App />);
+        // 3D Parallax Tilt
+        document.addEventListener('mousemove', (e) => {
+            const cx = window.innerWidth / 2;
+            const cy = window.innerHeight / 2;
+            const tiltX = -(e.clientY - cy) * 0.02;
+            const tiltY = (e.clientX - cx) * 0.02;
+            board.style.transform = `rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+        });
     </script>
 </body>
 </html>

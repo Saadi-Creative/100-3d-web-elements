@@ -24,123 +24,140 @@
         .text-glow {
             text-shadow: 0 0 15px rgba(255,255,255,0.2);
         }
-    </style>
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
+        
+        .flipping-flap {
+            transform-origin: center;
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform: rotateX(0deg);
         }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+        
+        .flipping-flap.active {
+            transform: rotateX(-180deg);
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div id="root"></div>
-    <script type="text/babel" data-type="module">
-        import React, { useState, useEffect } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion } from 'framer-motion';
+    <div id="root">
+        <div class="flex flex-col items-center justify-center w-full h-full preserve-3d">
+            <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.05)_0%,transparent_70%)] pointer-events-none"></div>
+            
+            <h1 class="text-3xl font-extrabold text-white mb-16 tracking-widest drop-shadow-2xl">PROMO ENDS IN</h1>
 
-        const TrueSplitFlap = ({ value, label }) => {
-            const [prev, setPrev] = useState(value);
-            const [isFlipping, setIsFlipping] = useState(false);
+            <div class="flex items-center gap-2 transform translate-z-[100px]">
+                
+                <!-- Hours -->
+                <div class="flex flex-col items-center mx-1 md:mx-3" id="hours-container"></div>
+                
+                <div class="text-5xl text-slate-800 font-black mb-16">:</div>
+                
+                <!-- Minutes -->
+                <div class="flex flex-col items-center mx-1 md:mx-3" id="minutes-container"></div>
+                
+                <div class="text-5xl text-slate-800 font-black mb-16">:</div>
+                
+                <!-- Seconds -->
+                <div class="flex flex-col items-center mx-1 md:mx-3" id="seconds-container"></div>
+                
+            </div>
+        </div>
+    </div>
 
-            useEffect(() => {
-                if (value !== prev) {
-                    setIsFlipping(true);
-                    const timer = setTimeout(() => {
-                        setIsFlipping(false);
-                        setPrev(value);
-                    }, 600); // Wait for flip to complete
-                    return () => clearTimeout(timer);
-                }
-            }, [value, prev]);
-
-            const currentStr = String(value).padStart(2, '0');
-            const prevStr = String(prev).padStart(2, '0');
-
-            return (
-                <div className="flex flex-col items-center mx-1 md:mx-3">
-                    <div className="relative w-28 md:w-36 h-36 md:h-48 rounded-2xl preserve-3d text-7xl md:text-8xl font-black flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.9)] bg-black">
-                        
-                        {/* Static Bottom (New Value) */}
-                        <div className="absolute inset-0 flap-card rounded-2xl flex items-center justify-center flap-bottom z-10 text-glow">
-                            <span className="translate-y-[-2px]">{currentStr}</span>
-                        </div>
-                        
-                        {/* Static Top (New Value) */}
-                        <div className="absolute inset-0 flap-card rounded-2xl flex items-center justify-center flap-top z-10 text-glow">
-                            <span className="translate-y-[-2px]">{currentStr}</span>
-                        </div>
-
-                        {/* Static Bottom (Old Value) - Visible before the flap lands on it */}
-                        <div className="absolute inset-0 flap-card rounded-2xl flex items-center justify-center flap-bottom z-10 text-glow shadow-[inset_0_20px_30px_rgba(0,0,0,0.5)]">
-                            <span className="translate-y-[-2px]">{prevStr}</span>
-                        </div>
-
-                        {/* Flipping Flap */}
-                        {isFlipping && (
-                            <motion.div
-                                className="absolute inset-0 preserve-3d z-30"
-                                initial={{ rotateX: 0 }}
-                                animate={{ rotateX: -180 }}
-                                transition={{ type: "spring", stiffness: 60, damping: 14 }} // snappiness + gravity
-                                style={{ transformOrigin: "center" }}
-                            >
-                                {/* Front of flap (shows Old Top) */}
-                                <div className="absolute inset-0 flap-card rounded-2xl flex items-center justify-center flap-top" style={{ backfaceVisibility: "hidden" }}>
-                                    <span className="translate-y-[-2px]">{prevStr}</span>
-                                </div>
-                                {/* Back of flap (shows New Bottom) */}
-                                <div className="absolute inset-0 flap-card rounded-2xl flex items-center justify-center flap-bottom bg-[#1f1f1f]" style={{ backfaceVisibility: "hidden", transform: "rotateX(180deg)" }}>
-                                    <span className="translate-y-[-2px]">{currentStr}</span>
-                                </div>
-                            </motion.div>
-                        )}
-                        
-                        {/* Center hinge styling */}
-                        <div className="absolute top-1/2 left-0 w-full h-[3px] bg-black/95 z-40 -translate-y-1/2"></div>
-                        <div className="absolute top-1/2 left-0 w-full h-[1px] bg-white/10 z-40 -translate-y-[2px]"></div>
-                        
-                        {/* Hinge pins */}
-                        <div className="absolute top-1/2 -left-2 w-4 h-4 bg-[#111] rounded-full z-40 -translate-y-1/2 shadow-[inset_0_2px_4px_rgba(0,0,0,0.9)] border border-white/10"></div>
-                        <div className="absolute top-1/2 -right-2 w-4 h-4 bg-[#111] rounded-full z-40 -translate-y-1/2 shadow-[inset_0_2px_4px_rgba(0,0,0,0.9)] border border-white/10"></div>
+    <script>
+        function createSplitFlap(containerId, label) {
+            const container = document.getElementById(containerId);
+            
+            container.innerHTML = `
+                <div class="relative w-28 md:w-36 h-36 md:h-48 rounded-2xl preserve-3d text-7xl md:text-8xl font-black flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.9)] bg-black">
+                    <!-- Static Bottom (New Value) -->
+                    <div class="absolute inset-0 flap-card rounded-2xl flex items-center justify-center flap-bottom z-10 text-glow">
+                        <span class="translate-y-[-2px] new-val">00</span>
                     </div>
-                    <span className="mt-8 text-slate-500 font-bold tracking-[0.4em] uppercase text-xs md:text-sm drop-shadow-md">{label}</span>
-                </div>
-            );
-        };
-
-        const App = () => {
-            const [time, setTime] = useState(new Date());
-
-            useEffect(() => {
-                const interval = setInterval(() => {
-                    setTime(new Date());
-                }, 1000);
-                return () => clearInterval(interval);
-            }, []);
-
-            return (
-                <div className="flex flex-col items-center justify-center w-full h-full preserve-3d">
-                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.05)_0%,transparent_70%)] pointer-events-none"></div>
                     
-                    <h1 className="text-3xl font-extrabold text-white mb-16 tracking-widest drop-shadow-2xl">PROMO ENDS IN</h1>
-
-                    <div className="flex items-center gap-2 transform translate-z-[100px]">
-                        <TrueSplitFlap value={time.getHours()} label="Hours" />
-                        <div className="text-5xl text-slate-800 font-black mb-16">:</div>
-                        <TrueSplitFlap value={time.getMinutes()} label="Minutes" />
-                        <div className="text-5xl text-slate-800 font-black mb-16">:</div>
-                        <TrueSplitFlap value={time.getSeconds()} label="Seconds" />
+                    <!-- Static Top (New Value) -->
+                    <div class="absolute inset-0 flap-card rounded-2xl flex items-center justify-center flap-top z-10 text-glow">
+                        <span class="translate-y-[-2px] new-val">00</span>
                     </div>
-                </div>
-            );
-        };
 
-        createRoot(document.getElementById('root')).render(<App />);
+                    <!-- Static Bottom (Old Value) -->
+                    <div class="absolute inset-0 flap-card rounded-2xl flex items-center justify-center flap-bottom z-10 text-glow shadow-[inset_0_20px_30px_rgba(0,0,0,0.5)]">
+                        <span class="translate-y-[-2px] old-val">00</span>
+                    </div>
+
+                    <!-- Flipping Flap -->
+                    <div class="absolute inset-0 preserve-3d z-30 flipping-flap hidden">
+                        <!-- Front of flap (shows Old Top) -->
+                        <div class="absolute inset-0 flap-card rounded-2xl flex items-center justify-center flap-top" style="backface-visibility: hidden;">
+                            <span class="translate-y-[-2px] old-val">00</span>
+                        </div>
+                        <!-- Back of flap (shows New Bottom) -->
+                        <div class="absolute inset-0 flap-card rounded-2xl flex items-center justify-center flap-bottom bg-[#1f1f1f]" style="backface-visibility: hidden; transform: rotateX(180deg);">
+                            <span class="translate-y-[-2px] new-val">00</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Center hinge styling -->
+                    <div class="absolute top-1/2 left-0 w-full h-[3px] bg-black/95 z-40 -translate-y-1/2"></div>
+                    <div class="absolute top-1/2 left-0 w-full h-[1px] bg-white/10 z-40 -translate-y-[2px]"></div>
+                    
+                    <!-- Hinge pins -->
+                    <div class="absolute top-1/2 -left-2 w-4 h-4 bg-[#111] rounded-full z-40 -translate-y-1/2 shadow-[inset_0_2px_4px_rgba(0,0,0,0.9)] border border-white/10"></div>
+                    <div class="absolute top-1/2 -right-2 w-4 h-4 bg-[#111] rounded-full z-40 -translate-y-1/2 shadow-[inset_0_2px_4px_rgba(0,0,0,0.9)] border border-white/10"></div>
+                </div>
+                <span class="mt-8 text-slate-500 font-bold tracking-[0.4em] uppercase text-xs md:text-sm drop-shadow-md">${label}</span>
+            `;
+
+            let prevValue = null;
+            let isFlipping = false;
+
+            return function update(newValue) {
+                const newValStr = String(newValue).padStart(2, '0');
+                
+                if (prevValue === null) {
+                    prevValue = newValue;
+                    container.querySelectorAll('.new-val').forEach(el => el.textContent = newValStr);
+                    container.querySelectorAll('.old-val').forEach(el => el.textContent = newValStr);
+                    return;
+                }
+
+                if (newValue !== prevValue && !isFlipping) {
+                    isFlipping = true;
+                    const prevValStr = String(prevValue).padStart(2, '0');
+                    
+                    container.querySelectorAll('.new-val').forEach(el => el.textContent = newValStr);
+                    container.querySelectorAll('.old-val').forEach(el => el.textContent = prevValStr);
+                    
+                    const flippingFlap = container.querySelector('.flipping-flap');
+                    flippingFlap.classList.remove('hidden');
+                    
+                    // Force reflow
+                    void flippingFlap.offsetWidth;
+                    
+                    flippingFlap.classList.add('active');
+
+                    setTimeout(() => {
+                        flippingFlap.classList.remove('active');
+                        flippingFlap.classList.add('hidden');
+                        isFlipping = false;
+                        prevValue = newValue;
+                    }, 600); // Must match transition duration
+                }
+            };
+        }
+
+        const updateHours = createSplitFlap('hours-container', 'Hours');
+        const updateMinutes = createSplitFlap('minutes-container', 'Minutes');
+        const updateSeconds = createSplitFlap('seconds-container', 'Seconds');
+
+        function updateTime() {
+            const time = new Date();
+            updateHours(time.getHours());
+            updateMinutes(time.getMinutes());
+            updateSeconds(time.getSeconds());
+        }
+
+        updateTime(); // Initial update
+        setInterval(updateTime, 1000);
     </script>
 </body>
 </html>

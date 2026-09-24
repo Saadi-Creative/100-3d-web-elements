@@ -1,280 +1,256 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Magnetic Card Stack</title>
+    <title>Magnetic Holographic Card</title>
+    <link rel="stylesheet" href="../../styles/shared.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
+        .stage {
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #0a0a14 0%, #12121f 50%, #1a1a2e 100%);
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            perspective: 1500px;
-            overflow: hidden;
+            perspective: 1200px;
         }
 
-        .card-wrapper {
-            position: relative;
+        /* The magnetic field container */
+        .magnetic-area {
+            padding: var(--space-12);
             display: flex;
-            flex-direction: column;
+            justify-content: center;
             align-items: center;
-            gap: 30px;
         }
 
-        /* MAGNETIC CARD - Single Instance */
-        .magnetic-card {
+        /* The Card Frame */
+        .card {
             position: relative;
-            width: 380px;
-            height: 240px;
-            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-            border-radius: 24px;
-            cursor: pointer;
+            width: 340px;
+            height: 220px;
+            border-radius: var(--radius-xl);
             transform-style: preserve-3d;
-            transition: transform 0.1s ease-out, box-shadow 0.2s ease;
-
-            /* Base 3D thickness */
-            box-shadow:
-                0 8px 0 0 #1a2332,
-                0 12px 0 0 #141d28,
-                0 16px 0 0 #0e151e,
-                0 20px 40px rgba(0, 0, 0, 0.6),
-                inset 0 2px 4px rgba(255, 255, 255, 0.08),
-                inset 0 -4px 8px rgba(0, 0, 0, 0.3);
-
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            overflow: hidden;
+            /* Glassy Material */
+            background: linear-gradient(135deg, 
+                oklch(95% 0.01 var(--hue-base) / 0.1), 
+                oklch(95% 0.01 var(--hue-base) / 0.02)
+            );
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-subtle);
+            box-shadow: 
+                0 20px 40px rgba(0,0,0,0.4),
+                inset 0 1px 1px rgba(255,255,255,0.1);
+            
+            /* Spring physics for magnetic pull and return */
+            transition: transform var(--time-base) var(--ease-out),
+                        box-shadow var(--time-base) var(--ease-out);
+            cursor: grab;
+        }
+        
+        .card:active {
+            cursor: grabbing;
         }
 
-        /* Card content */
-        .card-content {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            padding: 30px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            z-index: 2;
-        }
-
-        .card-logo {
-            font-size: 32px;
-            font-weight: 800;
-            background: linear-gradient(135deg, #f472b6, #8b5cf6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .card-chip {
-            width: 50px;
-            height: 40px;
-            background: linear-gradient(135deg, #fbbf24, #f59e0b);
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(251, 191, 36, 0.3);
-        }
-
-        .card-number {
-            font-size: 22px;
-            font-weight: 600;
-            color: #f8fafc;
-            letter-spacing: 3px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-        }
-
-        .card-details {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-        }
-
-        .card-name {
-            font-size: 14px;
-            color: #cbd5e1;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .card-expiry {
-            font-size: 12px;
-            color: #94a3b8;
-        }
-
-        /* Gradient overlay that shifts with cursor */
-        .card-gradient {
+        /* Interactive glare overlay */
+        .card-glare {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-                    rgba(139, 92, 246, 0.15),
-                    transparent 40%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
+            inset: 0;
+            border-radius: inherit;
+            background: radial-gradient(
+                800px circle at var(--mx, 50%) var(--my, 50%), 
+                rgba(255,255,255,0.15) 0%, 
+                transparent 40%
+            );
             pointer-events: none;
-            z-index: 1;
+            opacity: 0;
+            transition: opacity var(--time-base) var(--ease-out);
+            mix-blend-mode: overlay;
         }
 
-        .magnetic-card:hover .card-gradient {
+        .magnetic-area:hover .card-glare {
             opacity: 1;
         }
 
-        /* Compressed state on click */
-        .magnetic-card.compressed {
-            transform: scale(0.95) translateZ(-20px) !important;
-            box-shadow:
-                0 4px 0 0 #1a2332,
-                0 6px 0 0 #141d28,
-                0 8px 0 0 #0e151e,
-                0 12px 20px rgba(0, 0, 0, 0.7);
+        /* Parallax layers */
+        .card-layer {
+            position: absolute;
+            inset: 0;
+            padding: var(--space-6);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            transform-style: preserve-3d;
         }
 
-        /* Hint text */
-        .hint {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.3);
-            text-align: center;
+        /* Depth Layer 1: Background geometric foil */
+        .layer-bg {
+            transform: translateZ(10px);
+        }
+        
+        .geometric-foil {
+            position: absolute;
+            right: -20px;
+            bottom: -40px;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: conic-gradient(
+                from 0deg at 50% 50%,
+                var(--accent-base) 0deg,
+                var(--info) 90deg,
+                var(--accent-active) 180deg,
+                var(--info) 270deg,
+                var(--accent-base) 360deg
+            );
+            filter: blur(40px);
+            opacity: 0.3;
         }
 
-        .hint kbd {
-            background: rgba(255, 255, 255, 0.08);
-            padding: 3px 8px;
-            border-radius: 4px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            font-family: inherit;
+        /* Depth Layer 2: Chip and Brand */
+        .layer-mid {
+            transform: translateZ(30px);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
         }
+
+        .chip {
+            width: 44px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            background: linear-gradient(135deg, var(--text-tertiary), var(--text-muted));
+            border: 1px solid var(--border-subtle);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            /* Engraved lines */
+            background-image: 
+                linear-gradient(rgba(0,0,0,0.2) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,0.2) 1px, transparent 1px);
+            background-size: 14px 10px;
+        }
+
+        .brand {
+            font-size: var(--text-lg);
+            font-weight: 800;
+            letter-spacing: 0.2em;
+            color: var(--text-primary);
+        }
+
+        /* Depth Layer 3: Typography */
+        .layer-front {
+            transform: translateZ(50px);
+            justify-content: flex-end;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        .card-number {
+            font-size: var(--text-xl);
+            font-family: var(--font-mono);
+            letter-spacing: 0.1em;
+            color: var(--text-primary);
+            margin-bottom: var(--space-4);
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            font-size: var(--text-xs);
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
     </style>
 </head>
-
 <body>
-    <div class="card-wrapper">
-        <!-- SINGLE INSTANCE - Magnetic Card -->
-        <div class="magnetic-card" id="card">
-            <div class="card-gradient" id="gradient"></div>
-            <div class="card-content">
-                <div>
-                    <div class="card-logo">3D CARD</div>
-                    <div class="card-chip" style="margin-top: 20px;"></div>
+    <div class="stage">
+        <!-- The magnetic area captures mouse movement before touching the card -->
+        <div class="magnetic-area" id="magneticArea">
+            <div class="card" id="card">
+                <div class="card-glare" id="glare"></div>
+                
+                <div class="card-layer layer-bg">
+                    <div class="geometric-foil"></div>
                 </div>
-                <div>
-                    <div class="card-number">4532 •••• •••• 8901</div>
-                    <div class="card-details">
-                        <div class="card-name">John Smith</div>
-                        <div class="card-expiry">12/26</div>
+                
+                <div class="card-layer layer-mid">
+                    <div class="chip"></div>
+                    <div class="brand">NEXUS</div>
+                </div>
+
+                <div class="card-layer layer-front">
+                    <div class="card-number">4532  ••••  ••••  8901</div>
+                    <div class="card-footer">
+                        <span>Holo Pass</span>
+                        <span>09/28</span>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="hint">Hover to bend • Click to compress</div>
     </div>
 
     <script>
+        const area = document.getElementById('magneticArea');
         const card = document.getElementById('card');
-        const gradient = document.getElementById('gradient');
+        const glare = document.getElementById('glare');
+        
+        // Physical bounds and constraints
+        const MAX_TILT = 20; // degrees
+        const PULL_STRENGTH = 15; // px translation
 
-        // ========== MAGNETIC BENDING & TILTING ==========
-        let isPressed = false;
+        function updateMagneticField(e) {
+            const rect = area.getBoundingClientRect();
+            const cardRect = card.getBoundingClientRect();
+            
+            // Mouse position relative to the tracking area
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // Normalized coordinates (-1 to 1)
+            const normX = (x / rect.width) * 2 - 1;
+            const normY = (y / rect.height) * 2 - 1;
+            
+            // Calculate tilt (inversed for natural feel)
+            const tiltX = normY * -MAX_TILT;
+            const tiltY = normX * MAX_TILT;
+            
+            // Calculate magnetic pull translation
+            const pullX = normX * PULL_STRENGTH;
+            const pullY = normY * PULL_STRENGTH;
 
-        card.addEventListener('mousemove', (e) => {
-            if (isPressed) return;
+            // Apply transform dynamically with 0 transition for instant tracking
+            card.style.transition = 'none';
+            card.style.transform = `translate3d(${pullX}px, ${pullY}px, 20px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+            
+            // Update Glare overlay based on mouse position over the card
+            // We map the mouse position to the card's local space
+            const glareX = e.clientX - cardRect.left;
+            const glareY = e.clientY - cardRect.top;
+            glare.style.setProperty('--mx', `${glareX}px`);
+            glare.style.setProperty('--my', `${glareY}px`);
+        }
 
-            const rect = card.getBoundingClientRect();
-            const x = e.clientX - rect.left; // X position within card
-            const y = e.clientY - rect.top;  // Y position within card
+        function resetMagneticField() {
+            // Restore CSS transition for smooth spring back
+            card.style.transition = 'transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            card.style.transform = `translate3d(0, 0, 0) rotateX(0deg) rotateY(0deg)`;
+        }
 
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
-
-            // Calculate rotation based on distance from center
-            const rotateY = ((x - centerX) / centerX) * 15; // -15 to +15 degrees
-            const rotateX = ((centerY - y) / centerY) * 15; // -15 to +15 degrees
-
-            // Calculate corner lift (bending effect)
-            const bendX = ((x - centerX) / centerX) * 5;
-            const bendY = ((centerY - y) / centerY) * 5;
-
-            // Apply transform with perspective and translation for magnetic effect
-            card.style.transform = `
-                perspective(1000px)
-                rotateX(${rotateX}deg) 
-                rotateY(${rotateY}deg)
-                translateZ(20px)
-                scale(1.02)
-            `;
-
-            // Update gradient position
-            const mouseX = (x / rect.width) * 100;
-            const mouseY = (y / rect.height) * 100;
-            gradient.style.setProperty('--mouse-x', `${mouseX}%`);
-            gradient.style.setProperty('--mouse-y', `${mouseY}%`);
-        });
-
-        card.addEventListener('mouseleave', () => {
-            if (isPressed) return;
-
-            // Reset to flat position
-            card.style.transform = `
-                perspective(1000px)
-                rotateX(0deg)
-                rotateY(0deg)
-                translateZ(0px)
-                scale(1)
-            `;
-        });
-
-        // ========== COMPRESSION ON CLICK ==========
+        area.addEventListener('mousemove', updateMagneticField);
+        area.addEventListener('mouseleave', resetMagneticField);
+        
+        // Interaction on press
         card.addEventListener('mousedown', () => {
-            isPressed = true;
-            card.classList.add('compressed');
+            card.style.transition = 'transform 0.2s var(--ease-out)';
+            // Push card in physically
+            const currentTransform = card.style.transform;
+            card.style.transform = currentTransform.replace('20px', '-20px').replace(/scale\([^\)]*\)/, '') + ' scale(0.95)';
         });
-
-        card.addEventListener('mouseup', () => {
-            isPressed = false;
-            card.classList.remove('compressed');
-
-            // Restore hover state if still hovering
-            const rect = card.getBoundingClientRect();
-            const hovering = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2) === card;
-
-            if (!hovering) {
-                card.style.transform = `
-                    perspective(1000px)
-                    rotateX(0deg)
-                    rotateY(0deg)
-                    translateZ(0px)
-                    scale(1)
-                `;
-            }
+        
+        window.addEventListener('mouseup', () => {
+            card.style.transition = 'transform 0.4s var(--ease-spring)';
+            const currentTransform = card.style.transform;
+            card.style.transform = currentTransform.replace('-20px', '20px').replace('scale(0.95)', '');
         });
-
-        // Global mouseup to handle release outside card
-        document.addEventListener('mouseup', () => {
-            if (isPressed) {
-                isPressed = false;
-                card.classList.remove('compressed');
-            }
-        });
-
-        // Exposed API
-        window.MagneticCard = {
-            reset: () => {
-                card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0px) scale(1)';
-                card.classList.remove('compressed');
-            }
-        };
     </script>
 </body>
-
 </html>

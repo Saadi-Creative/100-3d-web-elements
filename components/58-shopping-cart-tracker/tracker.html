@@ -8,26 +8,78 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         body { margin: 0; background: #0f172a; min-height: 100vh; font-family: 'Inter', sans-serif; color: white; overflow-x: hidden; }
-    </style>
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
+        
+        .cart-icon {
+            transition: transform 0.4s;
         }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+        
+        @keyframes jiggle {
+            0% { transform: scale(1) rotate(0deg); }
+            20% { transform: scale(1.3) rotate(-15deg); }
+            40% { transform: scale(0.9) rotate(15deg); }
+            60% { transform: scale(1.15) rotate(-10deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+        
+        .jiggling {
+            animation: jiggle 0.4s ease-out;
+        }
+        
+        .flying-item {
+            position: fixed;
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            z-index: 50;
+            pointer-events: none;
+            /* Using transition for animation */
+            transition: transform 0.7s cubic-bezier(0.1, 0.9, 0.3, 1), opacity 0.7s, top 0.7s cubic-bezier(0.1, 0.9, 0.3, 1), left 0.7s cubic-bezier(0.1, 0.9, 0.3, 1);
+        }
+        
+        .cart-badge {
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform: scale(0);
+        }
+        .cart-badge.show {
+            transform: scale(1);
+        }
+    </style>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root">
+        <div class="min-h-screen p-8 md:p-16 relative">
+            
+            <!-- Navbar -->
+            <div class="flex justify-between items-center mb-16 max-w-7xl mx-auto">
+                <h1 class="text-3xl md:text-5xl font-black tracking-tighter">WristHub.</h1>
+                
+                <!-- Cart Icon -->
+                <div id="cart" class="bg-slate-800 p-4 rounded-full flex items-center justify-center relative shadow-[0_0_20px_rgba(0,0,0,0.5)] border border-slate-700 cursor-pointer hover:bg-slate-700 transition-colors cart-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white">
+                        <circle cx="9" cy="21" r="1"></circle>
+                        <circle cx="20" cy="21" r="1"></circle>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                    </svg>
+                    <div id="cartBadge" class="absolute -top-2 -right-2 bg-indigo-500 text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full shadow-lg cart-badge">
+                        0
+                    </div>
+                </div>
+            </div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useState, useRef, useEffect } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, AnimatePresence } from 'framer-motion';
+            <div class="max-w-7xl mx-auto">
+                <p class="text-xl text-slate-400 mb-16 max-w-2xl">Click "Add to Cart" and see the smooth Bezier curved flight path moving products into the basket seamlessly.</p>
+                
+                <div id="products-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <!-- Products rendered via JS -->
+                </div>
+            </div>
+            
+            <div id="flying-layer"></div>
+        </div>
+    </div>
 
+    <script>
         const products = [
             { id: 1, name: "Neon Smartwatch", price: "$299", color: "#f43f5e" },
             { id: 2, name: "Quantum Earbuds", price: "$149", color: "#8b5cf6" },
@@ -35,145 +87,80 @@
             { id: 4, name: "OLED Monitor", price: "$899", color: "#3b82f6" }
         ];
 
-        const Store = () => {
-            const [cartCount, setCartCount] = useState(0);
-            const [flyingItems, setFlyingItems] = useState([]);
-            const cartRef = useRef(null);
+        let cartCount = 0;
+        const cartElement = document.getElementById('cart');
+        const cartBadge = document.getElementById('cartBadge');
+        const productsContainer = document.getElementById('products-container');
+        const flyingLayer = document.getElementById('flying-layer');
+
+        function renderProducts() {
+            products.forEach(product => {
+                const card = document.createElement('div');
+                card.className = 'bg-slate-800/50 border border-slate-700 p-8 rounded-3xl flex flex-col items-center shadow-xl transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.4)] relative group overflow-hidden';
+                
+                card.innerHTML = `
+                    <div class="w-32 h-32 rounded-2xl mb-8 shadow-2xl transition-transform duration-500 group-hover:scale-110"
+                        style="background-color: ${product.color}; box-shadow: 0 15px 30px -10px ${product.color}"></div>
+                    
+                    <h3 class="text-xl font-bold mb-2 text-slate-100">${product.name}</h3>
+                    <p class="text-slate-400 mb-8 font-medium">${product.price}</p>
+                    
+                    <button class="add-to-cart-btn w-full py-4 rounded-xl font-bold bg-white text-slate-900 shadow-[0_5px_15px_rgba(255,255,255,0.2)] hover:bg-slate-200 transition-colors active:scale-95 z-10">
+                        Add to Cart
+                    </button>
+                `;
+                
+                card.querySelector('.add-to-cart-btn').addEventListener('click', (e) => triggerAddToCart(product, e));
+                productsContainer.appendChild(card);
+            });
+        }
+
+        function triggerAddToCart(product, e) {
+            const rect = e.currentTarget.getBoundingClientRect();
             
-            // Jiggle state for the cart icon
-            const [isCartJiggling, setIsCartJiggling] = useState(false);
+            const startX = rect.left + rect.width / 2;
+            const startY = rect.top + rect.height / 2;
 
-            const triggerAddToCart = (product, e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
+            const cartRect = cartElement.getBoundingClientRect();
+            const endX = cartRect.left + cartRect.width / 2;
+            const endY = cartRect.top + cartRect.height / 2;
+
+            const flyingItem = document.createElement('div');
+            flyingItem.className = 'flying-item';
+            flyingItem.style.backgroundColor = product.color;
+            
+            // Set initial state
+            flyingItem.style.left = `${startX - 24}px`;
+            flyingItem.style.top = `${startY - 24}px`;
+            flyingItem.style.transform = `scale(1.5) rotate(0deg)`;
+            flyingItem.style.opacity = '1';
+            
+            flyingLayer.appendChild(flyingItem);
+            
+            // Force reflow
+            flyingItem.getBoundingClientRect();
+            
+            // Set end state for animation
+            flyingItem.style.left = `${endX - 24}px`;
+            flyingItem.style.top = `${endY - 24}px`;
+            flyingItem.style.transform = `scale(0.2) rotate(360deg)`;
+            flyingItem.style.opacity = '0.5';
+            
+            setTimeout(() => {
+                flyingItem.remove();
                 
-                // Starting coordinates
-                const startX = rect.left + rect.width / 2;
-                const startY = rect.top + rect.height / 2;
-
-                // Ending coordinates (the cart icon)
-                let endX = window.innerWidth - 60; // Approximate top-right
-                let endY = 40;
+                cartCount++;
+                cartBadge.textContent = cartCount;
+                cartBadge.classList.add('show');
                 
-                if (cartRef.current) {
-                    const cartRect = cartRef.current.getBoundingClientRect();
-                    endX = cartRect.left + cartRect.width / 2;
-                    endY = cartRect.top + cartRect.height / 2;
-                }
+                cartElement.classList.remove('jiggling');
+                // Force reflow
+                void cartElement.offsetWidth;
+                cartElement.classList.add('jiggling');
+            }, 700);
+        }
 
-                const newItemId = Date.now() + Math.random();
-                
-                setFlyingItems(prev => [...prev, {
-                    id: newItemId,
-                    color: product.color,
-                    startX,
-                    startY,
-                    endX,
-                    endY
-                }]);
-
-                // We'll clean up the flying item after the animation (duration 0.7s)
-                setTimeout(() => {
-                    setFlyingItems(prev => prev.filter(item => item.id !== newItemId));
-                    setCartCount(c => c + 1);
-                    
-                    // Trigger a small bump/jiggle on the cart
-                    setIsCartJiggling(true);
-                    setTimeout(() => setIsCartJiggling(false), 300);
-                }, 700);
-            };
-
-            return (
-                <div className="min-h-screen p-8 md:p-16 relative">
-                    
-                    {/* Navbar */}
-                    <div className="flex justify-between items-center mb-16 max-w-7xl mx-auto">
-                        <h1 className="text-3xl md:text-5xl font-black tracking-tighter">WristHub.</h1>
-                        
-                        {/* Cart Icon */}
-                        <motion.div 
-                            ref={cartRef}
-                            className="bg-slate-800 p-4 rounded-full flex items-center justify-center relative shadow-[0_0_20px_rgba(0,0,0,0.5)] border border-slate-700 cursor-pointer hover:bg-slate-700 transition-colors"
-                            animate={{ 
-                                scale: isCartJiggling ? [1, 1.3, 0.9, 1.15, 1] : 1,
-                                rotate: isCartJiggling ? [0, -15, 15, -10, 0] : 0
-                            }}
-                            transition={{ duration: 0.4 }}
-                        >
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
-                                <circle cx="9" cy="21" r="1"></circle>
-                                <circle cx="20" cy="21" r="1"></circle>
-                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                            </svg>
-                            {cartCount > 0 && (
-                                <motion.div 
-                                    initial={{ scale: 0 }}
-                                    animate={{ scale: 1 }}
-                                    className="absolute -top-2 -right-2 bg-indigo-500 text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full shadow-lg"
-                                >
-                                    {cartCount}
-                                </motion.div>
-                            )}
-                        </motion.div>
-                    </div>
-
-                    <div className="max-w-7xl mx-auto">
-                        <p className="text-xl text-slate-400 mb-16 max-w-2xl">Click "Add to Cart" and see the smooth Bezier curved flight path moving products into the basket seamlessly.</p>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                            {products.map(product => (
-                                <div key={product.id} className="bg-slate-800/50 border border-slate-700 p-8 rounded-3xl flex flex-col items-center shadow-xl transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.4)] relative group overflow-hidden">
-                                    {/* Visual product proxy */}
-                                    <div 
-                                        className="w-32 h-32 rounded-2xl mb-8 shadow-2xl transition-transform duration-500 group-hover:scale-110"
-                                        style={{ backgroundColor: product.color, boxShadow: `0 15px 30px -10px ${product.color}` }}
-                                    ></div>
-                                    
-                                    <h3 className="text-xl font-bold mb-2 text-slate-100">{product.name}</h3>
-                                    <p className="text-slate-400 mb-8 font-medium">{product.price}</p>
-                                    
-                                    <button
-                                        onClick={(e) => triggerAddToCart(product, e)}
-                                        className="w-full py-4 rounded-xl font-bold bg-white text-slate-900 shadow-[0_5px_15px_rgba(255,255,255,0.2)] hover:bg-slate-200 transition-colors active:scale-95 z-10"
-                                    >
-                                        Add to Cart
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Flying Items Portal layer */}
-                    {flyingItems.map(item => (
-                        <motion.div
-                            key={item.id}
-                            style={{ backgroundColor: item.color }}
-                            className="fixed top-0 left-0 w-12 h-12 rounded-xl shadow-2xl z-50 pointer-events-none"
-                            initial={{ 
-                                x: item.startX - 24, 
-                                y: item.startY - 24, 
-                                scale: 1.5, 
-                                opacity: 1,
-                                rotate: 0
-                            }}
-                            animate={{ 
-                                x: item.endX - 24, 
-                                y: item.endY - 24, 
-                                scale: 0.2, 
-                                opacity: 0.5,
-                                rotate: 360
-                            }}
-                            transition={{ 
-                                duration: 0.7, 
-                                // Bezier curve to make it arc up slightly rather than straight line
-                                ease: [0.1, 0.9, 0.3, 1]
-                            }}
-                        />
-                    ))}
-                </div>
-            );
-        };
-
-        createRoot(document.getElementById('root')).render(<Store />);
+        renderProducts();
     </script>
 </body>
 </html>

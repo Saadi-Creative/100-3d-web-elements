@@ -9,7 +9,6 @@
         body { margin: 0; background: #1e293b; min-height: 100vh; display: flex; align-items: center; justify-content: center; font-family: 'Inter', sans-serif; overflow: hidden; }
         .preserve-3d { transform-style: preserve-3d; }
         
-        /* The iridescent foil effect */
         .foil-glare {
             background: linear-gradient(
                 125deg, 
@@ -23,128 +22,101 @@
             );
             background-size: 200% 200%;
             mix-blend-mode: color-dodge;
+            transition: opacity 0.3s;
+        }
+        
+        #card {
+            transition: transform 0.1s ease-out, scale 0.3s ease-out;
+            transform: rotateX(0deg) rotateY(0deg) scale(1);
+        }
+        
+        #card:hover {
+            scale: 1.05;
+        }
+        
+        #card:hover .foil-glare {
+            opacity: 1;
+        }
+        
+        #floor-shadow {
+            transition: transform 0.1s ease-out;
         }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-    <div id="root"></div>
-
-    <script type="text/babel" data-type="module">
-        import React, { useRef } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
-
-        const App = () => {
-            const containerRef = useRef(null);
+    <div class="w-full h-full flex flex-col items-center justify-center p-8 preserve-3d" style="perspective: 1500px">
+        <h2 class="text-3xl font-black text-slate-100 mb-12 tracking-tighter">Wall of Love</h2>
+        
+        <div id="card" class="relative w-[340px] h-[480px] rounded-3xl preserve-3d cursor-crosshair">
             
-            const mouseX = useMotionValue(0.5);
-            const mouseY = useMotionValue(0.5);
+            <div id="floor-shadow" class="absolute -inset-4 bg-indigo-500/30 rounded-full blur-[40px] pointer-events-none" style="transform: translate3d(0px, 0px, -100px)"></div>
 
-            const smoothX = useSpring(mouseX, { damping: 20, stiffness: 150 });
-            const smoothY = useSpring(mouseY, { damping: 20, stiffness: 150 });
+            <div class="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl border border-slate-600/50 shadow-xl overflow-hidden pointer-events-none">
+                <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(129,140,248,0.2),transparent_50%)]"></div>
+            </div>
 
-            // Aggressive rotations for 3D card tilt
-            const rotateX = useTransform(smoothY, [0, 1], [30, -30]);
-            const rotateY = useTransform(smoothX, [0, 1], [-30, 30]);
+            <div id="foil" class="absolute inset-0 rounded-3xl foil-glare opacity-0 pointer-events-none mix-blend-color-dodge z-30" style="background-position: 50% 50%;"></div>
 
-            // Background positioning for Holographic Foil Glare
-            const glareX = useTransform(smoothX, [0, 1], ["0%", "100%"]);
-            const glareY = useTransform(smoothY, [0, 1], ["0%", "100%"]);
-
-            const handleMouseMove = (e) => {
-                if (!containerRef.current) return;
-                const rect = containerRef.current.getBoundingClientRect();
-                mouseX.set((e.clientX - rect.left) / rect.width);
-                mouseY.set((e.clientY - rect.top) / rect.height);
-            };
-
-            const handleMouseLeave = () => {
-                mouseX.set(0.5);
-                mouseY.set(0.5);
-            };
-
-            return (
-                <div className="w-full h-full flex flex-col items-center justify-center p-8 preserve-3d" style={{ perspective: 1500 }}>
-                    <h2 className="text-3xl font-black text-slate-100 mb-12 tracking-tighter">Wall of Love</h2>
-                    
-                    <motion.div
-                        ref={containerRef}
-                        onMouseMove={handleMouseMove}
-                        onMouseLeave={handleMouseLeave}
-                        className="relative w-[340px] h-[480px] rounded-3xl preserve-3d cursor-crosshair"
-                        style={{ rotateX, rotateY }}
-                        whileHover={{ scale: 1.05 }}
-                        transition={{ duration: 0.3 }}
-                    >
-                        {/* Floor shadow */}
-                        <motion.div 
-                            className="absolute -inset-4 bg-indigo-500/30 rounded-full blur-[40px] pointer-events-none"
-                            style={{ 
-                                x: useTransform(smoothX, [0, 1], [30, -30]),
-                                y: useTransform(smoothY, [0, 1], [30, -30]),
-                                translateZ: -100 
-                            }}
-                        />
-
-                        {/* Card Background / Base */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl border border-slate-600/50 shadow-xl overflow-hidden pointer-events-none">
-                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(129,140,248,0.2),transparent_50%)]"></div>
-                        </div>
-
-                        {/* Holographic Foil Layer */}
-                        <motion.div 
-                            className="absolute inset-0 rounded-3xl foil-glare opacity-0 transition-opacity duration-300 pointer-events-none mix-blend-color-dodge z-30"
-                            style={{ backgroundPositionX: glareX, backgroundPositionY: glareY }}
-                            whileHover={{ opacity: 1 }}
-                        />
-
-                        <div className="absolute inset-0 rounded-3xl preserve-3d p-8 flex flex-col pointer-events-none">
-                            {/* Stars Floating slightly */}
-                            <div className="flex gap-1 mb-8" style={{ transform: 'translateZ(20px)' }}>
-                                {[1,2,3,4,5].map(i => (
-                                    <svg key={i} className="w-5 h-5 text-amber-400 drop-shadow-md" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                                ))}
-                            </div>
-
-                            {/* Quote Text Floating higher */}
-                            <p className="text-xl font-semibold text-slate-100 leading-snug drop-shadow-lg mb-auto preserve-3d" style={{ transform: 'translateZ(30px)' }}>
-                                "The spatial depth logic in this template completely transformed our conversion rates. It literally jumps off the screen. Unbelievable performance."
-                            </p>
-
-                            <div className="mt-8 pt-6 border-t border-white/10 preserve-3d flex items-center justify-between" style={{ transform: 'translateZ(10px)' }}>
-                                <div>
-                                    <h4 className="font-bold text-white text-lg drop-shadow">Sarah Jenkins</h4>
-                                    <p className="text-sky-400 text-sm font-medium">VP Engineering, Vercel</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* The Aggressive 3D Character/Portrait Image taking up right side space */}
-                        {/* We use an abstract 3D looking shape since we don't have an image, but style it aggressively forward */}
-                        <motion.div 
-                            className="absolute -right-8 bottom-12 w-48 h-48 drop-shadow-[0_20px_20px_rgba(0,0,0,0.8)] pointer-events-none"
-                            style={{ transform: 'translateZ(80px)' }}
-                        >
-                            <img src="https://illustrations.popsy.co/amber/freelancer.svg" className="w-full h-full object-contain filter hue-rotate-15" alt="3D character" />
-                        </motion.div>
-
-                    </motion.div>
+            <div class="absolute inset-0 rounded-3xl preserve-3d p-8 flex flex-col pointer-events-none">
+                <div class="flex gap-1 mb-8" style="transform: translateZ(20px)">
+                    <svg class="w-5 h-5 text-amber-400 drop-shadow-md" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                    <svg class="w-5 h-5 text-amber-400 drop-shadow-md" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                    <svg class="w-5 h-5 text-amber-400 drop-shadow-md" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                    <svg class="w-5 h-5 text-amber-400 drop-shadow-md" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                    <svg class="w-5 h-5 text-amber-400 drop-shadow-md" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
                 </div>
-            );
-        };
 
-        createRoot(document.getElementById('root')).render(<App />);
+                <p class="text-xl font-semibold text-slate-100 leading-snug drop-shadow-lg mb-auto preserve-3d" style="transform: translateZ(30px)">
+                    "The spatial depth logic in this template completely transformed our conversion rates. It literally jumps off the screen. Unbelievable performance."
+                </p>
+
+                <div class="mt-8 pt-6 border-t border-white/10 preserve-3d flex items-center justify-between" style="transform: translateZ(10px)">
+                    <div>
+                        <h4 class="font-bold text-white text-lg drop-shadow">Sarah Jenkins</h4>
+                        <p class="text-sky-400 text-sm font-medium">VP Engineering, Vercel</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="absolute -right-8 bottom-12 w-48 h-48 drop-shadow-[0_20px_20px_rgba(0,0,0,0.8)] pointer-events-none" style="transform: translateZ(80px)">
+                <img src="https://illustrations.popsy.co/amber/freelancer.svg" class="w-full h-full object-contain filter hue-rotate-15" alt="3D character" />
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const card = document.getElementById('card');
+        const foil = document.getElementById('foil');
+        const shadow = document.getElementById('floor-shadow');
+
+        let currentRotateX = 0;
+        let currentRotateY = 0;
+        let currentX = 0.5;
+        let currentY = 0.5;
+
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            currentX = (e.clientX - rect.left) / rect.width;
+            currentY = (e.clientY - rect.top) / rect.height;
+
+            const rx = (currentY - 0.5) * -60; 
+            const ry = (currentX - 0.5) * 60;
+            
+            card.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+            foil.style.backgroundPosition = `${currentX * 100}% ${currentY * 100}%`;
+            
+            const sx = (currentX - 0.5) * -60;
+            const sy = (currentY - 0.5) * -60;
+            shadow.style.transform = `translate3d(${sx}px, ${sy}px, -100px)`;
+        });
+
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = `rotateX(0deg) rotateY(0deg)`;
+            foil.style.backgroundPosition = `50% 50%`;
+            shadow.style.transform = `translate3d(0px, 0px, -100px)`;
+        });
     </script>
 </body>
 </html>

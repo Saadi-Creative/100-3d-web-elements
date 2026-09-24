@@ -1,330 +1,209 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Bento Grid</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        neutral: {
-                            950: '#0a0a0a',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body { margin: 0; background-color: #0a0a0a; color: white; overflow-x: hidden; overflow-y: auto; }
-        #root { min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 2rem 0; overflow-x: hidden; }
-        
-        /* Glassmorphism utilities */
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
-            /* Inner border effect */
-            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>28 - 3D Spatial Bento Card Deck</title>
+  <link rel="stylesheet" href="../../styles/shared.css" />
+  <style>
+    .demo-container {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-8);
+      background: radial-gradient(circle at 50% 30%, #1e1b4b 0%, #020617 80%);
+      font-family: var(--font-sans);
+      perspective: 1200px;
+    }
+
+    .bento-header {
+      text-align: center;
+      margin-bottom: var(--space-8);
+    }
+
+    .bento-title {
+      font-size: var(--text-3xl);
+      font-weight: 800;
+      color: var(--text-heading);
+      letter-spacing: var(--tracking-tight);
+    }
+
+    .bento-sub {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      letter-spacing: var(--tracking-wider);
+      text-transform: uppercase;
+      margin-top: var(--space-2);
+    }
+
+    /* Bento Grid Layout */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-6);
+      width: 100%;
+      max-width: 860px;
+      transform-style: preserve-3d;
+    }
+
+    /* 3D Bento Card */
+    .bento-card {
+      position: relative;
+      padding: var(--space-6);
+      border-radius: var(--radius-2xl);
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-xl);
+      transform-style: preserve-3d;
+      transition: transform 0.15s ease-out, border-color 0.3s ease;
+      cursor: pointer;
+      user-select: none;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 200px;
+    }
+
+    .bento-card.col-span-2 {
+      grid-column: span 2;
+    }
+
+    .bento-card:hover {
+      border-color: var(--border-strong);
+    }
+
+    .card-glare {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: radial-gradient(
+        400px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+        rgba(255, 255, 255, 0.08) 0%,
+        transparent 70%
+      );
+      pointer-events: none;
+    }
+
+    .card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-md);
+      background: var(--surface-overlay);
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-base);
+      transform: translateZ(20px);
+    }
+
+    .card-icon svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+
+    .card-content {
+      transform: translateZ(25px);
+    }
+
+    .card-heading {
+      font-size: var(--text-lg);
+      font-weight: 700;
+      color: var(--text-heading);
+    }
+
+    .card-text {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      margin-top: var(--space-2);
+      line-height: var(--leading-relaxed);
+    }
+  </style>
 </head>
 <body>
-    <div id="root"></div>
+  <div class="demo-container">
+    <div class="bento-header">
+      <h1 class="bento-title">3D Spatial Bento Deck</h1>
+      <p class="bento-sub">Interactive 3D cards with cursor illumination</p>
+    </div>
 
-    <!-- React, ReactDOM, and Framer Motion via ESM -->
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@11.0.8?external=react,react-dom",
-            "three": "https://esm.sh/three@0.160.0",
-            "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.14?external=react,react-dom,three",
-            "@react-three/drei": "https://esm.sh/@react-three/drei@9.96.1?external=react,react-dom,three,@react-three/fiber"
-        }
-    }
-    </script>
+    <div class="bento-grid">
+      <!-- Hero Feature Card -->
+      <div class="bento-card col-span-2">
+        <div class="card-glare"></div>
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        </div>
+        <div class="card-content">
+          <h2 class="card-heading">Lightning Spatial Performance</h2>
+          <p class="card-text">Hardware-accelerated 3D CSS transforms with zero frame drops across devices.</p>
+        </div>
+      </div>
 
-    <!-- Babel for JSX -->
-    <script>
-        // Suppress Babel warning
-        const origWarn = console.warn;
-        console.warn = function(...args) {
-            if (args[0] && typeof args[0] === 'string' && (args[0].includes('in-browser Babel transformer') || args[0].includes('cdn.tailwindcss.com should not be used in production'))) return;
-            origWarn.apply(console, args);
-        };
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+      <!-- Stat Card -->
+      <div class="bento-card">
+        <div class="card-glare"></div>
+        <div class="card-icon" style="color: #34d399;">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+        </div>
+        <div class="card-content">
+          <h2 class="card-heading" style="color: #34d399;">99.9% Uptime</h2>
+          <p class="card-text">Global edge mesh network.</p>
+        </div>
+      </div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useRef, useState, useEffect } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, useMotionValue, useSpring, useMotionTemplate } from 'framer-motion';
-        import { Canvas, useThree } from '@react-three/fiber';
+      <!-- Secondary Card -->
+      <div class="bento-card">
+        <div class="card-glare"></div>
+        <div class="card-icon" style="color: #f59e0b;">
+          <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2z"/></svg>
+        </div>
+        <div class="card-content">
+          <h2 class="card-heading">Encrypted Mesh</h2>
+          <p class="card-text">End-to-end security vault.</p>
+        </div>
+      </div>
 
-        const Shape = ({ type }) => {
-            switch (type) {
-                case 'icosahedron': return <icosahedronGeometry args={[1.5, 0]} />;
-                case 'torus': return <torusGeometry args={[1, 0.4, 8, 16]} />;
-                case 'octahedron': return <octahedronGeometry args={[1.5, 0]} />;
-                case 'dodecahedron': return <dodecahedronGeometry args={[1.5, 0]} />;
-                case 'box': return <boxGeometry args={[1.8, 1.8, 1.8]} />;
-                default: return <icosahedronGeometry args={[1.5, 0]} />;
-            }
-        };
+      <!-- Wide Feature Card -->
+      <div class="bento-card col-span-2">
+        <div class="card-glare"></div>
+        <div class="card-icon" style="color: #38bdf8;">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93z"/></svg>
+        </div>
+        <div class="card-content">
+          <h2 class="card-heading">Global Edge Infrastructure</h2>
+          <p class="card-text">Deployed across 35 regions worldwide with zero configuration.</p>
+        </div>
+      </div>
+    </div>
+  </div>
 
-        const ReactiveMesh = ({ rotateX, rotateY, shapeType, color }) => {
-            const meshRef = useRef();
-            const { invalidate } = useThree();
+  <script>
+    const cards = document.querySelectorAll('.bento-card');
 
-            useEffect(() => {
-                // Subscribe to framer motion spring values
-                const unsubY = rotateY.on('change', (v) => { 
-                    if(meshRef.current) {
-                        meshRef.current.rotation.y = (v * Math.PI / 180) * 3 + 0.5; // Rotate 3x faster than card tilt
-                        // Pop out when hovered (v is not 0)
-                        meshRef.current.position.z = (Math.abs(v) + Math.abs(rotateX.get())) * 0.05;
-                        invalidate();
-                    }
-                });
-                const unsubX = rotateX.on('change', (v) => { 
-                    if(meshRef.current) {
-                        meshRef.current.rotation.x = (v * Math.PI / 180) * 3 + 0.5;
-                        meshRef.current.position.z = (Math.abs(rotateY.get()) + Math.abs(v)) * 0.05;
-                        invalidate();
-                    }
-                });
-                return () => { unsubX(); unsubY(); }
-            }, [rotateX, rotateY, invalidate]);
+    cards.forEach((card) => {
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
 
-            return (
-                <mesh ref={meshRef} rotation={[0.5, 0.5, 0]}>
-                    <Shape type={shapeType} />
-                    <meshBasicMaterial color={color} wireframe={true} transparent opacity={0.15} />
-                </mesh>
-            );
-        };
+        const rotX = ((y - rect.height / 2) / (rect.height / 2)) * -10;
+        const rotY = ((x - rect.width / 2) / (rect.width / 2)) * 10;
 
-        // Reusable 3D Magnetic Bento Card Component
-        const BentoCard = ({ children, className, shapeType = 'icosahedron', shapeColor = '#ffffff' }) => {
-            const ref = useRef(null);
-            
-            // Motion values track the mouse position relative to the card's center
-            const x = useMotionValue(0);
-            const y = useMotionValue(0);
-            
-            // Smooth out the raw mouse coordinates for buttery 60fps physics
-            const springConfig = { damping: 20, stiffness: 150, mass: 0.5 };
-            const rotateX = useSpring(useMotionValue(0), springConfig);
-            const rotateY = useSpring(useMotionValue(0), springConfig);
+        card.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg) translateY(-4px)`;
+        card.style.setProperty('--mouse-x', `${x}px`);
+        card.style.setProperty('--mouse-y', `${y}px`);
+      });
 
-            // Glare position
-            const mouseX = useSpring(useMotionValue(-500), springConfig);
-            const mouseY = useSpring(useMotionValue(-500), springConfig);
-
-            const handleMouseMove = (e) => {
-                if (!ref.current) return;
-                
-                const rect = ref.current.getBoundingClientRect();
-                const width = rect.width;
-                const height = rect.height;
-                
-                // Mouse position relative to the top-left of the card
-                const clientX = e.clientX - rect.left;
-                const clientY = e.clientY - rect.top;
-
-                // Center coordinates (0,0 is the middle of the card)
-                const centerX = clientX - width / 2;
-                const centerY = clientY - height / 2;
-
-                // Update rotational motion values (Tilt max 15 degrees)
-                // Normalize by width/height so tilt is consistent regardless of card size
-                rotateX.set((centerY / (height / 2)) * -10);
-                rotateY.set((centerX / (width / 2)) * 10);
-                
-                // Update glare tracking (absolute pixels relative to card)
-                mouseX.set(clientX);
-                mouseY.set(clientY);
-            };
-
-            const handleMouseLeave = () => {
-                rotateX.set(0);
-                rotateY.set(0);
-                mouseX.set(-500); // Hide glare off-screen
-                mouseY.set(-500);
-            };
-
-            // Dynamic CSS radial gradient for the "glass glare" tracking the cursor
-            const background = useMotionTemplate`radial-gradient(400px circle at ${mouseX}px ${mouseY}px, rgba(255,255,255,0.1), transparent 80%)`;
-
-            return (
-                <div style={{ perspective: '1200px' }} className={className}>
-                    <motion.div
-                        ref={ref}
-                        onMouseMove={handleMouseMove}
-                        onMouseLeave={handleMouseLeave}
-                        style={{
-                            rotateX,
-                            rotateY,
-                            transformStyle: 'preserve-3d'
-                        }}
-                        className="relative w-full h-full rounded-3xl glass-panel overflow-hidden transition-all duration-300 ease-out group cursor-pointer"
-                    >
-                        {/* Dynamic Glare Overlay */}
-                        <motion.div 
-                            className="absolute inset-0 z-10 pointer-events-none mix-blend-overlay"
-                            style={{ background }}
-                        />
-
-                        {/* R3F WebGL Canvas - Render on Demand */}
-                        <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
-                            <Canvas frameloop="demand" camera={{ position: [0, 0, 5], fov: 45 }}>
-                                <ReactiveMesh rotateX={rotateX} rotateY={rotateY} shapeType={shapeType} color={shapeColor} />
-                            </Canvas>
-                        </div>
-                        
-                        {/* Content Container pushes slightly off the background via Z-translation for 3D depth */}
-                        <div className="relative z-20 w-full h-full p-8 flex flex-col justify-between" style={{ transform: 'translateZ(30px)' }}>
-                            {children}
-                        </div>
-                    </motion.div>
-                </div>
-            );
-        };
-
-        const App = () => {
-            return (
-                <div className="w-full flex flex-col items-center">
-                    
-                    {/* Hero Scroller Section */}
-                    <div className="h-screen w-full flex flex-col items-center justify-center relative">
-                        <h1 className="text-5xl md:text-7xl font-black mb-4 tracking-tighter text-center">
-                            The Bento Grid
-                        </h1>
-                        <p className="text-neutral-500 uppercase tracking-[0.3em] text-sm mb-12">
-                            Scroll down to explore
-                        </p>
-                        
-                        {/* Bouncing scroll indicator */}
-                        <motion.div 
-                            animate={{ y: [0, 10, 0] }}
-                            transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-                            className="absolute bottom-12 text-neutral-600"
-                        >
-                            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                            </svg>
-                        </motion.div>
-                    </div>
-
-                    {/* Bento Grid Container */}
-                    <div className="w-full max-w-6xl mx-auto h-[800px] grid grid-cols-4 grid-rows-3 gap-6 p-4 mb-32 relative z-10">
-                    
-                    {/* Hero Feature (Spans 2x2) */}
-                    <BentoCard className="col-span-2 row-span-2" shapeType="dodecahedron" shapeColor="#818cf8">
-                        <div className="h-full flex flex-col justify-between">
-                            <div className="w-12 h-12 rounded-full bg-indigo-500/20 flex items-center justify-center mb-4">
-                                <svg className="w-6 h-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                </svg>
-                            </div>
-                            <div>
-                                <h2 className="text-3xl font-bold tracking-tight mb-2">Lightning Performance</h2>
-                                <p className="text-neutral-400 leading-relaxed text-sm">
-                                    Hardware-accelerated CSS transforms paired with Framer Motion primitives ensure flawless 60fps interactions without triggering React re-renders.
-                                </p>
-                            </div>
-                        </div>
-                    </BentoCard>
-
-                    {/* Stat Card */}
-                    <BentoCard className="col-span-1 row-span-1" shapeType="torus" shapeColor="#34d399">
-                        <div className="flex flex-col h-full justify-between">
-                            <p className="text-neutral-500 text-sm font-medium uppercase tracking-wider">Uptime</p>
-                            <h3 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-emerald-400 to-cyan-500">
-                                99.9%
-                            </h3>
-                        </div>
-                    </BentoCard>
-
-                    {/* Small Feature */}
-                    <BentoCard className="col-span-1 row-span-1" shapeType="octahedron" shapeColor="#fb7185">
-                        <div className="flex flex-col h-full justify-center items-center text-center">
-                            <div className="w-10 h-10 rounded-xl bg-rose-500/20 mb-3 flex items-center justify-center">
-                                <svg className="w-5 h-5 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                </svg>
-                            </div>
-                            <h4 className="font-semibold text-sm">End-to-End Encrypted</h4>
-                        </div>
-                    </BentoCard>
-
-                    {/* Wide Feature */}
-                    <BentoCard className="col-span-2 row-span-1" shapeType="box" shapeColor="#60a5fa">
-                        <div className="flex items-center h-full gap-6">
-                            <div className="flex-1">
-                                <h3 className="text-xl font-bold mb-2">Global Edge Network</h3>
-                                <p className="text-neutral-400 text-sm">Deploy your applications instantly to 35+ regions worldwide with zero configuration.</p>
-                            </div>
-                            <div className="w-24 h-24 rounded-full border-4 border-dashed border-neutral-700 flex items-center justify-center relative animate-[spin_10s_linear_infinite]">
-                                <div className="w-3 h-3 bg-blue-500 rounded-full absolute -top-1.5 shadow-[0_0_15px_#3b82f6]"></div>
-                            </div>
-                        </div>
-                    </BentoCard>
-
-                    {/* Tall Feature */}
-                    <BentoCard className="col-span-1 row-span-2" shapeType="icosahedron" shapeColor="#a78bfa">
-                        <div className="h-full flex flex-col">
-                            <h3 className="font-bold mb-1">Analytics</h3>
-                            <p className="text-xs text-neutral-500 mb-6">Real-time tracking</p>
-                            
-                            <div className="flex-1 flex items-end gap-2">
-                                {/* Mock bar chart */}
-                                {[40, 70, 45, 90, 65, 100].map((height, i) => (
-                                    <div key={i} className="flex-1 bg-gradient-to-t from-violet-500/20 to-violet-500/80 rounded-t-sm" style={{ height: height + '%' }}></div>
-                                ))}
-                            </div>
-                        </div>
-                    </BentoCard>
-
-                    {/* Medium Feature */}
-                    <BentoCard className="col-span-2 row-span-1" shapeType="torus" shapeColor="#f97316">
-                        <div className="flex flex-col h-full justify-between">
-                            <div className="flex justify-between items-start">
-                                <h3 className="font-bold">Dynamic Routing</h3>
-                                <span className="px-2 py-1 text-[10px] uppercase tracking-wider bg-white/10 rounded-full text-neutral-300">Beta</span>
-                            </div>
-                            <div className="w-full h-1.5 bg-neutral-800 rounded-full overflow-hidden mt-4">
-                                <div className="h-full w-2/3 bg-gradient-to-r from-orange-400 to-pink-500 rounded-full"></div>
-                            </div>
-                        </div>
-                    </BentoCard>
-
-                    {/* Final Small Square */}
-                    <BentoCard className="col-span-1 row-span-1" shapeType="octahedron" shapeColor="#a3a3a3">
-                         <div className="h-full flex flex-col justify-center items-center text-center">
-                            <svg className="w-8 h-8 text-neutral-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                            </svg>
-                            <span className="font-mono text-xs text-neutral-500">&lt;/&gt; API Acccess</span>
-                        </div>
-                    </BentoCard>
-
-                    </div>
-                </div>
-            );
-        };
-
-        const root = createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'rotateX(0deg) rotateY(0deg) translateY(0px)';
+      });
+    });
+  </script>
 </body>
 </html>
-

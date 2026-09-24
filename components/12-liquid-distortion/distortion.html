@@ -1,237 +1,251 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Liquid Image Distortion</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>12 - Hydro-Prismatic Fluid Lens</title>
+  <link rel="stylesheet" href="../../styles/shared.css" />
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: #0a0a0f;
-      width: 100%;
-      height: 100vh;
+    .demo-container {
+      position: relative;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      overflow: hidden;
-      font-family: 'Inter', sans-serif;
+      padding: var(--space-8);
+      background: radial-gradient(circle at 50% 50%, #0f172a 0%, #020617 100%);
     }
-    .frame {
+
+    /* Hydro Lens Card Frame */
+    .lens-frame {
       position: relative;
-      border-radius: 16px;
+      width: 100%;
+      max-width: 440px;
+      border-radius: var(--radius-2xl);
       overflow: hidden;
-      box-shadow: 0 30px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.06);
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-2xl);
+      transform-style: preserve-3d;
+      transition: transform 0.3s ease, border-color 0.3s ease;
     }
+
+    .lens-frame:hover {
+      border-color: var(--border-strong);
+      transform: translateY(-4px);
+    }
+
     #canvas-container {
-      width: 340px;
-      height: 280px;
+      width: 100%;
+      height: 320px;
       cursor: crosshair;
     }
-    canvas { display: block; }
-    .label {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      padding: 16px 18px;
-      background: linear-gradient(transparent, rgba(0,0,0,0.85));
+
+    .lens-label {
+      padding: var(--space-4) var(--space-6);
       display: flex;
+      align-items: center;
       justify-content: space-between;
-      align-items: flex-end;
+      border-top: 1px solid var(--border-subtle);
+      background: var(--surface-overlay);
     }
-    .label-title {
-      font-size: 16px;
+
+    .lens-title {
+      font-size: var(--text-sm);
       font-weight: 700;
-      color: white;
+      color: var(--text-heading);
     }
-    .label-sub {
-      font-size: 10px;
-      color: rgba(255,255,255,0.4);
-      letter-spacing: 2px;
-      text-transform: uppercase;
+
+    .lens-sub {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
     }
-    .wave-indicator {
-      font-size: 9px;
-      letter-spacing: 2px;
-      color: rgba(99, 179, 237, 0.6);
-      text-transform: uppercase;
+
+    .badge-shader {
+      font-size: var(--text-xs);
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      background: rgba(56, 189, 248, 0.1);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.2);
     }
-    .hint-text {
-      margin-top: 16px;
-      font-size: 11px;
-      color: rgba(255,255,255,0.2);
-      letter-spacing: 2px;
-      text-transform: uppercase;
+
+    /* Mode Toolbar */
+    .lens-toolbar {
+      margin-top: var(--space-6);
+      display: flex;
+      gap: var(--space-3);
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius-full);
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      backdrop-filter: blur(16px);
+    }
+
+    .mode-btn {
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius-full);
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .mode-btn.is-active {
+      background: var(--surface-overlay);
+      border-color: var(--border-subtle);
+      color: var(--accent-base);
+      box-shadow: 0 0 12px var(--accent-glow);
     }
   </style>
 </head>
 <body>
-
-<div class="frame">
-  <div id="canvas-container"></div>
-  <div class="label">
-    <div>
-      <div class="label-title">Fluid Canvas</div>
-      <div class="label-sub">Liquid Distortion Shader</div>
+  <div class="demo-container">
+    <div class="lens-frame">
+      <div id="canvas-container"></div>
+      <div class="lens-label">
+        <div>
+          <div class="lens-title">Hydro-Prismatic Fluid Lens</div>
+          <div class="lens-sub">Viscous GLSL Shader Displacement</div>
+        </div>
+        <span class="badge-shader">GPU · GLSL</span>
+      </div>
     </div>
-    <div class="wave-indicator">GPU · GLSL</div>
+
+    <div class="lens-toolbar" role="toolbar" aria-label="Shader fluid modes">
+      <button class="mode-btn is-active" data-speed="4.0" data-freq="28.0">Tidal Wave</button>
+      <button class="mode-btn" data-speed="1.5" data-freq="14.0">Mercury Flow</button>
+      <button class="mode-btn" data-speed="8.0" data-freq="45.0">Ripple Pulse</button>
+    </div>
   </div>
-</div>
 
-<p class="hint-text">‹ Move cursor over image ›</p>
-
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+    }
   }
-}
-</script>
+  </script>
 
-<script type="module">
-import * as THREE from 'three';
+  <script type="module">
+    import * as THREE from 'three';
 
-const container = document.getElementById('canvas-container');
-const W = container.clientWidth;
-const H = container.clientHeight;
+    const container = document.getElementById('canvas-container');
+    const W = container.clientWidth;
+    const H = container.clientHeight;
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-renderer.setSize(W, H);
-container.appendChild(renderer.domElement);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.setSize(W, H);
+    container.appendChild(renderer.domElement);
 
-const scene = new THREE.Scene();
-const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    const scene = new THREE.Scene();
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
-// Vertex shader — passthrough
-const vertexShader = `
-  varying vec2 vUv;
-  void main() {
-    vUv = uv;
-    gl_Position = vec4(position, 1.0);
-  }
-`;
+    const vertexShader = `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = vec4(position, 1.0);
+      }
+    `;
 
-// Fragment shader — liquid ripple distortion
-const fragmentShader = `
-  uniform sampler2D uTexture;
-  uniform vec2 uMouse;
-  uniform float uTime;
-  uniform float uHover;
-  varying vec2 vUv;
+    const fragmentShader = `
+      uniform sampler2D uTexture;
+      uniform vec2 uMouse;
+      uniform float uTime;
+      uniform float uHover;
+      uniform float uSpeed;
+      uniform float uFreq;
+      varying vec2 vUv;
 
-  void main() {
-    vec2 uv = vUv;
+      void main() {
+        vec2 uv = vUv;
+        vec2 delta = uv - uMouse;
+        float dist = length(delta);
 
-    // Distance from mouse in UV space
-    vec2 delta = uv - uMouse;
-    float dist = length(delta);
+        float wave = sin(dist * uFreq - uTime * uSpeed) * (uHover * 0.035);
+        float attenuation = smoothstep(0.4, 0.0, dist);
+        wave *= attenuation;
 
-    // Wave ripple: sin wave spreading from mouse center
-    float rippleRadius = 0.35;
-    float rippleStrength = uHover * 0.032;
-    float rippleSpeed = 4.0;
-    float wave = sin(dist * 28.0 - uTime * rippleSpeed) * rippleStrength;
+        vec2 displacementDir = normalize(delta + vec2(0.0001));
+        uv += displacementDir * wave;
+        uv = clamp(uv, 0.001, 0.999);
 
-    // Attenuate effect by distance (sharp near mouse, fades away)
-    float attenuation = smoothstep(rippleRadius, 0.0, dist);
-    wave *= attenuation;
+        vec4 color = texture2D(uTexture, uv);
+        float aberration = attenuation * uHover * 0.01;
 
-    // Additional turbulence for fluid feel
-    float turbulence = sin(uv.x * 12.0 + uTime * 1.5) * sin(uv.y * 10.0 + uTime * 1.2) * 0.006 * uHover;
+        float r = texture2D(uTexture, uv + vec2(aberration, 0.0)).r;
+        float g = color.g;
+        float b = texture2D(uTexture, uv + vec2(-aberration, 0.0)).b;
 
-    // Displace UV
-    vec2 displacementDir = normalize(delta + vec2(0.0001));
-    uv += displacementDir * wave + turbulence;
+        gl_FragColor = vec4(r, g, b, 1.0);
+      }
+    `;
 
-    // Edge clamping
-    uv = clamp(uv, 0.001, 0.999);
+    const loader = new THREE.TextureLoader();
+    const texture = loader.load(
+      'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=680&h=560&fit=crop&auto=format&q=85'
+    );
+    texture.minFilter = THREE.LinearFilter;
 
-    vec4 color = texture2D(uTexture, uv);
+    const uniforms = {
+      uTexture: { value: texture },
+      uMouse:   { value: new THREE.Vector2(0.5, 0.5) },
+      uTime:    { value: 0.0 },
+      uHover:   { value: 0.0 },
+      uSpeed:   { value: 4.0 },
+      uFreq:    { value: 28.0 }
+    };
 
-    // Chromatic aberration near mouse
-    float aberration = attenuation * uHover * 0.008;
-    float r = texture2D(uTexture, uv + vec2( aberration, 0.0)).r;
-    float g = color.g;
-    float b = texture2D(uTexture, uv + vec2(-aberration, 0.0)).b;
+    const geometry = new THREE.PlaneGeometry(2, 2);
+    const material = new THREE.ShaderMaterial({ vertexShader, fragmentShader, uniforms });
+    scene.add(new THREE.Mesh(geometry, material));
 
-    gl_FragColor = vec4(r, g, b, 1.0);
-  }
-`;
+    let targetHover = 0, targetMX = 0.5, targetMY = 0.5;
+    let currentHover = 0, currentMX = 0.5, currentMY = 0.5;
 
-// Load image texture
-const loader = new THREE.TextureLoader();
-const texture = loader.load(
-  'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=680&h=560&fit=crop&auto=format&q=85',
-  () => { needsRender = true; }
-);
-texture.minFilter = THREE.LinearFilter;
-texture.magFilter = THREE.LinearFilter;
+    container.addEventListener('mousemove', (e) => {
+      const rect = container.getBoundingClientRect();
+      targetMX = (e.clientX - rect.left) / rect.width;
+      targetMY = 1.0 - (e.clientY - rect.top) / rect.height;
+    });
 
-const uniforms = {
-  uTexture: { value: texture },
-  uMouse:   { value: new THREE.Vector2(0.5, 0.5) },
-  uTime:    { value: 0.0 },
-  uHover:   { value: 0.0 },
-};
+    container.addEventListener('mouseenter', () => { targetHover = 1.0; });
+    container.addEventListener('mouseleave', () => { targetHover = 0.0; });
 
-// PlaneGeometry — fills orthographic camera
-const geometry = new THREE.PlaneGeometry(2, 2);
-const material = new THREE.ShaderMaterial({
-  vertexShader,
-  fragmentShader,
-  uniforms,
-});
+    const clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = clock.getDelta();
+      uniforms.uTime.value += delta;
 
-scene.add(new THREE.Mesh(geometry, material));
+      currentMX += (targetMX - currentMX) * 0.08;
+      currentMY += (targetMY - currentMY) * 0.08;
+      currentHover += (targetHover - currentHover) * 0.06;
 
-// Mouse tracking — normalized UV coords
-let targetHover = 0;
-let targetMX = 0.5, targetMY = 0.5;
-let currentHover = 0, currentMX = 0.5, currentMY = 0.5;
-let needsRender = true;
+      uniforms.uMouse.value.set(currentMX, currentMY);
+      uniforms.uHover.value = currentHover;
 
-container.addEventListener('mousemove', (e) => {
-  const rect = container.getBoundingClientRect();
-  targetMX = (e.clientX - rect.left) / rect.width;
-  targetMY = 1.0 - (e.clientY - rect.top) / rect.height;
-  needsRender = true;
-});
+      renderer.render(scene, camera);
+    }
+    animate();
 
-container.addEventListener('mouseenter', () => { targetHover = 1.0; needsRender = true; });
-container.addEventListener('mouseleave', () => { targetHover = 0.0; needsRender = true; });
+    const modeBtns = document.querySelectorAll('.mode-btn');
+    modeBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        modeBtns.forEach((b) => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
 
-const clock = new THREE.Clock();
-
-function lerp(a, b, t) { return a + (b - a) * t; }
-
-function animate() {
-  requestAnimationFrame(animate);
-
-  const delta = clock.getDelta();
-  uniforms.uTime.value += delta;
-
-  // Smooth mouse position
-  currentMX = lerp(currentMX, targetMX, 0.07);
-  currentMY = lerp(currentMY, targetMY, 0.07);
-  currentHover = lerp(currentHover, targetHover, 0.05);
-
-  uniforms.uMouse.value.set(currentMX, currentMY);
-  uniforms.uHover.value = currentHover;
-
-  // Always render while distorting
-  if (currentHover > 0.01 || Math.abs(currentMX - targetMX) > 0.001) {
-    needsRender = true;
-  }
-
-  if (needsRender) {
-    renderer.render(scene, camera);
-    needsRender = currentHover > 0.01;
-  }
-}
-
-animate();
-</script>
+        uniforms.uSpeed.value = parseFloat(btn.dataset.speed);
+        uniforms.uFreq.value = parseFloat(btn.dataset.freq);
+      });
+    });
+  </script>
 </body>
 </html>

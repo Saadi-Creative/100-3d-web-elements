@@ -4,186 +4,311 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scroll-Driven Matrix Transformation Grid</title>
-    <script>
-        const origWarn = console.warn;
-        console.warn = function(...args) {
-            const msg = args[0];
-            if (typeof msg === 'string' && (msg.includes('Babel') || msg.includes('Tailwind') || msg.includes('tailwindcss'))) return;
-            origWarn.apply(console, args);
-        };
-    </script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../../styles/shared.css">
     <style>
-        body { margin: 0; background: #050505; min-height: 500vh; overflow-x: hidden; font-family: 'Inter', sans-serif; color: white; }
-        #root { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; z-index: -1; pointer-events: none;}
-        .content { position: absolute; top: 0; left: 0; width: 100%; pointer-events: none; }
-        .section { height: 100vh; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; padding-left: 10vw;}
-        h1, h2, p { text-shadow: 0 4px 20px rgba(0,0,0,0.8); }
-    </style>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.12?external=react,react-dom,three",
-            "three": "https://esm.sh/three@0.160.0"
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #04060a;
+            min-height: 100vh;
+            overflow: hidden;
+            color: white;
+            font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, sans-serif);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
         }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+        #webgl-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .hud-overlay {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            right: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .hud-left {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .hud-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #f8fafc;
+            letter-spacing: -0.02em;
+        }
+
+        .hud-sub {
+            font-size: 12px;
+            font-family: var(--font-mono, monospace);
+            color: #38bdf8;
+        }
+
+        .transformation-modes {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 20;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(16px);
+            padding: 6px;
+            border-radius: 9999px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .mode-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 12px;
+            font-family: var(--font-mono, monospace);
+            padding: 8px 16px;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .mode-btn.active {
+            background: #38bdf8;
+            color: #04060a;
+            font-weight: 600;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.5);
+        }
+
+        .mode-btn:hover:not(.active) {
+            color: #ffffff;
+        }
+
+        .matrix-math-box {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-family: var(--font-mono, monospace);
+            font-size: 10px;
+            color: #64748b;
+            z-index: 15;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .math-row {
+            color: #94a3b8;
+        }
+    </style>
 </head>
 <body>
-    <div id="root"></div>
-    <div class="content">
-        <div class="section">
-            <h1 class="text-6xl font-bold mb-4 text-emerald-400">Data Architecture</h1>
-            <p class="text-xl text-slate-300 max-w-lg">Scroll to observe real-time matrix transformations applied to the foundational dataset. Integrated physics processing shifts dimensions dynamically.</p>
-        </div>
-        <div class="section">
-            <h2 class="text-5xl font-semibold mb-3 text-cyan-400">Shear Vectoring</h2>
-            <p class="text-lg text-slate-400 max-w-md">Linear algebraic transformations push the grid structure out of alignment, revealing underlying network threads before snapping back.</p>
-        </div>
-        <div class="section">
-            <h2 class="text-5xl font-semibold mb-3 text-purple-400">Dimensional Spread</h2>
-            <p class="text-lg text-slate-400 max-w-md">Data points scatter across unmapped axes, expanding the volume of the search index before compression.</p>
-        </div>
-        <div class="section">
-            <h2 class="text-5xl font-semibold mb-3 text-fuchsia-400">Rotational Chaos</h2>
-            <p class="text-lg text-slate-400 max-w-md">High-velocity multi-axis rotation simulates deep-learning feature extraction algorithms processing spatial data.</p>
-        </div>
-        <div class="section">
-            <h2 class="text-6xl font-bold mb-3 text-white">Structural Synthesis</h2>
-            <p class="text-xl text-slate-300 max-w-lg">The system snaps into a perfect cube topology, stabilizing the data map into a pure, optimized state.</p>
+
+    <canvas id="webgl-canvas"></canvas>
+
+    <div class="hud-overlay">
+        <div class="hud-left">
+            <div class="hud-title">Affine Matrix Tensor Transformation</div>
+            <div class="hud-sub" id="mode-desc">Mode: [0] Cubic Lattice · Neutral State</div>
         </div>
     </div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useRef, useMemo } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { Canvas, useFrame } from '@react-three/fiber';
-        import * as THREE from 'three';
+    <div class="transformation-modes">
+        <button class="mode-btn active" data-mode="0">1. Neutral Cube</button>
+        <button class="mode-btn" data-mode="1">2. Shear Vector</button>
+        <button class="mode-btn" data-mode="2">3. Spherical Bloom</button>
+        <button class="mode-btn" data-mode="3">4. Vortex Twist</button>
+    </div>
 
-        const MatrixGrid = () => {
-            const meshRef = useRef();
-            const count = 12; // 12x12x12 = 1728 points
-            const total = count * count * count;
-            
-            const dummy = useMemo(() => new THREE.Object3D(), []);
-            
-            // Generate base positions (a perfect cube of points)
-            const positions = useMemo(() => {
-                const pos = [];
-                const offset = (count - 1) / 2;
-                const spacing = 1.2;
-                for(let x=0; x<count; x++){
-                    for(let y=0; y<count; y++){
-                        for(let z=0; z<count; z++) {
-                            pos.push({
-                                x: (x - offset) * spacing,
-                                y: (y - offset) * spacing,
-                                z: (z - offset) * spacing,
-                            });
-                        }
-                    }
+    <div class="matrix-math-box">
+        <div>AFFINE TENSOR (4×4):</div>
+        <div class="math-row" id="m0">[ 1.00,  0.00,  0.00,  0.00 ]</div>
+        <div class="math-row" id="m1">[ 0.00,  1.00,  0.00,  0.00 ]</div>
+        <div class="math-row" id="m2">[ 0.00,  0.00,  1.00,  0.00 ]</div>
+        <div class="math-row" id="m3">[ 0.00,  0.00,  0.00,  1.00 ]</div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+
+        const canvas = document.getElementById('webgl-canvas');
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(6, 4, 8);
+        camera.lookAt(0, 0, 0);
+
+        // 3D Instanced Matrix Grid of Glowing Micro-Nodes
+        const GRID_DIM = 7; // 7x7x7 = 343 nodes
+        const NODE_COUNT = GRID_DIM * GRID_DIM * GRID_DIM;
+        const SPACING = 0.55;
+
+        const boxGeo = new THREE.BoxGeometry(0.12, 0.12, 0.12);
+        const boxMat = new THREE.MeshStandardMaterial({
+            color: 0x38bdf8,
+            roughness: 0.2,
+            metalness: 0.8,
+            emissive: 0x0284c7,
+            emissiveIntensity: 0.4
+        });
+
+        const instancedMesh = new THREE.InstancedMesh(boxGeo, boxMat, NODE_COUNT);
+        scene.add(instancedMesh);
+
+        // Ambient & Directional Lighting
+        const ambLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambLight);
+        const dirLight = new THREE.DirectionalLight(0x38bdf8, 2.0);
+        dirLight.position.set(5, 10, 7);
+        scene.add(dirLight);
+
+        // Wireframe Axis Helpers
+        const gridHelper = new THREE.GridHelper(8, 16, 0x1e293b, 0x0f172a);
+        gridHelper.position.y = -2.2;
+        scene.add(gridHelper);
+
+        // Base Initial Coordinates
+        const basePos = [];
+        const currentPos = [];
+        const targetPos = [];
+
+        let idx = 0;
+        const offset = ((GRID_DIM - 1) * SPACING) / 2;
+
+        for (let x = 0; x < GRID_DIM; x++) {
+            for (let y = 0; y < GRID_DIM; y++) {
+                for (let z = 0; z < GRID_DIM; z++) {
+                    const bx = x * SPACING - offset;
+                    const by = y * SPACING - offset;
+                    const bz = z * SPACING - offset;
+
+                    basePos.push(new THREE.Vector3(bx, by, bz));
+                    currentPos.push(new THREE.Vector3(bx, by, bz));
+                    targetPos.push(new THREE.Vector3(bx, by, bz));
+                    idx++;
                 }
-                return pos;
-            }, [count]);
+            }
+        }
 
-            useFrame(({ clock }) => {
-                // Scroll progress from 0 (top) to 1 (bottom)
-                const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-                const scrollY = window.scrollY;
-                const progress = Math.min(1, Math.max(0, scrollY / (docHeight || 1)));
+        let activeMode = 0;
+        const modeDesc = document.getElementById('mode-desc');
+        const modeButtons = document.querySelectorAll('.mode-btn');
 
-                // Transformations
-                const shearAmt = Math.sin(progress * Math.PI) * 1.5;
-                const spreadAmt = 1 + Math.sin(progress * Math.PI) * 2.0;
-                const chaosAmt = Math.sin(Math.max(0, (progress - 0.5) * 2) * Math.PI) * 2.0;
+        const modeLabels = [
+            'Mode: [0] Cubic Lattice · Neutral State',
+            'Mode: [1] Shear Vectoring · Linear Shear Transform',
+            'Mode: [2] Spherical Bloom · Radial Wave Expansion',
+            'Mode: [3] Vortex Twist · High Velocity Tensor Rotation'
+        ];
 
-                // Snap logic at the end
-                const isSnap = progress > 0.95;
-                const ease = isSnap ? Math.max(0, (1 - progress) / 0.05) : 1; 
+        function applyTransformation(mode) {
+            activeMode = mode;
+            modeDesc.textContent = modeLabels[mode];
+            modeButtons.forEach(btn => btn.classList.toggle('active', parseInt(btn.dataset.mode) === mode));
 
-                let i = 0;
-                const time = clock.getElapsedTime();
-                
-                // Global rotation
-                if(meshRef.current) {
-                    meshRef.current.rotation.y = time * 0.1 + progress * Math.PI * 4;
-                    meshRef.current.rotation.x = time * 0.05 + progress * Math.PI * 2;
+            for (let i = 0; i < NODE_COUNT; i++) {
+                const b = basePos[i];
+                if (mode === 0) {
+                    // Neutral Cube
+                    targetPos[i].copy(b);
+                } else if (mode === 1) {
+                    // Shear Vector
+                    targetPos[i].set(
+                        b.x + b.y * 0.7,
+                        b.y,
+                        b.z + b.y * 0.4
+                    );
+                } else if (mode === 2) {
+                    // Spherical Bloom
+                    const len = b.length();
+                    const dir = b.clone().normalize();
+                    targetPos[i].copy(dir.multiplyScalar(len * 1.6 + 0.3));
+                } else if (mode === 3) {
+                    // Vortex Twist
+                    const angle = b.y * 1.5;
+                    const cosA = Math.cos(angle);
+                    const sinA = Math.sin(angle);
+                    targetPos[i].set(
+                        b.x * cosA - b.z * sinA,
+                        b.y * 1.2,
+                        b.x * sinA + b.z * cosA
+                    );
                 }
+            }
+        }
 
-                for(let x=0; x<count; x++){
-                    for(let y=0; y<count; y++){
-                        for(let z=0; z<count; z++) {
-                            const base = positions[i];
-                            
-                            let px = base.x;
-                            let py = base.y;
-                            let pz = base.z;
-                            
-                            if (ease > 0) {
-                                // Apply Scale/Spread
-                                const currentSpread = 1 + (spreadAmt - 1) * ease;
-                                px *= currentSpread;
-                                py *= currentSpread;
-                                pz *= currentSpread;
-                                
-                                // Apply Shear transform: X depends on Y, Z depends on X
-                                const currentShear = shearAmt * ease;
-                                px += py * currentShear;
-                                pz += px * currentShear * 0.5;
-                                
-                                // Apply chaotic noise 
-                                const currentChaos = chaosAmt * ease;
-                                if (currentChaos > 0) {
-                                    px += Math.sin(time * 2 + py) * currentChaos;
-                                    py += Math.cos(time * 2 + px) * currentChaos;
-                                    pz += Math.sin(time * 3 + pz) * currentChaos;
-                                }
-                            }
-
-                            dummy.position.set(px, py, pz);
-                            
-                            // Scale down points based on distance or pulse
-                            const dist = Math.sqrt(px*px + py*py + pz*pz);
-                            let pScale = 0.8;
-                            
-                            if (ease > 0) {
-                                pScale += Math.sin(time * 5 + dist) * 0.3 * ease;
-                            }
-                            
-                            dummy.scale.set(pScale, pScale, pScale);
-                            dummy.updateMatrix();
-                            meshRef.current.setMatrixAt(i, dummy.matrix);
-                            i++;
-                        }
-                    }
-                }
-                meshRef.current.instanceMatrix.needsUpdate = true;
+        modeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                applyTransformation(parseInt(btn.dataset.mode));
             });
+        });
 
-            return (
-                <instancedMesh ref={meshRef} args={[null, null, total]}>
-                    <sphereGeometry args={[0.08, 16, 16]} />
-                    <meshBasicMaterial color="#00ffcc" transparent opacity={0.8} />
-                </instancedMesh>
-            );
-        };
+        // Mouse Orbit
+        let mouseX = 0;
+        let mouseY = 0;
+        window.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+            mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+        });
 
-        const App = () => {
-            return (
-                <Canvas camera={{ position: [0, 0, 30], fov: 45 }}>
-                    <color attach="background" args={['#050505']} />
-                    <fog attach="fog" args={['#050505', 10, 50]} />
-                    <MatrixGrid />
-                </Canvas>
-            );
-        };
+        const dummy = new THREE.Object3D();
+        const clock = new THREE.Clock();
 
-        const root = createRoot(document.getElementById('root'));
-        root.render(<App />);
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+
+            // Camera subtle orbit
+            camera.position.x = 6 * Math.cos(time * 0.2 + mouseX * 0.5);
+            camera.position.z = 8 * Math.sin(time * 0.2 + mouseX * 0.5);
+            camera.position.y = 4 - mouseY * 2;
+            camera.lookAt(0, 0, 0);
+
+            // Interpolate node positions
+            for (let i = 0; i < NODE_COUNT; i++) {
+                currentPos[i].lerp(targetPos[i], 0.08);
+
+                dummy.position.copy(currentPos[i]);
+                dummy.rotation.x = time * 0.5 + i * 0.01;
+                dummy.rotation.y = time * 0.3 + i * 0.01;
+                dummy.updateMatrix();
+
+                instancedMesh.setMatrixAt(i, dummy.matrix);
+            }
+            instancedMesh.instanceMatrix.needsUpdate = true;
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
     </script>
 </body>
 </html>

@@ -3,118 +3,308 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Cookie Drawer</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>3D Pneumatic Security Hatch Cookie Drawer</title>
+    <link rel="stylesheet" href="../../styles/shared.css">
     <style>
-        body { margin: 0; background: #0e0e11; min-height: 100vh; overflow: hidden; font-family: 'Inter', sans-serif; color: white; display: flex; align-items: center; justify-content: center; }
-        #root { width: 100%; height: 100vh; position: relative; perspective: 1200px; display: flex; flex-direction: column; overflow: hidden; }
-        
-        .preserve-3d { transform-style: preserve-3d; }
-        
-        .glass-drawer {
-            background: linear-gradient(180deg, rgba(30,30,35,0.95) 0%, rgba(20,20,25,0.98) 100%);
-            backdrop-filter: blur(20px);
-            border-top: 1px solid rgba(255,255,255,0.1);
-            border-left: 1px solid rgba(255,255,255,0.05);
-            border-right: 1px solid rgba(255,255,255,0.05);
-            box-shadow: 0 -30px 60px rgba(0,0,0,0.8), inset 0 2px 2px rgba(255,255,255,0.05);
+        body {
+            background: #080a12;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            user-select: none;
+            perspective: 1400px;
+        }
+
+        /* Mock App Workspace in Background */
+        .workspace-backdrop {
+            position: absolute;
+            inset: 40px;
+            background: rgba(18, 24, 38, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            opacity: 0.3;
+            transform: translateZ(-80px);
+            pointer-events: none;
+        }
+
+        .ws-row {
+            height: 18px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 6px;
+        }
+
+        /* Trigger Reopen Hatch Button */
+        .reopen-btn {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            background: rgba(18, 24, 38, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #cbd5e1;
+            font-family: var(--font-mono, monospace);
+            font-size: 11px;
+            padding: 6px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            z-index: 50;
+            transition: all 0.2s ease;
+        }
+
+        .reopen-btn:hover {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: #38bdf8;
+            color: #38bdf8;
+        }
+
+        /* 3D Pneumatic Hatch Drawer */
+        .hatch-drawer {
+            position: absolute;
+            bottom: 30px;
+            width: 480px;
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            border: 2px solid rgba(56, 189, 248, 0.3);
+            border-radius: 24px;
+            padding: 28px;
+            box-shadow: 
+                0 -20px 50px rgba(0, 0, 0, 0.8),
+                0 0 40px rgba(56, 189, 248, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transform-style: preserve-3d;
             transform-origin: bottom center;
+            transform: rotateX(0deg) translateZ(40px);
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                        opacity 0.4s ease;
+            z-index: 30;
+        }
+
+        .hatch-drawer.closed {
+            transform: rotateX(85deg) translateZ(-60px);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Pneumatic Hydraulic Hinges */
+        .hatch-hinge {
+            position: absolute;
+            bottom: -8px;
+            width: 32px;
+            height: 12px;
+            background: #334155;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        .hatch-hinge.left { left: 40px; }
+        .hatch-hinge.right { right: 40px; }
+
+        .hatch-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .hatch-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #f8fafc;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .hatch-desc {
+            font-size: 13px;
+            color: #94a3b8;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        /* Toggle Options */
+        .cookie-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .cookie-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 10px 14px;
+        }
+
+        .cookie-label {
+            font-size: 12.5px;
+            color: #e2e8f0;
+            font-weight: 500;
+        }
+
+        .cookie-switch {
+            width: 38px;
+            height: 22px;
+            border-radius: 9999px;
+            background: #334155;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .cookie-switch.active {
+            background: #38bdf8;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+        }
+
+        .switch-knob {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: white;
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .cookie-switch.active .switch-knob {
+            transform: translateX(16px);
+        }
+
+        .cookie-switch.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Actions */
+        .hatch-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-hatch {
+            flex: 1;
+            height: 42px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-accept {
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            border: 1px solid #38bdf8;
+            color: white;
+            box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);
+        }
+
+        .btn-accept:hover {
+            background: #38bdf8;
+            color: #04060a;
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.6);
+        }
+
+        .btn-custom {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #cbd5e1;
+        }
+
+        .btn-custom:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
         }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-    <div id="root"></div>
-    <script type="text/babel" data-type="module">
-        import React, { useState, useEffect } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, AnimatePresence } from 'framer-motion';
 
-        const App = () => {
-            const [isVisible, setIsVisible] = useState(false);
+    <button class="reopen-btn" id="reopen-btn">⚙️ Privacy Hatch</button>
 
-            useEffect(() => {
-                // Delay before showing cookie consent
-                const timer = setTimeout(() => setIsVisible(true), 1000);
-                return () => clearTimeout(timer);
-            }, []);
+    <div class="workspace-backdrop">
+        <div class="ws-row" style="width: 40%;"></div>
+        <div class="ws-row" style="width: 80%;"></div>
+        <div class="ws-row" style="width: 60%;"></div>
+    </div>
 
-            return (
-                <div className="w-full h-full relative preserve-3d flex flex-col items-center justify-center bg-[#0e0e11]" style={{ perspective: '1600px' }}>
-                    
-                    {/* Dummy background content */}
-                    <div className="text-center z-0 opacity-20 pointer-events-none p-10 transform translate-z-[-100px]">
-                        <h1 className="text-7xl font-bold mb-6 tracking-tight">Immersive Experiences</h1>
-                        <p className="text-2xl max-w-2xl mx-auto">This content is behind the 3D drawer. Wait for the consent banner to physically drop down like a hatch on the screen edge.</p>
-                    </div>
+    <div class="hatch-drawer" id="hatch">
+        <div class="hatch-hinge left"></div>
+        <div class="hatch-hinge right"></div>
 
-                    <AnimatePresence>
-                        {isVisible && (
-                            <motion.div 
-                                className="absolute bottom-[-2px] left-0 w-full flex justify-center pb-0 preserve-3d z-50 pointer-events-none"
-                            >
-                                <motion.div
-                                    className="glass-drawer w-full max-w-4xl p-10 rounded-t-[40px] pointer-events-auto preserve-3d flex items-center justify-between gap-8 flex-col sm:flex-row"
-                                    initial={{ rotateX: -90, y: 50, opacity: 0 }}
-                                    animate={{ rotateX: 0, y: 0, opacity: 1 }}
-                                    exit={{ rotateX: -90, y: 50, opacity: 0, transition: { duration: 0.5, ease: "easeInOut" } }}
-                                    transition={{ 
-                                        type: "spring", 
-                                        bounce: 0,
-                                        duration: 0.6
-                                    }}
-                                    style={{ transformStyle: "preserve-3d" }}
-                                >
-                                    {/* 3D Depth Layer for Elements inside Drawer */}
-                                    <motion.div animate={{ z: 40 }} className="flex items-start gap-6 preserve-3d">
-                                        <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 shadow-lg">
-                                            <svg className="w-8 h-8 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                                        </div>
-                                        <div>
-                                            <h3 className="text-2xl font-bold text-white mb-2 tracking-tight">We value your privacy</h3>
-                                            <p className="text-white/50 text-[15px] leading-relaxed max-w-lg">
-                                                We use cookies to enhance your browsing experience, analyze our traffic, and serve tailored content. Since you live in a 3D world, this banner hinges open like a real drawer.
-                                            </p>
-                                        </div>
-                                    </motion.div>
-                                    
-                                    {/* Action Buttons Pop Out */}
-                                    <motion.div animate={{ z: 60 }} className="flex gap-4 shrink-0 preserve-3d w-full sm:w-auto mt-4 sm:mt-0">
-                                        <motion.button 
-                                            onClick={() => setIsVisible(false)}
-                                            className="px-6 py-4 rounded-xl font-semibold text-white/50 hover:text-white bg-white/5 hover:bg-white/10 transition-colors w-full sm:w-auto border border-white/5"
-                                            whileHover={{ z: 20 }}
-                                        >
-                                            Preferences
-                                        </motion.button>
-                                        <motion.button 
-                                            onClick={() => setIsVisible(false)}
-                                            className="px-8 py-4 rounded-xl font-bold text-black bg-white hover:bg-gray-200 transition-colors shadow-[0_20px_40px_rgba(255,255,255,0.2)] w-full sm:w-auto tracking-wide"
-                                            whileHover={{ scale: 1.05, z: 30 }}
-                                            whileTap={{ scale: 0.95 }}
-                                        >
-                                            Accept All
-                                        </motion.button>
-                                    </motion.div>
-                                </motion.div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
-            );
-        };
+        <div class="hatch-head">
+            <div class="hatch-title">
+                <span>🛡️</span>
+                <span>Pneumatic Privacy Vault</span>
+            </div>
+            <span style="font-size: 10px; font-family: var(--font-mono, monospace); color: #38bdf8;">SECURE ENCLAVE</span>
+        </div>
 
-        createRoot(document.getElementById('root')).render(<App />);
+        <div class="hatch-desc">
+            We store cryptographic tokens and telemetry parameters to deliver hardware-accelerated spatial experiences.
+        </div>
+
+        <div class="cookie-options">
+            <div class="cookie-row">
+                <span class="cookie-label">Essential Kernel State</span>
+                <div class="cookie-switch active disabled"><div class="switch-knob"></div></div>
+            </div>
+
+            <div class="cookie-row">
+                <span class="cookie-label">High-FPS WebGL Diagnostics</span>
+                <div class="cookie-switch active" id="sw-diag"><div class="switch-knob"></div></div>
+            </div>
+
+            <div class="cookie-row">
+                <span class="cookie-label">Edge Session Personalization</span>
+                <div class="cookie-switch" id="sw-edge"><div class="switch-knob"></div></div>
+            </div>
+        </div>
+
+        <div class="hatch-actions">
+            <button class="btn-hatch btn-accept" id="btn-accept">Accept All Tokens</button>
+            <button class="btn-hatch btn-custom" id="btn-save">Save Preferences</button>
+        </div>
+    </div>
+
+    <script>
+        const hatch = document.getElementById('hatch');
+        const reopenBtn = document.getElementById('reopen-btn');
+        const btnAccept = document.getElementById('btn-accept');
+        const btnSave = document.getElementById('btn-save');
+        const swDiag = document.getElementById('sw-diag');
+        const swEdge = document.getElementById('sw-edge');
+
+        [swDiag, swEdge].forEach(sw => {
+            sw.addEventListener('click', () => {
+                sw.classList.toggle('active');
+            });
+        });
+
+        function closeHatch() {
+            hatch.classList.add('closed');
+        }
+
+        function openHatch() {
+            hatch.classList.remove('closed');
+        }
+
+        btnAccept.addEventListener('click', closeHatch);
+        btnSave.addEventListener('click', closeHatch);
+        reopenBtn.addEventListener('click', openHatch);
     </script>
 </body>
 </html>

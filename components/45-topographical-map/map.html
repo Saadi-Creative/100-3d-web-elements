@@ -3,244 +3,323 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Topographical Drop-Zone Map</title>
-    <script>
-        const origWarn = console.warn;
-        console.warn = function(...args) {
-            const msg = args[0];
-            if (typeof msg === 'string' && (msg.includes('Babel') || msg.includes('Tailwind') || msg.includes('tailwindcss'))) return;
-            origWarn.apply(console, args);
-        };
-    </script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Topographical Drop-Zone LiDAR Map</title>
+    <link rel="stylesheet" href="../../styles/shared.css">
     <style>
-        body { margin: 0; background: #020610; min-height: 400vh; overflow-x: hidden; font-family: 'Inter', sans-serif; color: white; }
-        #root { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; z-index: -1; pointer-events: none;}
-        .content { position: absolute; top: 0; left: 0; width: 100%; pointer-events: none; }
-        .section { height: 100vh; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; padding: 10vh 10vw;}
-        .panel { background: rgba(10, 20, 40, 0.7); border: 1px solid #1a3a5a; padding: 2rem; border-radius: 12px; backdrop-filter: blur(8px); max-width: 500px; padding-bottom: 2.5rem;}
-        h1, h2, p { text-shadow: 0 4px 15px rgba(0,0,0,0.8); }
-        .status-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #3b82f6; box-shadow: 0 0 10px #3b82f6; margin-right: 12px; animation: pulse 2s infinite;}
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
-    </style>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.12?external=react,react-dom,three",
-            "three": "https://esm.sh/three@0.160.0"
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #020610;
+            min-height: 100vh;
+            overflow: hidden;
+            color: white;
+            font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, sans-serif);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
         }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+        #webgl-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .hud-overlay {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .hud-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-family: var(--font-mono, monospace);
+            color: #60a5fa;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .hud-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #f8fafc;
+            letter-spacing: -0.02em;
+        }
+
+        .controls-bar {
+            position: absolute;
+            bottom: 24px;
+            display: flex;
+            gap: 10px;
+            z-index: 20;
+        }
+
+        .btn-tac {
+            background: rgba(10, 20, 40, 0.85);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            color: #93c5fd;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-family: var(--font-mono, monospace);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-tac:hover {
+            background: rgba(59, 130, 246, 0.25);
+            border-color: #3b82f6;
+            color: #ffffff;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .telemetry-box {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            background: rgba(10, 20, 40, 0.85);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            padding: 14px 18px;
+            backdrop-filter: blur(12px);
+            font-family: var(--font-mono, monospace);
+            font-size: 11px;
+            color: #94a3b8;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .tac-val {
+            color: #60a5fa;
+            font-weight: 600;
+        }
+    </style>
 </head>
 <body>
-    <div id="root"></div>
-    <div class="content">
-        <div class="section">
-            <div class="panel">
-                <div class="flex items-center mb-4 text-slate-400 font-mono text-sm tracking-wider uppercase"><span class="status-dot"></span> Mission Briefing</div>
-                <h1 class="text-5xl font-bold mb-4 text-white">Topographical Scan</h1>
-                <p class="text-lg text-slate-300">Scroll to pan the reconnaissance camera over the procedurally generated tactical terrain map.</p>
-            </div>
+
+    <canvas id="webgl-canvas"></canvas>
+
+    <div class="hud-overlay">
+        <div class="hud-badge">
+            <span>📡</span>
+            <span>Orbital LiDAR Reconnaissance</span>
         </div>
-        <div class="section">
-            <div class="panel ml-auto text-right items-end flex flex-col">
-                <div class="flex items-center justify-end mb-4 text-slate-400 font-mono text-sm tracking-wider uppercase w-full">Tracking Zone <span class="status-dot ml-3 mr-0" style="background:#f59e0b; box-shadow:0 0 10px #f59e0b; animation-name:pulseAlt"></span></div>
-                <h2 class="text-4xl font-bold mb-3 text-amber-400">Locating Highest Peak</h2>
-                <p class="text-lg text-slate-300 text-right">The system analyzes the generated geometry to locate the most prominent elevation point for deployment.</p>
-            </div>
-        </div>
-        <div class="section">
-            <div class="panel">
-                <div class="flex items-center mb-4 text-pink-400 font-mono text-sm tracking-wider uppercase"><span class="status-dot" style="background:#ff3366; box-shadow:0 0 10px #ff3366"></span> Drop Imminent</div>
-                <h2 class="text-5xl font-bold mb-3 text-pink-500">Care Package Deployed</h2>
-                <p class="text-xl text-slate-300">Target locked. High-visibility beacon dropped and secure.</p>
-            </div>
-        </div>
-        <div class="section" style="height: 100vh;">
-            <!-- Buffer space for scrolling to the end smoothly -->
-        </div>
+        <div class="hud-title">Topographical Relief &amp; Drop-Zone Beacon</div>
     </div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useRef, useMemo, useEffect, useState } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { Canvas, useFrame, useThree } from '@react-three/fiber';
-        import * as THREE from 'three';
+    <div class="controls-bar">
+        <button class="btn-tac" id="drop-btn">
+            <span>📍</span> Drop Recon Beacon
+        </button>
+        <button class="btn-tac" id="wire-btn">
+            <span>⬡</span> Toggle Wireframe
+        </button>
+        <button class="btn-tac" id="scan-btn">
+            <span>✨</span> Pulse LiDAR Beam
+        </button>
+    </div>
 
-        // Fake perlin using sine waves combination to keep dependencies clean
-        const noise = (x, y) => {
-            const rx = x * 0.15;
-            const ry = y * 0.15;
-            return (Math.sin(rx) * Math.cos(ry) * 2.5) +
-                   (Math.sin(x * 0.4 + 2) * Math.cos(y * 0.3 + 1) * 1.0) +
-                   (Math.sin(x * 0.8) * Math.cos(y * 0.7) * 0.3);
-        };
+    <div class="telemetry-box">
+        <div>COORDINATES: <span class="tac-val">34°02′N 118°14′W</span></div>
+        <div>ELEVATION PEAK: <span class="tac-val" id="elev-val">2,480m</span></div>
+        <div>PROBE STATUS: <span class="tac-val" id="probe-status">LOCKED &amp; SYNCED</span></div>
+    </div>
 
-        const Terrain = ({ onPeakFound }) => {
-            const geomRef = useRef();
+    <script type="module">
+        import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
 
-            useMemo(() => {
-                if(!geomRef.current) return;
-                const positions = geomRef.current.attributes.position;
-                let highest = -Infinity;
-                let peakPos = new THREE.Vector3();
+        const canvas = document.getElementById('webgl-canvas');
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-                // Displace vertices
-                for (let i = 0; i < positions.count; i++) {
-                    const x = positions.getX(i);
-                    const y = positions.getY(i); // Note: PlaneGeometry in ThreeJS is XY flat
-                    const z = noise(x, y);
-                    positions.setZ(i, z);
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 6, 9);
+        camera.lookAt(0, 0, 0);
 
-                    if (z > highest) {
-                        highest = z;
-                        peakPos.set(x, y, z);
+        // Procedural Topographical Terrain Plane
+        const SEGMENTS = 90;
+        const terrainGeo = new THREE.PlaneGeometry(10, 10, SEGMENTS, SEGMENTS);
+        terrainGeo.rotateX(-Math.PI / 2);
+
+        // Elevation displacement with Perlin-style sinusoidal compounding
+        const pos = terrainGeo.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+            const x = pos.getX(i);
+            const z = pos.getZ(i);
+            const y = Math.sin(x * 0.8) * Math.cos(z * 0.8) * 0.9 +
+                      Math.sin(x * 1.8 + z * 1.2) * 0.35 +
+                      Math.sin(x * 3.5) * 0.12;
+            pos.setY(i, y);
+        }
+        terrainGeo.computeVertexNormals();
+
+        // Custom Shader Material for Topographical Contour Lines
+        const terrainMat = new THREE.ShaderMaterial({
+            uniforms: {
+                uTime: { value: 0 },
+                uPulse: { value: 0 },
+                uWire: { value: 0.0 }
+            },
+            vertexShader: `
+                varying vec3 vPos;
+                varying vec3 vNormal;
+                void main() {
+                    vPos = position;
+                    vNormal = normal;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform float uTime;
+                uniform float uPulse;
+                uniform float uWire;
+                varying vec3 vPos;
+                varying vec3 vNormal;
+
+                void main() {
+                    // Elevation color ramp (deep blue to bright cyan/white peaks)
+                    float h = (vPos.y + 1.2) / 2.4;
+                    vec3 colLow = vec3(0.02, 0.12, 0.28);
+                    vec3 colMid = vec3(0.12, 0.45, 0.85);
+                    vec3 colHigh = vec3(0.35, 0.85, 1.0);
+
+                    vec3 baseCol = mix(colLow, colMid, smoothstep(0.0, 0.5, h));
+                    baseCol = mix(baseCol, colHigh, smoothstep(0.5, 1.0, h));
+
+                    // Topographical Contour Lines (every 0.2 units)
+                    float contour = mod(vPos.y * 10.0, 1.0);
+                    float line = smoothstep(0.0, 0.08, contour) * (1.0 - smoothstep(0.12, 0.2, contour));
+                    baseCol += vec3(0.3, 0.8, 1.0) * line * 0.7;
+
+                    // LiDAR Pulse Wave
+                    float dist = length(vPos.xz);
+                    float wave = sin(dist * 2.0 - uTime * 3.0) * 0.5 + 0.5;
+                    baseCol += vec3(0.2, 0.7, 1.0) * wave * 0.15;
+
+                    if (uPulse > 0.0) {
+                        float pulseRing = smoothstep(0.0, 0.5, 1.0 - abs(dist - uPulse * 5.0));
+                        baseCol += vec3(1.0, 0.3, 0.6) * pulseRing * 1.5;
                     }
+
+                    gl_FragColor = vec4(baseCol, 0.95);
                 }
-                
-                positions.needsUpdate = true;
-                geomRef.current.computeVertexNormals();
+            `,
+            transparent: true
+        });
 
-                // We rotate the plane by -PI/2 on X axis later.
-                // So local Z goes to world Y. Local Y goes to world -Z.
-                if (onPeakFound) {
-                    onPeakFound(new THREE.Vector3(peakPos.x, highest, -peakPos.y));
-                }
-            }, [onPeakFound]);
+        const terrain = new THREE.Mesh(terrainGeo, terrainMat);
+        scene.add(terrain);
 
-            return (
-                <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-                    <planeGeometry ref={geomRef} args={[50, 50, 100, 100]} />
-                    {/* Dark grid-like tactical material */}
-                    <meshStandardMaterial 
-                        color="#0f172a" 
-                        wireframe={true} 
-                        emissive="#1e3a8a"
-                        emissiveIntensity={0.6}
-                    />
-                </mesh>
-            );
-        };
+        // Tactical Beacon Marker Probe
+        const beaconGroup = new THREE.Group();
+        const beaconPinGeo = new THREE.ConeGeometry(0.15, 0.6, 16);
+        beaconPinGeo.rotateX(Math.PI);
+        const beaconPinMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+        const beaconPin = new THREE.Mesh(beaconPinGeo, beaconPinMat);
+        beaconPin.position.y = 0.3;
+        beaconGroup.add(beaconPin);
 
-        const Beacon = ({ peakPos, triggerDrop }) => {
-            const meshRef = useRef();
-            // Start the drop from high up
-            const dropState = useRef({ y: 40, vy: 0, settled: false });
+        // Beacon Light Beam
+        const beamGeo = new THREE.CylinderGeometry(0.02, 0.3, 4, 16, 1, true);
+        const beamMat = new THREE.MeshBasicMaterial({
+            color: 0xf43f5e,
+            transparent: true,
+            opacity: 0.4,
+            side: THREE.DoubleSide
+        });
+        const beam = new THREE.Mesh(beamGeo, beamMat);
+        beam.position.y = 2.3;
+        beaconGroup.add(beam);
 
-            useFrame(({ clock }) => {
-                const time = clock.getElapsedTime();
-                if (!meshRef.current || !peakPos) return;
+        beaconGroup.position.set(0.8, 1.1, -0.6);
+        scene.add(beaconGroup);
 
-                if (triggerDrop) {
-                    if (!dropState.current.settled) {
-                        // Apply gravity
-                        dropState.current.vy -= 0.05; 
-                        dropState.current.y += dropState.current.vy;
-                        
-                        // The beacon center should rest half its height above the peak
-                        const targetY = peakPos.y + 0.5; 
-                        
-                        if (dropState.current.y <= targetY) {
-                            dropState.current.y = targetY;
-                            dropState.current.vy *= -0.55; // dampening factor (bounciness)
-                            
-                            if (Math.abs(dropState.current.vy) < 0.15) {
-                                dropState.current.settled = true;
-                                dropState.current.vy = 0;
-                            }
-                        }
-                    }
-                }
+        // Interaction Buttons
+        let isWire = false;
+        document.getElementById('wire-btn').addEventListener('click', () => {
+            isWire = !isWire;
+            terrainMat.wireframe = isWire;
+        });
 
-                // Apply position
-                meshRef.current.position.set(peakPos.x, dropState.current.y, peakPos.z);
-                
-                // Spin animation logic
-                if (dropState.current.settled) {
-                   meshRef.current.rotation.y = time * 2;
-                   meshRef.current.rotation.x = Math.PI / 4;
-                   meshRef.current.rotation.z = Math.PI / 4;
-                } else {
-                   meshRef.current.rotation.x += dropState.current.vy * 0.1;
-                   meshRef.current.rotation.y = time * 3;
-                }
-            });
+        let pulseProgress = 0;
+        document.getElementById('scan-btn').addEventListener('click', () => {
+            pulseProgress = 0.01;
+        });
 
-            if (!peakPos) return null;
+        const dropBtn = document.getElementById('drop-btn');
+        const elevVal = document.getElementById('elev-val');
+        dropBtn.addEventListener('click', () => {
+            const rx = (Math.random() - 0.5) * 6;
+            const rz = (Math.random() - 0.5) * 6;
+            const ry = Math.sin(rx * 0.8) * Math.cos(rz * 0.8) * 0.9 +
+                       Math.sin(rx * 1.8 + rz * 1.2) * 0.35 +
+                       Math.sin(rx * 3.5) * 0.12;
+            beaconGroup.position.set(rx, ry + 0.3, rz);
+            elevVal.textContent = `${Math.floor(1800 + (ry + 1.2) * 800)}m`;
+        });
 
-            return (
-                <mesh ref={meshRef} castShadow>
-                    <boxGeometry args={[1, 1, 1]} />
-                    <meshStandardMaterial 
-                        color="#ff3366" 
-                        emissive="#ff3366"
-                        emissiveIntensity={1.5}
-                    />
-                    <pointLight color="#ff3366" intensity={25} distance={20} decay={2} />
-                </mesh>
-            );
-        };
-        
-        const Scene = () => {
-            const { camera } = useThree();
-            const [trigger, setTrigger] = useState(false);
-            const [peakPos, setPeakPos] = useState(null);
-            
-            useEffect(() => {
-                const handleScroll = () => {
-                    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-                    const progress = Math.min(1, Math.max(0, window.scrollY / (docHeight || 1)));
-                    
-                    // Trigger drop when scrolled past 50%
-                    if (progress > 0.5 && !trigger) {
-                        setTrigger(true);
-                    }
-                    
-                    // Camera panning: Move over the terrain as we scroll
-                    camera.position.z = 30 - progress * 20;
-                    camera.position.y = 15 - progress * 5;
-                    camera.position.x = Math.sin(progress * Math.PI) * 10;
-                    
-                    // Look at center slightly dynamically
-                    camera.lookAt(progress * 5, 0, -progress * 10);
-                };
-                
-                window.addEventListener('scroll', handleScroll, { passive: true });
-                handleScroll(); 
-                return () => window.removeEventListener('scroll', handleScroll);
-            }, [camera, trigger]);
+        // Mouse Orbit
+        let mouseX = 0;
+        let mouseY = 0;
+        window.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+            mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+        });
 
-            // Memoize terrain generation callback
-            const handlePeakFound = useMemo(() => {
-                return (pos) => setPeakPos(pos);
-            }, []);
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
 
-            return (
-                <group>
-                    <ambientLight intensity={0.1} />
-                    <directionalLight position={[10, 30, 20]} intensity={1.5} castShadow />
-                    <Terrain onPeakFound={handlePeakFound} />
-                    {peakPos && <Beacon peakPos={peakPos} triggerDrop={trigger} />}
-                </group>
-            );
-        };
+            terrainMat.uniforms.uTime.value = time;
 
-        const App = () => {
-            return (
-                <Canvas shadows camera={{ position: [0, 15, 30], fov: 45 }}>
-                    <color attach="background" args={['#020610']} />
-                    <fog attach="fog" args={['#020610', 20, 60]} />
-                    <Scene />
-                </Canvas>
-            );
-        };
+            if (pulseProgress > 0) {
+                pulseProgress += delta * 0.8;
+                if (pulseProgress > 1.2) pulseProgress = 0;
+                terrainMat.uniforms.uPulse.value = pulseProgress;
+            }
 
-        const root = createRoot(document.getElementById('root'));
-        root.render(<App />);
+            // Camera subtle orbit
+            camera.position.x = 8 * Math.sin(time * 0.15 + mouseX * 0.6);
+            camera.position.z = 8 * Math.cos(time * 0.15 + mouseX * 0.6);
+            camera.position.y = 5.5 - mouseY * 2.0;
+            camera.lookAt(0, 0, 0);
+
+            // Animate Beacon Beam Pulse
+            beam.material.opacity = 0.3 + Math.sin(time * 6.0) * 0.2;
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
     </script>
 </body>
 </html>

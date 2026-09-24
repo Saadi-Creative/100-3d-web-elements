@@ -9,189 +9,229 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         body { margin:0; background:#f8fafc; min-height:100vh; font-family:'Inter',sans-serif; overflow-x:hidden; }
         .preserve-3d { transform-style:preserve-3d; perspective:1200px; }
+        
+        .table-row {
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.4s, opacity 0.4s, padding 0.4s, border-radius 0.4s, box-shadow 0.4s;
+            transform: translateZ(0) scale(1);
+        }
+        
+        /* State when NO row is active */
+        .table-container:not(.has-active) .table-row:hover {
+            background-color: #f8fafc;
+        }
+
+        /* State when a row is active */
+        .table-container.has-active .table-row.dimmed {
+            transform: translateZ(-50px) scale(0.96);
+            filter: blur(3px);
+            opacity: 0.4;
+            pointer-events: none;
+        }
+        
+        .table-container.has-active .table-row.active {
+            transform: translateZ(50px) scale(1.05);
+            border-radius: 1rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border-color: transparent;
+            z-index: 10;
+            padding: 1.5rem;
+            background: white;
+            cursor: default;
+        }
+        
+        .edit-fields {
+            display: none;
+        }
+        .display-fields {
+            display: block;
+        }
+        .table-row.active .edit-fields {
+            display: block;
+        }
+        .table-row.active .display-fields {
+            display: none;
+        }
+        
+        .action-panel {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s, margin-top 0.4s;
+            margin-top: 0;
+        }
+        
+        .table-row.active .action-panel {
+            max-height: 100px;
+            opacity: 1;
+            margin-top: 1.5rem;
+        }
+        
+        .backdrop-blocker {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .table-container.has-active .backdrop-blocker {
+            opacity: 1;
+            pointer-events: auto;
+        }
     </style>
-    <script type="importmap">{"imports":{"react":"https://esm.sh/react@18.2.0","react-dom/client":"https://esm.sh/react-dom@18.2.0/client","framer-motion":"https://esm.sh/framer-motion@10.16.4?external=react,react-dom"}}</script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-<div id="root"></div>
-<script type="text/babel" data-type="module">
-import React, { useState } from 'react';
-import { createRoot } from 'react-dom/client';
-import { motion, AnimatePresence } from 'framer-motion';
-
-const USERS = [
-    { id:1, name:'Eleanor Pena', role:'Lead Security', status:'Active', email:'eleanor@spatial.io', avatar:'EP' },
-    { id:2, name:'Jacob Jones', role:'System Admin', status:'Offline', email:'jacob@spatial.io', avatar:'JJ' },
-    { id:3, name:'Courtney Henry', role:'Product Manager', status:'Active', email:'courtney@spatial.io', avatar:'CH' },
-    { id:4, name:'Ralph Edwards', role:'UX Designer', status:'Busy', email:'ralph@spatial.io', avatar:'RE' },
-    { id:5, name:'Arlene McCoy', role:'Data Engineer', status:'Active', email:'arlene@spatial.io', avatar:'AM' },
-];
-
-const Row = ({ user, isActive, isDimmed, onActivate, onSave }) => {
-    // If it's active, we want it to physically pop forward by 40px, scale up, and show inputs
-    // If another row is active, this one dims, scales down, and recedes
-    return (
-        <motion.div
-            layout
-            onClick={!isActive ? onActivate : undefined}
-            className={`
-                w-full flex items-center bg-white border-b border-slate-200 
-                ${isActive ? 'rounded-2xl shadow-2xl relative z-10 border-transparent overflow-hidden' : 'cursor-pointer hover:bg-slate-50 relative z-0'}
-            `}
-            initial={false}
-            animate={{
-                scale: isActive ? 1.05 : isDimmed ? 0.96 : 1,
-                z: isActive ? 50 : isDimmed ? -50 : 0,
-                filter: isDimmed ? 'blur(3px)' : 'blur(0px)',
-                opacity: isDimmed ? 0.4 : 1,
-                y: isActive ? 0 : isDimmed ? 0 : 0
-            }}
-            transition={{ type: "spring", stiffness: 400, damping: 30 }}
-        >
-            <div className={`flex flex-col w-full ${isActive ? 'p-6' : 'p-4'}`}>
-                
-                {/* The Grid Layout for the data */}
-                <div className="flex items-center w-full gap-4">
-                    {/* Avatar */}
-                    <motion.div layout className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center flex-shrink-0 border border-indigo-200">
-                        {user.avatar}
-                    </motion.div>
-
-                    {/* Information Grid */}
-                    <div className="grid grid-cols-4 w-full gap-4 items-center">
-                        {/* Name */}
-                        <motion.div layout className="flex flex-col">
-                            {isActive && <span className="text-[10px] uppercase font-bold text-slate-400 mb-1">Full Name</span>}
-                            {isActive ? (
-                                <input type="text" defaultValue={user.name} className="w-full bg-slate-100 border border-slate-300 rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" />
-                            ) : (
-                                <span className="text-sm font-semibold text-slate-800">{user.name}</span>
-                            )}
-                        </motion.div>
-
-                        {/* Role */}
-                        <motion.div layout className="flex flex-col">
-                            {isActive && <span className="text-[10px] uppercase font-bold text-slate-400 mb-1">Assigned Role</span>}
-                            {isActive ? (
-                                <select defaultValue={user.role} className="w-full bg-slate-100 border border-slate-300 rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 focus:outline-none focus:border-indigo-500">
-                                    <option>{user.role}</option>
-                                    <option>Guest</option>
-                                    <option>Administrator</option>
-                                </select>
-                            ) : (
-                                <span className="text-sm text-slate-500 font-medium">{user.role}</span>
-                            )}
-                        </motion.div>
-
-                        {/* Email */}
-                        <motion.div layout className="flex flex-col">
-                            {isActive && <span className="text-[10px] uppercase font-bold text-slate-400 mb-1">Email Address</span>}
-                            {isActive ? (
-                                <input type="email" defaultValue={user.email} className="w-full bg-slate-100 border border-slate-300 rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 focus:outline-none focus:border-indigo-500" />
-                            ) : (
-                                <span className="text-sm text-slate-500">{user.email}</span>
-                            )}
-                        </motion.div>
-
-                        {/* Status / Actions */}
-                        <motion.div layout className="flex justify-end items-center gap-4">
-                            {!isActive && (
-                                <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${user.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : user.status === 'Offline' ? 'bg-slate-100 text-slate-600' : 'bg-amber-100 text-amber-700'}`}>
-                                    {user.status}
-                                </span>
-                            )}
-                        </motion.div>
-                    </div>
-                </div>
-
-                {/* Additional Action Buttons that expand down when active */}
-                <AnimatePresence>
-                    {isActive && (
-                        <motion.div
-                            initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                            animate={{ opacity: 1, height: 'auto', marginTop: 24 }}
-                            exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                            className="flex justify-end gap-3 pt-6 border-t border-slate-100"
-                        >
-                            <button onClick={(e) => { e.stopPropagation(); onSave(null); }} className="px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors">
-                                Cancel
-                            </button>
-                            <button onClick={(e) => { e.stopPropagation(); onSave(); }} className="px-6 py-2 text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-md transition-all active:scale-95">
-                                Save Changes
-                            </button>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
+<div id="root">
+    <div class="w-full min-h-screen py-24 px-8 flex justify-center preserve-3d">
+        <div class="w-full max-w-5xl relative z-10">
+            
+            <div class="mb-12 pointer-events-none">
+                <h1 class="text-4xl font-black text-slate-800 tracking-tighter mb-2">Spatial Spreadsheet Workspace</h1>
+                <p class="text-slate-500 font-medium">Click any row below. Instead of triggering a jarring modal popup breaking visual context, the rest of the table seamlessly recedes backward into the Z-axis while the targeted row physically morphs into an elevated input workspace.</p>
             </div>
-        </motion.div>
-    );
-};
 
-const App = () => {
-    const [activeId, setActiveId] = useState(null);
-    const [users, setUsers] = useState(USERS);
-
-    const handleSave = () => {
-        // Here we'd save to DB. For now, just collapse.
-        setActiveId(null);
-    };
-
-    return (
-        <div className="w-full min-h-screen py-24 px-8 flex justify-center preserve-3d">
-            <div className="w-full max-w-5xl relative z-10">
+            <div class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden relative preserve-3d">
                 
-                <div className="mb-12 pointer-events-none">
-                    <h1 className="text-4xl font-black text-slate-800 tracking-tighter mb-2">Spatial Spreadsheet Workspace</h1>
-                    <p className="text-slate-500 font-medium">Click any row below. Instead of triggering a jarring modal popup breaking visual context, the rest of the table seamlessly recedes backward into the Z-axis while the targeted row physically morphs into an elevated input workspace.</p>
+                <div class="flex px-6 py-4 bg-slate-50 border-b border-slate-200">
+                    <div class="w-10 mr-4"></div>
+                    <div class="grid grid-cols-4 w-full gap-4">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Name</span>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Role</span>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Email</span>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest text-right">Status</span>
+                    </div>
                 </div>
 
-                {/* Table Header Wrapper */}
-                <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden relative preserve-3d">
-                    
-                    {/* Header */}
-                    <div className="flex px-6 py-4 bg-slate-50 border-b border-slate-200">
-                        <div className="w-10 mr-4"></div>
-                        <div className="grid grid-cols-4 w-full gap-4">
-                            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Name</span>
-                            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Role</span>
-                            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Email</span>
-                            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest text-right">Status</span>
-                        </div>
-                    </div>
-
-                    {/* Table Body */}
-                    <div className="flex flex-col preserve-3d bg-slate-100/50 p-2 gap-1 rounded-b-2xl min-h-[400px]">
-                        {/* Backdrop blocker to prevent clicking other rows while one is active */}
-                        <AnimatePresence>
-                            {activeId !== null && (
-                                <motion.div 
-                                    className="absolute inset-0 z-[5] cursor-pointer"
-                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                    onClick={() => setActiveId(null)}
-                                />
-                            )}
-                        </AnimatePresence>
-
-                        {users.map((user) => (
-                            <Row 
-                                key={user.id} 
-                                user={user} 
-                                isActive={activeId === user.id} 
-                                isDimmed={activeId !== null && activeId !== user.id}
-                                onActivate={() => setActiveId(user.id)}
-                                onSave={handleSave}
-                            />
-                        ))}
-                    </div>
-
+                <div id="table-container" class="table-container flex flex-col preserve-3d bg-slate-100/50 p-2 gap-1 rounded-b-2xl min-h-[400px]">
+                    <div id="backdrop" class="backdrop-blocker absolute inset-0 z-[5] cursor-pointer"></div>
                 </div>
+
             </div>
         </div>
-    );
-};
-createRoot(document.getElementById('root')).render(<App/>);
+    </div>
+</div>
+
+<script>
+    const USERS = [
+        { id:1, name:'Eleanor Pena', role:'Lead Security', status:'Active', email:'eleanor@spatial.io', avatar:'EP' },
+        { id:2, name:'Jacob Jones', role:'System Admin', status:'Offline', email:'jacob@spatial.io', avatar:'JJ' },
+        { id:3, name:'Courtney Henry', role:'Product Manager', status:'Active', email:'courtney@spatial.io', avatar:'CH' },
+        { id:4, name:'Ralph Edwards', role:'UX Designer', status:'Busy', email:'ralph@spatial.io', avatar:'RE' },
+        { id:5, name:'Arlene McCoy', role:'Data Engineer', status:'Active', email:'arlene@spatial.io', avatar:'AM' },
+    ];
+
+    const container = document.getElementById('table-container');
+    const backdrop = document.getElementById('backdrop');
+    let activeId = null;
+
+    function renderTable() {
+        // Clear all except backdrop
+        Array.from(container.children).forEach(child => {
+            if (child !== backdrop) container.removeChild(child);
+        });
+
+        USERS.forEach(user => {
+            const row = document.createElement('div');
+            row.className = `table-row w-full flex flex-col bg-white border-b border-slate-200 p-4 cursor-pointer relative z-0`;
+            row.dataset.id = user.id;
+            
+            const statusClass = user.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : user.status === 'Offline' ? 'bg-slate-100 text-slate-600' : 'bg-amber-100 text-amber-700';
+
+            row.innerHTML = `
+                <div class="flex items-center w-full gap-4 pointer-events-none">
+                    <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center flex-shrink-0 border border-indigo-200">
+                        ${user.avatar}
+                    </div>
+
+                    <div class="grid grid-cols-4 w-full gap-4 items-center">
+                        <div class="flex flex-col">
+                            <span class="edit-fields text-[10px] uppercase font-bold text-slate-400 mb-1">Full Name</span>
+                            <input type="text" value="${user.name}" class="edit-fields pointer-events-auto w-full bg-slate-100 border border-slate-300 rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" />
+                            <span class="display-fields text-sm font-semibold text-slate-800">${user.name}</span>
+                        </div>
+
+                        <div class="flex flex-col">
+                            <span class="edit-fields text-[10px] uppercase font-bold text-slate-400 mb-1">Assigned Role</span>
+                            <select class="edit-fields pointer-events-auto w-full bg-slate-100 border border-slate-300 rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 focus:outline-none focus:border-indigo-500">
+                                <option>${user.role}</option>
+                                <option>Guest</option>
+                                <option>Administrator</option>
+                            </select>
+                            <span class="display-fields text-sm text-slate-500 font-medium">${user.role}</span>
+                        </div>
+
+                        <div class="flex flex-col">
+                            <span class="edit-fields text-[10px] uppercase font-bold text-slate-400 mb-1">Email Address</span>
+                            <input type="email" value="${user.email}" class="edit-fields pointer-events-auto w-full bg-slate-100 border border-slate-300 rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 focus:outline-none focus:border-indigo-500" />
+                            <span class="display-fields text-sm text-slate-500">${user.email}</span>
+                        </div>
+
+                        <div class="flex justify-end items-center gap-4">
+                            <span class="display-fields text-xs font-bold px-2.5 py-1 rounded-full ${statusClass}">
+                                ${user.status}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-panel flex justify-end gap-3 pt-6 border-t border-slate-100">
+                    <button class="btn-cancel px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors">
+                        Cancel
+                    </button>
+                    <button class="btn-save px-6 py-2 text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-md transition-all active:scale-95">
+                        Save Changes
+                    </button>
+                </div>
+            `;
+
+            row.addEventListener('click', (e) => {
+                if (activeId === user.id) return; // already active
+                if (e.target.closest('input') || e.target.closest('select') || e.target.closest('button')) return; // let form elms work
+                
+                activateRow(user.id);
+            });
+
+            const cancelBtn = row.querySelector('.btn-cancel');
+            const saveBtn = row.querySelector('.btn-save');
+
+            cancelBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deactivateRow();
+            });
+
+            saveBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deactivateRow();
+            });
+
+            container.appendChild(row);
+        });
+    }
+
+    function activateRow(id) {
+        activeId = id;
+        container.classList.add('has-active');
+        const rows = document.querySelectorAll('.table-row');
+        rows.forEach(r => {
+            if (parseInt(r.dataset.id) === id) {
+                r.classList.add('active');
+                r.classList.remove('dimmed');
+            } else {
+                r.classList.add('dimmed');
+                r.classList.remove('active');
+            }
+        });
+    }
+
+    function deactivateRow() {
+        activeId = null;
+        container.classList.remove('has-active');
+        const rows = document.querySelectorAll('.table-row');
+        rows.forEach(r => {
+            r.classList.remove('active', 'dimmed');
+        });
+    }
+
+    backdrop.addEventListener('click', deactivateRow);
+
+    renderTable();
 </script>
 </body>
 </html>
