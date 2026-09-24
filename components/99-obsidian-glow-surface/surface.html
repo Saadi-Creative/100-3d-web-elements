@@ -9,7 +9,6 @@
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Inter', sans-serif; background: #000000; }
         
         .ambient-core {
-            /* A violent violet/rose magma core sitting below the black glass */
             background: radial-gradient(circle at center, rgba(192, 38, 211, 1) 0%, rgba(225, 29, 72, 0.8) 40%, rgba(0,0,0,0) 70%);
             border-radius: 50%;
             filter: blur(140px);
@@ -17,7 +16,6 @@
         }
 
         .frosted-obsidian {
-            /* The physical thick dark glass plane that diffuses the magma core */
             background: rgba(10, 10, 15, 0.7);
             backdrop-filter: blur(90px) saturate(180%) brightness(0.9);
             -webkit-backdrop-filter: blur(90px) saturate(180%) brightness(0.9);
@@ -25,7 +23,6 @@
         }
 
         .hex-grid {
-            /* Mathematical SVG hex grid laid on top of the frosted glass */
             background-color: transparent;
             background-image: url("data:image/svg+xml;utf8,%3Csvg width='50' height='86.6' viewBox='0 0 50 86.6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M25 0L50 14.43v28.87L25 57.73 0 43.3V14.43L25 0z M25 86.6L50 72.17V43.3L25 28.87 0 43.3v28.87l25 14.43z' stroke='rgba(255,255,255,0.06)' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
             background-size: 50px 86.6px;
@@ -35,93 +32,61 @@
         
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root" class="relative w-full h-screen bg-black overflow-hidden flex flex-col items-center justify-center">
+        
+        <div class="absolute inset-0 z-0 overflow-hidden">
+            <div id="ambient-core" class="ambient-core absolute w-[900px] h-[900px] pointer-events-none transform -translate-x-1/2 -translate-y-1/2"></div>
+        </div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useEffect } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, useSpring } from 'framer-motion';
+        <div class="frosted-obsidian absolute inset-0 z-10 pointer-events-none"></div>
+        <div class="hex-grid absolute inset-0 z-20"></div>
 
-        const ObsidianSurface = () => {
-            // Highly dampened tracking to make the "core" feel heavy and submerged
-            const physics = { mass: 6, stiffness: 40, damping: 30 };
-            
-            const coreX = useSpring(0, physics);
-            const coreY = useSpring(0, physics);
+        <div class="relative z-30 max-w-4xl w-full px-8 text-center flex flex-col items-center">
+            <div class="inline-block border border-fuchsia-500/20 bg-fuchsia-500/10 rounded-full px-6 py-2 text-fuchsia-400 font-bold uppercase tracking-widest text-sm backdrop-blur mb-10 shadow-[0_0_30px_rgba(192,38,211,0.2)]">
+                Deep Context Active
+            </div>
+            <h1 class="text-7xl md:text-[110px] font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400 tracking-tighter leading-none mb-8 drop-shadow-2xl">
+                Obsidian Frost.
+            </h1>
+            <p class="text-2xl font-medium text-slate-300 max-w-2xl mx-auto leading-relaxed mb-16">
+                The definitive dark aesthetic. A heavy violet magma core tracks physically beneath an incredibly thick plane of frosted black glass violently saturated to extract luminous highlights across a mathematical SVG hex grid.
+            </p>
+            <div class="flex gap-6 relative group overflow-hidden rounded-2xl p-[1px]">
+                <span class="absolute inset-[-1000%] animate-[spin_4s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#000000_0%,#c026d3_50%,#000000_100%)]"></span>
+                <button class="relative px-16 py-6 bg-slate-950 font-black text-white text-xl uppercase tracking-widest rounded-2xl hover:bg-slate-900 transition-colors z-10">
+                    Connect Core
+                </button>
+            </div>
+        </div>
 
-            useEffect(() => {
-                const handleMouseMove = (e) => {
-                    coreX.set(e.clientX - 450); // offset half width 
-                    coreY.set(e.clientY - 450); // offset half height
-                };
+    </div>
 
-                // Initialize loosely in the center
-                coreX.set(window.innerWidth / 2 - 450);
-                coreY.set(window.innerHeight / 2 - 450);
+    <script>
+        const core = document.getElementById('ambient-core');
+        
+        let targetX = window.innerWidth / 2;
+        let targetY = window.innerHeight / 2;
+        let currentX = targetX;
+        let currentY = targetY;
 
-                window.addEventListener('mousemove', handleMouseMove);
-                return () => window.removeEventListener('mousemove', handleMouseMove);
-            }, [coreX, coreY]);
+        window.addEventListener('mousemove', (e) => {
+            targetX = e.clientX;
+            targetY = e.clientY;
+        });
 
-            return (
-                <div className="relative w-full h-screen bg-black overflow-hidden flex flex-col items-center justify-center">
-                    
-                    {/* Layer 1: The Magma Core attached to physical mouse presence */}
-                    <div className="absolute inset-0 z-0 overflow-hidden">
-                        <motion.div 
-                            className="ambient-core absolute w-[900px] h-[900px] pointer-events-none"
-                            style={{ x: coreX, y: coreY }}
-                        ></motion.div>
-                    </div>
+        function render() {
+            // Highly dampened tracking
+            currentX += (targetX - currentX) * 0.05;
+            currentY += (targetY - currentY) * 0.05;
 
-                    {/* Layer 2: The Frosted Obsidian Glass Plane overlapping the core completely */}
-                    <div className="frosted-obsidian absolute inset-0 z-10 pointer-events-none"></div>
+            // Notice we center the 900px element by subtracting 450
+            core.style.transform = `translate(${currentX - 450}px, ${currentY - 450}px)`;
+            requestAnimationFrame(render);
+        }
 
-                    {/* Layer 3: The Overlay Hexagonal Cyber Grid */}
-                    <div className="hex-grid absolute inset-0 z-20"></div>
-
-                    {/* Layer 4: The Foreground UI Elements */}
-                    <div className="relative z-30 max-w-4xl w-full px-8 text-center flex flex-col items-center">
-                        
-                        <div className="inline-block border border-fuchsia-500/20 bg-fuchsia-500/10 rounded-full px-6 py-2 text-fuchsia-400 font-bold uppercase tracking-widest text-sm backdrop-blur mb-10 shadow-[0_0_30px_rgba(192,38,211,0.2)]">
-                            Deep Context Active
-                        </div>
-
-                        <h1 className="text-7xl md:text-[110px] font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400 tracking-tighter leading-none mb-8 drop-shadow-2xl">
-                            Obsidian Frost.
-                        </h1>
-
-                        <p className="text-2xl font-medium text-slate-300 max-w-2xl mx-auto leading-relaxed mb-16">
-                            The definitive dark aesthetic. A heavy violet magma core tracks physically beneath an incredibly thick plane of frosted black glass violently saturated to extract luminous highlights across a mathematical SVG hex grid.
-                        </p>
-
-                        <div className="flex gap-6 relative group overflow-hidden rounded-2xl p-[1px]">
-                            {/* Animated shimmering border trick */}
-                            <span className="absolute inset-[-1000%] animate-[spin_4s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#000000_0%,#c026d3_50%,#000000_100%)]"></span>
-                            
-                            <button className="relative px-16 py-6 bg-slate-950 font-black text-white text-xl uppercase tracking-widest rounded-2xl hover:bg-slate-900 transition-colors z-10">
-                                Connect Core
-                            </button>
-                        </div>
-                    </div>
-
-                </div>
-            );
-        };
-
-        createRoot(document.getElementById('root')).render(<ObsidianSurface />);
+        render();
     </script>
 </body>
 </html>

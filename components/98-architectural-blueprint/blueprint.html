@@ -21,158 +21,160 @@
                 linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
                 linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
         }
+
+        #crosshairs {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        #crosshairs.active {
+            opacity: 1;
+        }
+
+        .cross-line {
+            will-change: transform;
+        }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root" class="relative w-full h-screen overflow-hidden">
+        
+        <div class="absolute inset-0 blueprint-grid z-0"></div>
+        <div class="absolute inset-0 blueprint-grid-sub z-0"></div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useState, useEffect } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, useSpring, AnimatePresence } from 'framer-motion';
-
-        const ArchitecturalBlueprint = () => {
-            const [hoveredRect, setHoveredRect] = useState(null);
+        <!-- Dynamic Measurement Guideline Vectors -->
+        <div id="crosshairs" class="absolute inset-0 z-10">
+            <!-- Horizontal Top Line -->
+            <div id="line-top" class="cross-line absolute left-0 right-0 h-[1px] bg-sky-400 transform -translate-y-full">
+                <span id="label-top" class="absolute left-4 -top-5 text-[10px] text-sky-400 font-mono tracking-widest">Y:0px</span>
+                <div class="absolute left-0 bottom-0 w-full h-px bg-sky-400/20 shadow-[0_0_10px_#38bdf8]"></div>
+            </div>
             
-            // Physics configuration for the guide lines snapping into place
-            const springConfig = { damping: 25, stiffness: 200, mass: 0.5 };
+            <!-- Horizontal Bottom Line -->
+            <div id="line-bottom" class="cross-line absolute left-0 right-0 h-[1px] bg-sky-400 transform -translate-y-full">
+                <span id="label-bottom" class="absolute right-4 top-1 text-[10px] text-sky-400 font-mono tracking-widest">H:0px</span>
+            </div>
+
+            <!-- Vertical Left Line -->
+            <div id="line-left" class="cross-line absolute top-0 bottom-0 w-[1px] bg-sky-400 transform -translate-x-full">
+                <span id="label-left" class="absolute top-4 -left-12 text-[10px] text-sky-400 font-mono tracking-widest">X:0px</span>
+                <div class="absolute left-0 top-0 w-px h-full bg-sky-400/20 shadow-[0_0_10px_#38bdf8]"></div>
+            </div>
+
+            <!-- Vertical Right Line -->
+            <div id="line-right" class="cross-line absolute top-0 bottom-0 w-[1px] bg-sky-400 transform -translate-x-full">
+                <span id="label-right" class="absolute bottom-4 left-2 text-[10px] text-sky-400 font-mono tracking-widest">W:0px</span>
+            </div>
+
+            <!-- Crosshair Intersections -->
+            <div id="dot-tl" class="cross-line absolute w-2 h-2 border border-sky-400 rounded-full -translate-x-1 -translate-y-1"></div>
+            <div id="dot-tr" class="cross-line absolute w-2 h-2 border border-sky-400 rounded-full -translate-x-1 -translate-y-1"></div>
+            <div id="dot-bl" class="cross-line absolute w-2 h-2 border border-sky-400 rounded-full -translate-x-1 -translate-y-1"></div>
+            <div id="dot-br" class="cross-line absolute w-2 h-2 border border-sky-400 rounded-full -translate-x-1 -translate-y-1"></div>
+        </div>
+
+        <!-- Physical Component Layout -->
+        <div class="relative z-20 w-full h-full flex flex-col items-center justify-center gap-12 pt-10">
             
-            const top = useSpring(0, springConfig);
-            const bottom = useSpring(0, springConfig);
-            const left = useSpring(0, springConfig);
-            const right = useSpring(0, springConfig);
+            <div class="target-block text-center group cursor-crosshair">
+                <h1 class="text-7xl font-black text-white tracking-tighter mb-2">Technical Blueprint</h1>
+                <p class="text-slate-400 font-mono text-sm tracking-widest uppercase">System Architecture Visualized</p>
+            </div>
 
-            useEffect(() => {
-                if (hoveredRect) {
-                    top.set(hoveredRect.top);
-                    bottom.set(hoveredRect.bottom);
-                    left.set(hoveredRect.left);
-                    right.set(hoveredRect.right);
-                }
-            }, [hoveredRect, top, bottom, left, right]);
-
-            const handleMouseEnter = (e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                setHoveredRect(rect);
-            };
-
-            const handleMouseLeave = () => {
-                setHoveredRect(null);
-            };
-
-            return (
-                <div className="relative w-full h-screen overflow-hidden">
-                    {/* The Faint Technical Grid Background */}
-                    <div className="absolute inset-0 blueprint-grid z-0"></div>
-                    <div className="absolute inset-0 blueprint-grid-sub z-0"></div>
-
-                    {/* Dynamic Measurement Guideline Vectors */}
-                    <AnimatePresence>
-                        {hoveredRect && (
-                            <motion.div 
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="absolute inset-0 z-10 pointer-events-none"
-                            >
-                                {/* Horizontal Top Line */}
-                                <motion.div 
-                                    className="absolute left-0 right-0 h-[1px] bg-sky-400"
-                                    style={{ top }}
-                                >
-                                    <span className="absolute left-4 -top-5 text-[10px] text-sky-400 font-mono tracking-widest">Y:{Math.round(hoveredRect.top)}px</span>
-                                    <div className="absolute left-0 bottom-0 w-full h-px bg-sky-400/20 shadow-[0_0_10px_#38bdf8]"></div>
-                                </motion.div>
-                                
-                                {/* Horizontal Bottom Line */}
-                                <motion.div 
-                                    className="absolute left-0 right-0 h-[1px] bg-sky-400"
-                                    style={{ top: bottom }}
-                                >
-                                    <span className="absolute right-4 top-1 text-[10px] text-sky-400 font-mono tracking-widest">H:{Math.round(hoveredRect.height)}px</span>
-                                </motion.div>
-
-                                {/* Vertical Left Line */}
-                                <motion.div 
-                                    className="absolute top-0 bottom-0 w-[1px] bg-sky-400"
-                                    style={{ left }}
-                                >
-                                    <span className="absolute top-4 -left-12 text-[10px] text-sky-400 font-mono tracking-widest">X:{Math.round(hoveredRect.left)}px</span>
-                                    <div className="absolute left-0 top-0 w-px h-full bg-sky-400/20 shadow-[0_0_10px_#38bdf8]"></div>
-                                </motion.div>
-
-                                {/* Vertical Right Line */}
-                                <motion.div 
-                                    className="absolute top-0 bottom-0 w-[1px] bg-sky-400"
-                                    style={{ left: right }}
-                                >
-                                    <span className="absolute bottom-4 left-2 text-[10px] text-sky-400 font-mono tracking-widest">W:{Math.round(hoveredRect.width)}px</span>
-                                </motion.div>
-
-                                {/* Crosshair Intersections */}
-                                <motion.div className="absolute w-2 h-2 border border-sky-400 rounded-full" style={{ top: top, left: left, x: -4, y: -4 }} />
-                                <motion.div className="absolute w-2 h-2 border border-sky-400 rounded-full" style={{ top: top, left: right, x: -4, y: -4 }} />
-                                <motion.div className="absolute w-2 h-2 border border-sky-400 rounded-full" style={{ top: bottom, left: left, x: -4, y: -4 }} />
-                                <motion.div className="absolute w-2 h-2 border border-sky-400 rounded-full" style={{ top: bottom, left: right, x: -4, y: -4 }} />
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-
-                    {/* Physical Component Layout */}
-                    <div className="relative z-20 w-full h-full flex flex-col items-center justify-center gap-12 pt-10">
-                        
-                        <div 
-                            className="text-center group cursor-crosshair"
-                            onMouseEnter={handleMouseEnter}
-                            onMouseLeave={handleMouseLeave}
-                        >
-                            <h1 className="text-7xl font-black text-white tracking-tighter mb-2">Technical Blueprint</h1>
-                            <p className="text-slate-400 font-mono text-sm tracking-widest uppercase">System Architecture Visualized</p>
-                        </div>
-
-                        <div className="flex gap-8 w-full max-w-4xl justify-center">
-                            {/* Block A */}
-                            <div 
-                                className="w-64 h-80 bg-slate-900 border border-slate-700/50 rounded-lg p-6 flex flex-col items-start hover:bg-slate-800 transition-colors cursor-crosshair"
-                                onMouseEnter={handleMouseEnter}
-                                onMouseLeave={handleMouseLeave}
-                            >
-                                <div className="w-12 h-12 bg-slate-800 rounded mb-6"></div>
-                                <div className="w-full h-4 bg-slate-800 rounded mb-3"></div>
-                                <div className="w-2/3 h-4 bg-slate-800 rounded"></div>
-                            </div>
-                            
-                            {/* Block B */}
-                            <div 
-                                className="w-64 h-80 bg-slate-900 border border-slate-700/50 rounded-lg p-6 flex flex-col items-start hover:bg-slate-800 transition-colors cursor-crosshair"
-                                onMouseEnter={handleMouseEnter}
-                                onMouseLeave={handleMouseLeave}
-                            >
-                                <div className="w-12 h-12 bg-slate-800 rounded mb-6"></div>
-                                <div className="w-full h-4 bg-slate-800 rounded mb-3"></div>
-                                <div className="w-2/3 h-4 bg-slate-800 rounded mb-12"></div>
-                                <div className="w-full h-10 bg-sky-500/20 border border-sky-500/50 rounded flex items-center justify-center text-sky-400 font-bold text-xs">Execute</div>
-                            </div>
-                        </div>
-
-                    </div>
+            <div class="flex gap-8 w-full max-w-4xl justify-center">
+                <div class="target-block w-64 h-80 bg-slate-900 border border-slate-700/50 rounded-lg p-6 flex flex-col items-start hover:bg-slate-800 transition-colors cursor-crosshair">
+                    <div class="w-12 h-12 bg-slate-800 rounded mb-6"></div>
+                    <div class="w-full h-4 bg-slate-800 rounded mb-3"></div>
+                    <div class="w-2/3 h-4 bg-slate-800 rounded"></div>
                 </div>
-            );
-        };
+                
+                <div class="target-block w-64 h-80 bg-slate-900 border border-slate-700/50 rounded-lg p-6 flex flex-col items-start hover:bg-slate-800 transition-colors cursor-crosshair">
+                    <div class="w-12 h-12 bg-slate-800 rounded mb-6"></div>
+                    <div class="w-full h-4 bg-slate-800 rounded mb-3"></div>
+                    <div class="w-2/3 h-4 bg-slate-800 rounded mb-12"></div>
+                    <div class="w-full h-10 bg-sky-500/20 border border-sky-500/50 rounded flex items-center justify-center text-sky-400 font-bold text-xs">Execute</div>
+                </div>
+            </div>
 
-        createRoot(document.getElementById('root')).render(<ArchitecturalBlueprint />);
+        </div>
+    </div>
+
+    <script>
+        const crosshairs = document.getElementById('crosshairs');
+        const lTop = document.getElementById('line-top');
+        const lBot = document.getElementById('line-bottom');
+        const lLeft = document.getElementById('line-left');
+        const lRight = document.getElementById('line-right');
+        
+        const lbTop = document.getElementById('label-top');
+        const lbBot = document.getElementById('label-bottom');
+        const lbLeft = document.getElementById('label-left');
+        const lbRight = document.getElementById('label-right');
+
+        const dTL = document.getElementById('dot-tl');
+        const dTR = document.getElementById('dot-tr');
+        const dBL = document.getElementById('dot-bl');
+        const dBR = document.getElementById('dot-br');
+
+        let targetRect = null;
+
+        // Current Spring values
+        let cxT = 0, cxB = 0, cxL = 0, cxR = 0;
+
+        function render() {
+            if (targetRect) {
+                // Lerp towards targets
+                cxT += (targetRect.top - cxT) * 0.2;
+                cxB += (targetRect.bottom - cxB) * 0.2;
+                cxL += (targetRect.left - cxL) * 0.2;
+                cxR += (targetRect.right - cxR) * 0.2;
+
+                lTop.style.transform = `translateY(${cxT}px)`;
+                lBot.style.transform = `translateY(${cxB}px)`;
+                lLeft.style.transform = `translateX(${cxL}px)`;
+                lRight.style.transform = `translateX(${cxR}px)`;
+
+                dTL.style.transform = `translate(${cxL - 4}px, ${cxT - 4}px)`;
+                dTR.style.transform = `translate(${cxR - 4}px, ${cxT - 4}px)`;
+                dBL.style.transform = `translate(${cxL - 4}px, ${cxB - 4}px)`;
+                dBR.style.transform = `translate(${cxR - 4}px, ${cxB - 4}px)`;
+
+                // Assuming targets are stable enough for label reading
+                if (Math.abs(targetRect.top - cxT) < 1) {
+                    lbTop.textContent = `Y:${Math.round(targetRect.top)}px`;
+                    lbBot.textContent = `H:${Math.round(targetRect.height)}px`;
+                    lbLeft.textContent = `X:${Math.round(targetRect.left)}px`;
+                    lbRight.textContent = `W:${Math.round(targetRect.width)}px`;
+                }
+            }
+            requestAnimationFrame(render);
+        }
+
+        render();
+
+        document.querySelectorAll('.target-block').forEach(el => {
+            el.addEventListener('mouseenter', (e) => {
+                targetRect = e.currentTarget.getBoundingClientRect();
+                
+                // If it's the first hover, snap instantly to avoid flying from 0,0
+                if (!crosshairs.classList.contains('active')) {
+                    cxT = targetRect.top;
+                    cxB = targetRect.bottom;
+                    cxL = targetRect.left;
+                    cxR = targetRect.right;
+                }
+
+                crosshairs.classList.add('active');
+            });
+
+            el.addEventListener('mouseleave', () => {
+                crosshairs.classList.remove('active');
+                targetRect = null;
+            });
+        });
+
     </script>
 </body>
 </html>

@@ -8,8 +8,6 @@
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Inter', sans-serif; background: #020617; }
         
-        /* I HAVE MASSIVELY INCREASED THE SPEED AND DISTANCE OF THE KEYFRAMES */
-        
         @keyframes orbitA {
             0% { transform: translate3d(-20vw, -20vh, 0) scale3d(1, 1, 1) rotate(0deg); opacity: 0.5; }
             50% { transform: translate3d(40vw, 30vh, 0) scale3d(1.8, 0.5, 1) rotate(180deg); opacity: 1; }
@@ -28,12 +26,10 @@
             100% { transform: translate3d(0vw, 0vh, 0) scale3d(1.5, 1.5, 1) rotate(180deg); opacity: 0.3; }
         }
 
-        /* Time slashed from 28s down to 6s for extremely visible liquid motion */
         .aurora-1 { animation: orbitA 6s infinite ease-in-out; }
         .aurora-2 { animation: orbitB 8s infinite ease-in-out reverse; }
         .aurora-3 { animation: orbitC 5s infinite ease-in-out; }
         
-        /* Inline SVG noise definition */
         .film-grain {
             position: absolute;
             inset: 0;
@@ -45,70 +41,38 @@
         }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root" class="relative w-full h-screen overflow-hidden bg-slate-950">
+        
+        <div class="absolute inset-0 z-0 pointer-events-none">
+            <div 
+                class="aurora-1 absolute top-[10%] left-[20%] w-[60vw] h-[60vh] rounded-[40%] mix-blend-screen"
+                style="background: radial-gradient(circle, rgba(6,182,212,1) 0%, rgba(6,182,212,0) 70%); filter: blur(80px);"
+            ></div>
+            <div 
+                class="aurora-2 absolute top-[40%] right-[10%] w-[70vw] h-[70vh] rounded-[30%] mix-blend-screen"
+                style="background: radial-gradient(circle, rgba(139,92,246,1) 0%, rgba(139,92,246,0) 70%); filter: blur(80px);"
+            ></div>
+            <div 
+                class="aurora-3 absolute bottom-[-10%] left-[30%] w-[80vw] h-[50vh] rounded-[50%] mix-blend-screen"
+                style="background: radial-gradient(circle, rgba(236,72,153,1) 0%, rgba(236,72,153,0) 70%); filter: blur(80px);"
+            ></div>
+        </div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useState, useEffect } from 'react';
-        import { createRoot } from 'react-dom/client';
+        <div class="film-grain"></div>
 
-        const AuroraBackground = () => {
-            return (
-                <div className="relative w-full h-screen overflow-hidden bg-slate-950">
-                    
-                    <div className="absolute inset-0 z-0 pointer-events-none">
-                        <div 
-                            className="aurora-1 absolute top-[10%] left-[20%] w-[60vw] h-[60vh] rounded-[40%] mix-blend-screen"
-                            style={{ 
-                                background: 'radial-gradient(circle, rgba(6,182,212,1) 0%, rgba(6,182,212,0) 70%)',
-                                filter: 'blur(80px)'
-                            }}
-                        ></div>
-                        <div 
-                            className="aurora-2 absolute top-[40%] right-[10%] w-[70vw] h-[70vh] rounded-[30%] mix-blend-screen"
-                            style={{ 
-                                background: 'radial-gradient(circle, rgba(139,92,246,1) 0%, rgba(139,92,246,0) 70%)',
-                                filter: 'blur(80px)'
-                            }}
-                        ></div>
-                        <div 
-                            className="aurora-3 absolute bottom-[-10%] left-[30%] w-[80vw] h-[50vh] rounded-[50%] mix-blend-screen"
-                            style={{ 
-                                background: 'radial-gradient(circle, rgba(236,72,153,1) 0%, rgba(236,72,153,0) 70%)',
-                                filter: 'blur(80px)'
-                            }}
-                        ></div>
-                    </div>
+        <div class="relative z-20 w-full h-full flex flex-col items-center justify-center pointer-events-none mix-blend-difference">
+            <div class="text-center">
+                <h1 class="text-8xl md:text-[140px] font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-slate-500 tracking-tighter leading-none mb-6">
+                    Aurora Active.
+                </h1>
+                <p class="text-2xl font-bold text-slate-300 tracking-tight max-w-lg mx-auto">
+                    The ambient mesh speeds have been violently multiplied and node filters sharpened.
+                </p>
+            </div>
+        </div>
 
-                    <div className="film-grain"></div>
-
-                    <div className="relative z-20 w-full h-full flex flex-col items-center justify-center pointer-events-none mix-blend-difference">
-                        <div className="text-center">
-                            <h1 className="text-8xl md:text-[140px] font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-slate-500 tracking-tighter leading-none mb-6">
-                                Aurora Active.
-                            </h1>
-                            <p className="text-2xl font-bold text-slate-300 tracking-tight max-w-lg mx-auto">
-                                The ambient mesh speeds have been violently multiplied and node filters sharpened.
-                            </p>
-                        </div>
-                    </div>
-
-                </div>
-            );
-        };
-
-        createRoot(document.getElementById('root')).render(<AuroraBackground />);
-    </script>
+    </div>
 </body>
 </html>

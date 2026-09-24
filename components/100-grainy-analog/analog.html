@@ -8,7 +8,6 @@
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Inter', sans-serif; background: #e5e5e5; }
         
-        /* The Base Lo-Fi Film Grain */
         .heavy-grain {
             position: absolute;
             inset: 0;
@@ -16,12 +15,10 @@
             pointer-events: none;
             opacity: 0.12;
             mix-blend-mode: multiply;
-            /* High contrast static noise SVG mapping */
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
             background-repeat: repeat;
         }
 
-        /* Ambient Occlusion Blot */
         .ambient-shadow {
             position: absolute;
             border-radius: 50%;
@@ -33,95 +30,68 @@
 
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root" class="relative w-full h-screen overflow-hidden flex flex-col items-center justify-center">
+        
+        <div class="heavy-grain"></div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useEffect } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, useSpring } from 'framer-motion';
+        <div id="shadow-1" class="ambient-shadow w-[600px] h-[600px] z-0 transform -translate-x-1/2 -translate-y-1/2"></div>
+        <div id="shadow-2" class="ambient-shadow w-[800px] h-[800px] bg-black/50 z-0 transform -translate-x-1/2 -translate-y-1/2"></div>
 
-        const GrainyAnalog = () => {
+        <div class="relative z-10 max-w-2xl px-8 flex flex-col items-start w-full">
+            <div class="w-16 h-1 bg-black mb-12"></div>
             
-            // Massively dampened spring metrics to simulate heavy physical lag
-            const springConfig1 = { mass: 8, stiffness: 20, damping: 50 };
-            const springConfig2 = { mass: 15, stiffness: 10, damping: 70 };
+            <h1 class="text-8xl font-black text-black tracking-tighter leading-[0.9] mb-8">
+                Analog<br/>Shadows.
+            </h1>
             
-            const mouseX1 = useSpring(0, springConfig1);
-            const mouseY1 = useSpring(0, springConfig1);
-            
-            const mouseX2 = useSpring(0, springConfig2);
-            const mouseY2 = useSpring(0, springConfig2);
+            <p class="text-2xl font-medium text-black/60 leading-relaxed max-w-xl mb-12">
+                A departure from digital perfection. Heavy physics-based ambient occlusion blobs lag violently behind your cursor natively, bound under a multiply-blended static film grain.
+            </p>
 
-            useEffect(() => {
-                const handleMouseMove = (e) => {
-                    // Center the tracking exactly on the mouse coordinates
-                    mouseX1.set(e.clientX - 300); // Offset half width
-                    mouseY1.set(e.clientY - 300);
+            <button class="px-8 py-4 bg-black text-[#e5e5e5] font-bold text-lg hover:bg-black/80 transition-colors shadow-2xl relative overflow-hidden group">
+                <span class="relative z-10">Read Manifesto</span>
+            </button>
+        </div>
 
-                    // Deeper, heavier shadow tracking behind
-                    mouseX2.set(e.clientX - 400); 
-                    mouseY2.set(e.clientY - 400);
-                };
+        <div class="absolute right-12 bottom-12 font-mono text-black/30 tracking-widest text-sm z-10 rotate-90 origin-bottom-right">
+            SYS // 100
+        </div>
 
-                window.addEventListener('mousemove', handleMouseMove);
-                return () => window.removeEventListener('mousemove', handleMouseMove);
-            }, [mouseX1, mouseY1, mouseX2, mouseY2]);
+    </div>
 
-            return (
-                <div className="relative w-full h-screen overflow-hidden flex flex-col items-center justify-center">
-                    
-                    {/* The Analog Noise Overlay on top of EVERYTHING */}
-                    <div className="heavy-grain"></div>
+    <script>
+        const s1 = document.getElementById('shadow-1');
+        const s2 = document.getElementById('shadow-2');
 
-                    {/* The Heavy Shadow Blobs chasing the mouse */}
-                    <motion.div 
-                        className="ambient-shadow w-[600px] h-[600px] z-0"
-                        style={{ x: mouseX1, y: mouseY1 }}
-                    ></motion.div>
+        let targetX = window.innerWidth / 2;
+        let targetY = window.innerHeight / 2;
 
-                    <motion.div 
-                        className="ambient-shadow w-[800px] h-[800px] bg-black/50 z-0"
-                        style={{ x: mouseX2, y: mouseY2 }}
-                    ></motion.div>
+        let curX1 = targetX, curY1 = targetY;
+        let curX2 = targetX, curY2 = targetY;
 
-                    {/* The UI Plane */}
-                    <div className="relative z-10 max-w-2xl px-8 flex flex-col items-start w-full">
-                        <div className="w-16 h-1 bg-black mb-12"></div>
-                        
-                        <h1 className="text-8xl font-black text-black tracking-tighter leading-[0.9] mb-8">
-                            Analog<br/>Shadows.
-                        </h1>
-                        
-                        <p className="text-2xl font-medium text-black/60 leading-relaxed max-w-xl mb-12">
-                            A departure from digital perfection. Heavy physics-based ambient occlusion blobs lag violently behind your cursor, bound under a multiply-blended static film grain.
-                        </p>
+        window.addEventListener('mousemove', (e) => {
+            targetX = e.clientX;
+            targetY = e.clientY;
+        });
 
-                        <button className="px-8 py-4 bg-black text-[#e5e5e5] font-bold text-lg hover:bg-black/80 transition-colors shadow-2xl relative overflow-hidden group">
-                            <span className="relative z-10">Read Manifesto</span>
-                        </button>
-                    </div>
+        function render() {
+            // Shadow 1 is faster
+            curX1 += (targetX - curX1) * 0.08;
+            curY1 += (targetY - curY1) * 0.08;
 
-                    <div className="absolute right-12 bottom-12 font-mono text-black/30 tracking-widest text-sm z-10 rotate-90 origin-bottom-right">
-                        SYS // 100
-                    </div>
+            // Shadow 2 is slower and heavier
+            curX2 += (targetX - curX2) * 0.03;
+            curY2 += (targetY - curY2) * 0.03;
 
-                </div>
-            );
-        };
+            s1.style.transform = `translate(${curX1 - 300}px, ${curY1 - 300}px)`;
+            s2.style.transform = `translate(${curX2 - 400}px, ${curY2 - 400}px)`;
 
-        createRoot(document.getElementById('root')).render(<GrainyAnalog />);
+            requestAnimationFrame(render);
+        }
+
+        render();
     </script>
 </body>
 </html>
