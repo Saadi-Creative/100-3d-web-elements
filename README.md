@@ -1,60 +1,58 @@
-# 🌌 100+ High-Performance 3D Web Elements
+# 100+ High-Performance 3D Web Elements
 
 ### The Ultimate 2.5D Spatial UI Component Library for Modern Web Applications
-A massive, production-grade collection of **100 interactive 3D web components** and **UI elements** engineered for a tactile, physical feel. Built with **React**, **Tailwind CSS**, and **Framer Motion**, every component achieves 100% hardware-accelerated 60FPS performance — **zero WebGL required**.
+A massive, production-grade collection of **100 interactive 3D web components** and **UI elements** engineered for a tactile, physical feel. Completely refactored and built from the ground up using **Vanilla JavaScript, HTML, and Tailwind CSS**, every component achieves 100% hardware-accelerated 60FPS performance without the overhead of heavy frameworks like React or Framer Motion. Zero WebGL required.
 
-> 🏆 The largest open-source collection of spatial, physics-based web UI elements on GitHub.
+> The largest open-source collection of spatial, physics-based, framework-agnostic web UI elements on GitHub.
 
 ![Hero Image](hero.png)
 
-[![GitHub Stars](https://img.shields.io/github/stars/IntelliSaad/100-3d-web-elements?style=for-the-badge&color=ffd700)](https://github.com/IntelliSaad/100-3d-web-elements/stargazers)
-[![GitHub Forks](https://img.shields.io/github/forks/IntelliSaad/100-3d-web-elements?style=for-the-badge&color=7f8c8d)](https://github.com/IntelliSaad/100-3d-web-elements/network/members)
-[![GitHub Issues](https://img.shields.io/github/issues/IntelliSaad/100-3d-web-elements?style=for-the-badge&color=d63031)](https://github.com/IntelliSaad/100-3d-web-elements/issues)
+[![GitHub Stars](https://img.shields.io/github/stars/Saadi-Creative/100-3d-web-elements?style=for-the-badge&color=ffd700)](https://github.com/Saadi-Creative/100-3d-web-elements/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/Saadi-Creative/100-3d-web-elements?style=for-the-badge&color=7f8c8d)](https://github.com/Saadi-Creative/100-3d-web-elements/network/members)
+[![GitHub Issues](https://img.shields.io/github/issues/Saadi-Creative/100-3d-web-elements?style=for-the-badge&color=d63031)](https://github.com/Saadi-Creative/100-3d-web-elements/issues)
 [![License: MIT](https://img.shields.io/badge/License-MIT-success?style=for-the-badge)](LICENSE)
 ![Components](https://img.shields.io/badge/Components-100%2B-blueviolet?style=for-the-badge)
 ![Performance](https://img.shields.io/badge/60FPS-Hardware_Accelerated-00c853?style=for-the-badge)
 
 ---
 
-## 📖 Table of Contents
-- [✨ Key Features](#-key-features)
-- [🛠️ Tech Stack](#️-tech-stack)
-- [📂 Full Component Directory (1–100)](#-full-component-directory-1100)
-- [🎨 Design Philosophy](#-design-philosophy)
-- [🚀 Quick Start](#-quick-start)
-- [❓ FAQ](#-faq)
-- [🤝 Contributing](#-contributing)
-- [📄 License](#-license)
+## Table of Contents
+- [Key Features](#key-features)
+- [Tech Stack](#tech-stack)
+- [Full Component Directory (1-100)](#full-component-directory-1-100)
+- [Design Philosophy](#design-philosophy)
+- [Quick Start](#quick-start)
+- [FAQ](#faq)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
-## ✨ Key Features
+## Key Features
 
 | Feature | Description |
 |---|---|
-| 🎯 **100% Tactile** | Every interaction has weight, inertia, and physical momentum via spring physics. |
-| ⚡ **Zero WebGL** | Runs entirely on the DOM using `translate3d`, `scale3d`, and `rotate` — locked at 60FPS. |
-| 🌈 **Modern Aesthetics** | Glassmorphism, iridescent gradients, procedural noise, and chromatic aberration. |
-| 🚀 **ESM Ready** | No build step. Imports React & Framer Motion directly from ESM CDNs. |
-| 📦 **Self-Contained** | Each component is a single `.html` file. Copy, paste, and ship. |
-| 🖥️ **Laptop Friendly** | Optimized for 8GB RAM machines using `will-change` and GPU compositing. |
+| **100% Tactile** | Every interaction has weight, inertia, and physical momentum simulated through native mathematics. |
+| **Vanilla Architecture** | Zero reliance on heavy frameworks like React or Framer Motion. Pure, dependency-free JavaScript. |
+| **Zero WebGL** | Runs entirely on the DOM using `translate3d`, `scale3d`, and `rotate` locked at 60FPS. |
+| **Modern Aesthetics** | Glassmorphism, iridescent gradients, procedural noise, and chromatic aberration. |
+| **Self-Contained** | Each component is a single `.html` file. Copy, paste, and ship. |
+| **Laptop Friendly** | Optimized for lower-end machines using `will-change` and GPU compositing. |
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
-![React](https://img.shields.io/badge/React_18-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
+![Vanilla JavaScript](https://img.shields.io/badge/JavaScript_ES2022-%23F7DF1E.svg?style=for-the-badge&logo=javascript&logoColor=black)
 ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
-![Framer Motion](https://img.shields.io/badge/Framer_Motion-0055FF?style=for-the-badge&logo=framer&logoColor=white)
-![JavaScript](https://img.shields.io/badge/JavaScript_ES2022-%23F7DF1E.svg?style=for-the-badge&logo=javascript&logoColor=black)
 ![CSS3](https://img.shields.io/badge/CSS3_Animations-%231572B6.svg?style=for-the-badge&logo=css3&logoColor=white)
 ![HTML5](https://img.shields.io/badge/HTML5_Canvas-%23E34F26.svg?style=for-the-badge&logo=html5&logoColor=white)
 
 ---
 
-## 📂 Full Component Directory (1–100)
+## Full Component Directory (1-100)
 
-### 🔵 Foundational 3D Elements (1–10)
+### Foundational 3D Elements (1-10)
 | # | Component | Description |
 |---|---|---|
 | 01 | [3D Button](components/01-3d-button/) | Physical depth button with shadow layers and press animation. |
@@ -68,7 +66,7 @@ A massive, production-grade collection of **100 interactive 3D web components** 
 | 09 | [Product Showcase](components/09-product-showcase/) | 3D product viewer with orbit controls. |
 | 10 | [Glassmorphism Shapes](components/10-glassmorphism-shapes/) | Frosted glass geometric primitives. |
 
-### 🟢 Visual Effects & Scenes (11–20)
+### Visual Effects & Scenes (11-20)
 | # | Component | Description |
 |---|---|---|
 | 11 | [Cyber Globe](components/11-cyber-globe/) | Rotating wireframe earth with data points. |
@@ -82,7 +80,7 @@ A massive, production-grade collection of **100 interactive 3D web components** 
 | 19 | [Snow](components/19-snow/) | Realistic particle snowfall system. |
 | 20 | [Origami Menu](components/20-origami-menu/) | Paper-fold navigation menu. |
 
-### 🟡 Interactive Elements (21–30)
+### Interactive Elements (21-30)
 | # | Component | Description |
 |---|---|---|
 | 21 | [Fluid Aurora](components/21-fluid-aurora/) | Animated aurora borealis background. |
@@ -96,7 +94,7 @@ A massive, production-grade collection of **100 interactive 3D web components** 
 | 29 | [Interactive Timeline](components/29-interactive-timeline/) | Scroll-driven 3D timeline. |
 | 30 | [Morphing Blob](components/30-morphing-blob/) | Organic shape-shifting blob. |
 
-### 🟠 SaaS UI Components (31–40)
+### SaaS UI Components (31-40)
 | # | Component | Description |
 |---|---|---|
 | 31 | [Looking Glass](components/31-looking-glass/) | Magnifying lens with depth layers. |
@@ -110,7 +108,7 @@ A massive, production-grade collection of **100 interactive 3D web components** 
 | 39 | [Cylinder Tabs](components/39-cylinder-tabs/) | Rotating cylindrical tab switcher. |
 | 40 | [Ribbon Dropdown](components/40-ribbon-dropdown/) | Unfurling ribbon-style dropdown. |
 
-### 🔴 Advanced Interactions (41–50)
+### Advanced Interactions (41-50)
 | # | Component | Description |
 |---|---|---|
 | 41 | [Cryptex Datepicker](components/41-cryptex-datepicker/) | Mechanical rotating date selector. |
@@ -124,7 +122,7 @@ A massive, production-grade collection of **100 interactive 3D web components** 
 | 49 | [Social Share](components/49-social-share/) | Expanding radial social buttons. |
 | 50 | [Split Flap Search](components/50-split-flap-search/) | Airport departure board search. |
 
-### 🟣 Premium Components (51–60)
+### Premium Components (51-60)
 | # | Component | Description |
 |---|---|---|
 | 51 | [Tethered Tooltip](components/51-tethered-tooltip/) | Physically tethered floating tooltip. |
@@ -138,7 +136,7 @@ A massive, production-grade collection of **100 interactive 3D web components** 
 | 59 | [Notification Stacker](components/59-notification-stacker/) | Stacking toast notification system. |
 | 60 | [Flip Clock](components/60-flip-clock/) | Mechanical split-flap countdown. |
 
-### ⚫ Spatial Systems (61–70)
+### Spatial Systems (61-70)
 | # | Component | Description |
 |---|---|---|
 | 61 | [Spatial Mega Menu](components/61-spatial-mega-menu/) | Full-width 3D navigation menu. |
@@ -152,13 +150,13 @@ A massive, production-grade collection of **100 interactive 3D web components** 
 | 69 | [Holographic Testimonial](components/69-holographic-testimonial/) | Rainbow-reflective review cards. |
 | 70 | [Spatial Bento Grid](components/70-spatial-bento-grid/) | Layout-morphing interactive bento. |
 
-### 🔷 2.5D Spatial UI (71–80)
+### 2.5D Spatial UI (71-80)
 | # | Component | Description |
 |---|---|---|
 | 71 | [Morphing Dropdown](components/71-morphing-dropdown/) | Fluid navigation dropdown system. |
 | 72 | [Spatial Context Menu](components/72-spatial-context-menu/) | Right-click 3D context menu. |
 | 73 | [Isometric Conveyor](components/73-isometric-conveyor/) | Animated isometric conveyor belt. |
-| 74 | [Command Palette ⌘K](components/74-command-palette/) | Global search with gliding highlights. |
+| 74 | [Command Palette CMD K](components/74-command-palette/) | Global search with gliding highlights. |
 | 75 | [Empty State Box](components/75-empty-state-box/) | "Lost in Space" immersive empty state. |
 | 76 | [Spatial Table Row](components/76-spatial-table-row/) | Inline row expansion with background recession. |
 | 77 | [Morphing Pill Navbar](components/77-morphing-pill-navbar/) | Scroll-triggered glassmorphic pill nav. |
@@ -166,7 +164,7 @@ A massive, production-grade collection of **100 interactive 3D web components** 
 | 79 | [AI Neural Input](components/79-floating-label-input/) | Conic-gradient input with star particles. |
 | 80 | [Fluid Mesh Gradient](components/80-fluid-mesh-gradient/) | Iridescent liquid silk background. |
 
-### 🛸 Immersive Backgrounds & Physics (81–90)
+### Immersive Backgrounds & Physics (81-90)
 | # | Component | Description |
 |---|---|---|
 | 81 | [Cyber-Grid Background](components/81-cyber-grid-background/) | Topographical gravity-well canvas grid. |
@@ -180,7 +178,7 @@ A massive, production-grade collection of **100 interactive 3D web components** 
 | 89 | [Spy Nav Headers](components/89-stacking-headers/) | Intersection-observer sidebar nav. |
 | 90 | [Spotlight Tracking Grid](components/90-svg-scroll-border/) | Mouse-tracking illumination grid. |
 
-### 🌌 Kinetic & Ambient Systems (91–100)
+### Kinetic & Ambient Systems (91-100)
 | # | Component | Description |
 |---|---|---|
 | 91 | [Scroll Unveil Typography](components/91-scrubbable-scroll-text/) | Kinetic text-slice scroll reveal. |
@@ -196,69 +194,69 @@ A massive, production-grade collection of **100 interactive 3D web components** 
 
 ---
 
-## 🎨 Design Philosophy: "Physical Intent"
+## Design Philosophy: "Physical Intent"
 
 Every component exists in a simulated **3D space**. We reject flat, lifeless UIs.
 
 | Principle | Implementation |
 |---|---|
 | **Z-Axis Depth** | Elements cast physical shadows and have architectural height via `translateZ`. |
-| **Spring Physics** | No linear tweens. We define how objects move with `stiffness`, `damping`, and `mass`. |
+| **Vanilla Physics** | No linear tweens. We calculate spring physics using highly optimized Vanilla JavaScript RequestAnimationFrame loops. |
 | **Optical Refraction** | Simulated glass and light using `backdrop-filter` and `mix-blend-mode`. |
 | **GPU Compositing** | 100% `transform: translate3d()` animations bypass the CPU entirely. |
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Clone & Serve
 ```bash
-git clone https://github.com/IntelliSaad/100-3d-web-elements.git
+git clone https://github.com/Saadi-Creative/100-3d-web-elements.git
 cd 100-3d-web-elements
 npx -y live-server --port=8080
 ```
 
 ### 2. Use a Component
-All components are **self-contained**. Copy any `.html` file into your project — all dependencies (React, Tailwind, Framer Motion) are loaded via CDN. Zero configuration required.
+All components are **self-contained**. Copy any `.html` file into your project. Tailwind is loaded via CDN, and all logic is written in plain JavaScript. Zero build configuration required.
 
 ```
-📁 components/
+components/
 └── 84-magnetic-blend-cursor/
-    └── cursor.html      ← Just open this file!
+    └── cursor.html      <-- Just open this file!
 ```
 
 ---
 
-## ❓ FAQ
+## FAQ
 
 ### What is a "2.5D Spatial UI"?
-It's a design approach that uses CSS 3D transforms (`translateZ`, `rotateX`, `perspective`) to create depth and physicality in standard DOM elements — without needing WebGL or Three.js.
+It's a design approach that uses CSS 3D transforms (`translateZ`, `rotateX`, `perspective`) to create depth and physicality in standard DOM elements, without needing WebGL or Three.js.
 
-### Can I use these in my React/Next.js project?
-Yes! Each component's React logic can be extracted and used directly. The inline CDN imports can be replaced with your project's npm packages.
+### Can I use these in my React/Next.js/Vue project?
+Yes! Since the logic has been completely decoupled into vanilla JavaScript, you can easily port these components into any framework of your choice.
 
 ### Will these run on low-end machines?
-Yes. Every animation uses `will-change: transform` and `translate3d()` to force GPU compositing, achieving a locked 60FPS even on 8GB RAM laptops.
+Yes. Every animation uses `will-change: transform` and `translate3d()` to force GPU compositing, achieving a locked 60FPS even on lower-end devices.
 
 ### Do I need a build step?
-No. Every component loads React, Tailwind, and Framer Motion from ESM CDNs. Just open the `.html` file in a browser.
+No. Every component loads Tailwind from an ESM CDN and runs native JavaScript. Just open the `.html` file in a browser.
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ---
 
-## 📄 License
+## License
 
 Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more information.
 
 ---
 
 <p align="center">
-  <strong>Engineered with physical intent by <a href="https://github.com/IntelliSaad">Muhammad Saad Ullah</a></strong>
+  <strong>Engineered with physical intent by <a href="https://saadicreative-portfolio.vercel.app/">Muhammad Saad Ullah</a></strong>
   <br>
-  <em>If this library helped you, consider giving it a ⭐</em>
+  <em>If this library helped you, consider giving it a Star</em>
 </p>
