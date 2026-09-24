@@ -10,27 +10,29 @@
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .will-change-transform { will-change: transform; transform-origin: center center; }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root">
+        <div class="w-full max-w-5xl mx-auto py-32 px-8">
+            
+            <div class="text-center mb-24 max-w-2xl mx-auto">
+                <h1 class="text-6xl font-black text-slate-800 tracking-tighter mb-4">Velocity Skew</h1>
+                <p class="text-slate-500 font-medium text-lg">Scroll rapidly up or down. Vanilla JS continuously calculates your scroll velocity integer via requestAnimationFrame, passing it through a lerp damper directly to the <code class="bg-slate-100 px-2 py-0.5 rounded text-indigo-500">skewY</code> and <code class="bg-slate-100 px-2 py-0.5 rounded text-indigo-500">scaleY</code> properties of the entire grid. It lends a visceral, fluid weight to generic content arrays.</p>
+            </div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useRef } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, useScroll, useVelocity, useSpring, useTransform } from 'framer-motion';
+            <!-- The Grid -->
+            <div id="grid-container" class="grid grid-cols-1 md:grid-cols-2 gap-12"></div>
 
+            <div class="py-32 text-center text-slate-400 font-bold uppercase tracking-widest text-xl">
+                End of Grid
+            </div>
+        </div>
+    </div>
+
+    <script>
         const DUMMY_IMAGES = [
             "bg-gradient-to-tr from-fuchsia-100 to-rose-100",
             "bg-gradient-to-tr from-sky-100 to-indigo-100",
@@ -41,83 +43,70 @@
             "bg-gradient-to-tr from-rose-100 to-red-100",
             "bg-gradient-to-tr from-cyan-100 to-blue-100",
         ];
+        
+        const container = document.getElementById('grid-container');
+        const items = [];
 
-        const App = () => {
-            // Track global scroll progression
-            const { scrollY } = useScroll();
-            
-            // Extract the raw velocity (pixels per frame) from the scroll position
-            const scrollVelocity = useVelocity(scrollY);
-            
-            // Apply a heavy physics spring to dampen the raw velocity, preventing jerky snaps
-            const smoothVelocity = useSpring(scrollVelocity, {
-                damping: 40,
-                stiffness: 200,
-                mass: 0.8
-            });
-
-            // Map the smoothed velocity strictly to a mild skew degree constraint (-10deg to 10deg)
-            const skewY = useTransform(smoothVelocity, [-1500, 1500], [-8, 8], { clamp: false });
-            // Add a slight scaling effect for extra physical weight
-            const scaleY = useTransform(smoothVelocity, [-1500, 0, 1500], [1.05, 1, 1.05], { clamp: false });
-
-            return (
-                <div className="w-full max-w-5xl mx-auto py-32 px-8">
-                    
-                    <div className="text-center mb-24 max-w-2xl mx-auto">
-                        <h1 className="text-6xl font-black text-slate-800 tracking-tighter mb-4">Velocity Skew</h1>
-                        <p className="text-slate-500 font-medium text-lg">Scroll rapidly up or down. Framer Motion continuously calculates your scroll velocity integer via requestAnimationFrame, passing it through a spring dampening curve directly to the <code className="bg-slate-100 px-2 py-0.5 rounded text-indigo-500">skewY</code> and <code className="bg-slate-100 px-2 py-0.5 rounded text-indigo-500">scaleY</code> properties of the entire grid. It lends a visceral, fluid weight to generic content arrays.</p>
+        // Generate 16 items
+        for (let i = 0; i < 16; i++) {
+            const bg = DUMMY_IMAGES[i % 8];
+            const idx = i + 1;
+            const html = `
+                <div class="w-full will-change-transform grid-item">
+                    <div class="w-full aspect-[4/3] rounded-[32px] ${bg} shadow-sm border border-slate-200/60 overflow-hidden flex items-center justify-center">
+                        <div class="w-24 h-24 bg-white/40 backdrop-blur rounded-full border border-white flex items-center justify-center font-bold text-slate-300 text-2xl">
+                            ${idx < 10 ? '0' + idx : idx}
+                        </div>
                     </div>
-
-                    {/* The Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                        {DUMMY_IMAGES.map((bg, idx) => (
-                            <motion.div 
-                                key={idx}
-                                // Apply the mathematical velocity mappings directly inline to bypass React state renders!
-                                style={{ skewY, scaleY, transformOrigin: "center center" }}
-                                className="w-full will-change-transform"
-                            >
-                                <div className={`w-full aspect-[4/3] rounded-[32px] ${bg} shadow-sm border border-slate-200/60 overflow-hidden flex items-center justify-center`}>
-                                    <div className="w-24 h-24 bg-white/40 backdrop-blur rounded-full border border-white flex items-center justify-center font-bold text-slate-300 text-2xl">
-                                        0{idx + 1}
-                                    </div>
-                                </div>
-                                <div className="mt-4 px-2">
-                                    <div className="h-4 w-1/3 bg-slate-200 rounded-full mb-2"></div>
-                                    <div className="h-3 w-1/4 bg-slate-100 rounded-full"></div>
-                                </div>
-                            </motion.div>
-                        ))}
-                        
-                        {/* Duplicate for height */}
-                        {DUMMY_IMAGES.map((bg, idx) => (
-                            <motion.div 
-                                key={idx + 8}
-                                style={{ skewY, scaleY, transformOrigin: "center center" }}
-                                className="w-full"
-                            >
-                                <div className={`w-full aspect-[4/3] rounded-[32px] ${bg} shadow-sm border border-slate-200/60 overflow-hidden flex items-center justify-center`}>
-                                    <div className="w-24 h-24 bg-white/40 backdrop-blur rounded-full border border-white flex items-center justify-center font-bold text-slate-300 text-2xl">
-                                        0{idx + 9}
-                                    </div>
-                                </div>
-                                <div className="mt-4 px-2">
-                                    <div className="h-4 w-1/3 bg-slate-200 rounded-full mb-2"></div>
-                                    <div className="h-3 w-1/4 bg-slate-100 rounded-full"></div>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
-
-                    <div className="py-32 text-center text-slate-400 font-bold uppercase tracking-widest text-xl">
-                        End of Grid
+                    <div class="mt-4 px-2">
+                        <div class="h-4 w-1/3 bg-slate-200 rounded-full mb-2"></div>
+                        <div class="h-3 w-1/4 bg-slate-100 rounded-full"></div>
                     </div>
                 </div>
-            );
-        };
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+        }
+        
+        container.querySelectorAll('.grid-item').forEach(el => items.push(el));
 
-        createRoot(document.getElementById('root')).render(<App />);
+        let lastY = window.scrollY;
+        let smoothVelocity = 0;
+
+        function render() {
+            const currentY = window.scrollY;
+            const velocity = currentY - lastY; // raw velocity
+            lastY = currentY;
+
+            // Dampen velocity
+            smoothVelocity += (velocity - smoothVelocity) * 0.1;
+
+            // Map velocity to skew (-8 to 8)
+            // Assuming max scroll velocity is around 100 per frame
+            let skew = (smoothVelocity / 100) * 8;
+            skew = Math.max(-15, Math.min(15, skew)); // clamp
+
+            // Map velocity to scale (1 to 1.05)
+            let scale = 1 + Math.abs(smoothVelocity / 100) * 0.05;
+            scale = Math.max(1, Math.min(1.1, scale));
+
+            // Apply transforms (only if there's enough movement to justify it, to save performance)
+            if (Math.abs(smoothVelocity) > 0.1) {
+                const transformString = `skewY(${skew}deg) scaleY(${scale})`;
+                items.forEach(el => {
+                    el.style.transform = transformString;
+                });
+            } else if (smoothVelocity !== 0) {
+                // snap to 0
+                smoothVelocity = 0;
+                items.forEach(el => {
+                    el.style.transform = `skewY(0deg) scaleY(1)`;
+                });
+            }
+
+            requestAnimationFrame(render);
+        }
+
+        render();
     </script>
 </body>
 </html>

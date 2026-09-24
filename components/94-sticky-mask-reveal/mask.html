@@ -7,139 +7,129 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body, html { margin: 0; background: #fafaf9; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+
+        /* Liquid Menu Transitions */
+        .liquid-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            background: #0f172a;
+            clip-path: circle(0px at var(--clip-x, 0px) var(--clip-y, 0px));
+            transition: clip-path 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none; /* Block clicks when closed */
+        }
+        
+        .liquid-overlay.open {
+            clip-path: circle(3000px at var(--clip-x, 0px) var(--clip-y, 0px));
+            pointer-events: auto;
+        }
+
+        .menu-link {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .liquid-overlay.open .menu-link {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Hamburger Animation */
+        .burger-line { transition: transform 0.4s ease, opacity 0.4s ease; transform-origin: center; }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root">
+        <!-- The Standard Page Scaffold -->
+        <div class="w-full h-screen flex flex-col items-center justify-center p-8 bg-slate-100 z-0 relative">
+            <div class="w-32 h-32 bg-slate-900 shadow-2xl rounded-full flex flex-col items-center justify-center mb-12">
+                <h2 class="text-white font-black text-xl tracking-widest uppercase opacity-50 mb-1">Status</h2>
+                <div class="w-4 h-4 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_15px_rgba(16,185,129,0.8)]"></div>
+            </div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useState, useRef } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, AnimatePresence } from 'framer-motion';
+            <h1 class="text-6xl md:text-8xl font-black text-slate-800 tracking-tighter mb-6 leading-none text-center">Liquid Reveal HUD.</h1>
+            <p class="text-xl font-medium text-slate-500 max-w-xl text-center mb-16 leading-relaxed">
+                Click the action button in the top right. Instead of a solid standard modal teleporting in, the <code class="bg-white px-2 rounded font-bold text-slate-700 shadow-sm">clip-path</code> mask mathematically interpolates radially outward from the exact physical X/Y coordinates of the mouse click event via Vanilla JS CSS Variables.
+            </p>
+        </div>
 
-        const FULL_SCREEN_MENU_LINKS = [
+        <!-- THE INTERACTIVE TRIGGER BUTTON -->
+        <button id="trigger-btn" class="fixed top-8 right-8 z-[100] w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center text-white shadow-[0_20px_40px_rgba(0,0,0,0.3)] hover:scale-105 active:scale-95 transition-transform">
+            <div class="relative w-8 h-8 flex flex-col justify-center items-center gap-1.5">
+                <span class="burger-line line-1 absolute w-8 h-[3px] bg-white rounded-full -translate-y-2"></span>
+                <span class="burger-line line-2 absolute w-8 h-[3px] bg-white rounded-full opacity-100"></span>
+                <span class="burger-line line-3 absolute w-8 h-[3px] bg-white rounded-full translate-y-2"></span>
+            </div>
+        </button>
+
+        <!-- THE FULL SCREEN LIQUID MENU OVERLAY -->
+        <div id="liquid-menu" class="liquid-overlay flex flex-col justify-center px-12 md:px-32">
+            <!-- Background Decorative Element -->
+            <div class="absolute top-[-20vh] right-[-10vw] w-[80vw] h-[80vw] bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none"></div>
+
+            <!-- Menu Links container -->
+            <div id="menu-container" class="relative z-10 flex flex-col gap-8 w-full max-w-5xl">
+                <div class="text-indigo-400 font-bold tracking-widest mb-4 uppercase text-sm border-b border-white/10 pb-4">Core Navigation Engine</div>
+                <!-- Links injected by JS -->
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const LINKS = [
             { name: "Deploy Node", sub: "Initialize compute physically." },
             { name: "Architecture", sub: "Review systemic topology planes." },
             { name: "Documentation", sub: "The full codebase map." },
             { name: "System Settings", sub: "Alter core variables directly." }
         ];
 
-        const LiquidMenu = () => {
-            const [isOpen, setIsOpen] = useState(false);
-            const buttonRef = useRef(null);
+        const menuContainer = document.getElementById('menu-container');
+        LINKS.forEach((link, i) => {
+            const html = `
+                <a href="#" class="menu-link group flex flex-col" style="transition-delay: ${0.1 + (i * 0.05)}s">
+                    <span class="text-5xl md:text-8xl font-black text-white tracking-tighter group-hover:text-indigo-400 transition-colors leading-[0.9]">${link.name}</span>
+                    <span class="text-slate-500 font-medium text-lg mt-2 group-hover:text-white transition-colors">${link.sub}</span>
+                </a>
+            `;
+            menuContainer.insertAdjacentHTML('beforeend', html);
+        });
 
-            // We need to calculate EXACTLY where the button is on the screen.
-            // When the menu opens, the expanding circle clip-path will originate from these precise pixel coordinates.
-            const [clipOrigin, setClipOrigin] = useState({ x: 0, y: 0 });
+        const triggerBtn = document.getElementById('trigger-btn');
+        const liquidMenu = document.getElementById('liquid-menu');
+        const line1 = document.querySelector('.line-1');
+        const line2 = document.querySelector('.line-2');
+        const line3 = document.querySelector('.line-3');
 
-            const toggleMenu = () => {
-                if (!isOpen && buttonRef.current) {
-                    const rect = buttonRef.current.getBoundingClientRect();
-                    // Grab dead center of the button
-                    setClipOrigin({
-                        x: rect.left + rect.width / 2,
-                        y: rect.top + rect.height / 2
-                    });
-                }
-                setIsOpen(!isOpen);
-            };
+        let isOpen = false;
 
-            return (
-                <>
-                    {/* The Standard Page Scaffold */}
-                    <div className="w-full h-screen flex flex-col items-center justify-center p-8 bg-slate-100 z-0 relative">
-                        <div className="w-32 h-32 bg-slate-900 shadow-2xl rounded-full flex flex-col items-center justify-center mb-12">
-                            <h2 className="text-white font-black text-xl tracking-widest uppercase opacity-50 mb-1">Status</h2>
-                            <div className="w-4 h-4 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_15px_rgba(16,185,129,0.8)]"></div>
-                        </div>
-
-                        <h1 className="text-6xl md:text-8xl font-black text-slate-800 tracking-tighter mb-6 leading-none text-center">Liquid Reveal HUD.</h1>
-                        <p className="text-xl font-medium text-slate-500 max-w-xl text-center mb-16 leading-relaxed">
-                            Click the action button in the top right. Instead of a solid standard modal teleporting in, the <code className="bg-white px-2 rounded font-bold text-slate-700 shadow-sm">clip-path</code> mask mathematically interpolates radially outward from the exact physical X/Y coordinates of the mouse click event.
-                        </p>
-                    </div>
-
-                    {/* --- THE INTERACTIVE TRIGGER BUTTON --- */}
-                    {/* Positioned absolute top right */}
-                    <button 
-                        ref={buttonRef}
-                        onClick={toggleMenu}
-                        className="fixed top-8 right-8 z-[100] w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center text-white shadow-[0_20px_40px_rgba(0,0,0,0.3)] hover:scale-105 active:scale-95 transition-transform"
-                    >
-                        {/* A tiny animated burger/X icon driven by state */}
-                        <div className="relative w-8 h-8 flex items-center justify-center">
-                            <motion.span 
-                                className="absolute w-8 h-[3px] bg-white rounded-full origin-center"
-                                animate={{ rotate: isOpen ? 45 : 0, y: isOpen ? 0 : -8 }}
-                            />
-                            <motion.span 
-                                className="absolute w-8 h-[3px] bg-white rounded-full origin-center"
-                                animate={{ opacity: isOpen ? 0 : 1 }}
-                            />
-                            <motion.span 
-                                className="absolute w-8 h-[3px] bg-white rounded-full origin-center"
-                                animate={{ rotate: isOpen ? -45 : 0, y: isOpen ? 0 : 8 }}
-                            />
-                        </div>
-                    </button>
-
-                    {/* --- THE FULL SCREEN LIQUID MENU OVERLAY --- */}
-                    <AnimatePresence>
-                        {isOpen && (
-                            <motion.div 
-                                className="fixed inset-0 z-50 bg-slate-900 flex flex-col justify-center px-12 md:px-32"
-                                // THE MAGIC PIECE:
-                                // Animates a circle clip path from 0px (hidden) out to 3000px (massive enough to cover any 4k monitor).
-                                // The 'at X Y' uses the exact pixel coordinates we saved when clicking the button!
-                                initial={{ clipPath: `circle(0px at ${clipOrigin.x}px ${clipOrigin.y}px)` }}
-                                animate={{ clipPath: `circle(3000px at ${clipOrigin.x}px ${clipOrigin.y}px)` }}
-                                exit={{ clipPath: `circle(0px at ${clipOrigin.x}px ${clipOrigin.y}px)` }}
-                                transition={{ type: "spring", stiffness: 100, damping: 20, mass: 0.5 }}
-                            >
-                                
-                                {/* Background Decorative Element */}
-                                <div className="absolute top-[-20vh] right-[-10vw] w-[80vw] h-[80vw] bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none"></div>
-
-                                {/* Menu Links container */}
-                                <div className="relative z-10 flex flex-col gap-8 w-full max-w-5xl">
-                                    <div className="text-indigo-400 font-bold tracking-widest mb-4 uppercase text-sm border-b border-white/10 pb-4">Core Navigation Engine</div>
-                                    
-                                    {FULL_SCREEN_MENU_LINKS.map((link, i) => (
-                                        <motion.a 
-                                            key={i} href="#" 
-                                            className="group flex flex-col"
-                                            // Stagger the text links sliding up gently AFTER the circle expands
-                                            initial={{ opacity: 0, y: 40 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: 20 }}
-                                            transition={{ delay: 0.1 + (i * 0.05), type: "spring" }}
-                                        >
-                                            <span className="text-5xl md:text-8xl font-black text-white tracking-tighter group-hover:text-indigo-400 transition-colors leading-[0.9]">{link.name}</span>
-                                            <span className="text-slate-500 font-medium text-lg mt-2 group-hover:text-white transition-colors">{link.sub}</span>
-                                        </motion.a>
-                                    ))}
-                                </div>
-
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </>
-            );
-        };
-
-        const App = () => <LiquidMenu />;
-        createRoot(document.getElementById('root')).render(<App />);
+        triggerBtn.addEventListener('click', () => {
+            if (!isOpen) {
+                // Get absolute center of the button for the origin
+                const rect = triggerBtn.getBoundingClientRect();
+                const x = rect.left + rect.width / 2;
+                const y = rect.top + rect.height / 2;
+                
+                liquidMenu.style.setProperty('--clip-x', `${x}px`);
+                liquidMenu.style.setProperty('--clip-y', `${y}px`);
+            }
+            
+            isOpen = !isOpen;
+            liquidMenu.classList.toggle('open');
+            
+            // Animate burger
+            if (isOpen) {
+                line1.style.transform = 'translateY(0) rotate(45deg)';
+                line2.style.opacity = '0';
+                line3.style.transform = 'translateY(0) rotate(-45deg)';
+            } else {
+                line1.style.transform = 'translateY(-8px) rotate(0deg)';
+                line2.style.opacity = '1';
+                line3.style.transform = 'translateY(8px) rotate(0deg)';
+            }
+        });
     </script>
 </body>
 </html>

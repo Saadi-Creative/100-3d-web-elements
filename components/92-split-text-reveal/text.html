@@ -10,134 +10,98 @@
         .tall-container { min-height: 200vh; }
         .word-wrapper { display: inline-flex; overflow: hidden; vertical-align: bottom; }
         
-        /* Perspective is critical for the heavy rotation effect */
         .perspective-text { perspective: 1200px; transform-style: preserve-3d; }
+        
+        .word-node {
+            display: inline-block;
+            transform-origin: bottom;
+            transform: translateY(120%) rotateX(-40deg) scale(0.9);
+            opacity: 0;
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.8s ease;
+        }
+
+        .split-text-container.revealed .word-node {
+            transform: translateY(0%) rotateX(0deg) scale(1);
+            opacity: 1;
+        }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-    <div id="root"></div>
-
-    <script type="text/babel" data-type="module">
-        import React from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion } from 'framer-motion';
-
-        const SplitText = ({ text }) => {
-            // Split the raw string into an array of individual words mathematically
-            const words = text.split(" ");
-
-            // Parent variants (The Orchestrator)
-            const containerVariants = {
-                hidden: {},
-                visible: {
-                    transition: {
-                        staggerChildren: 0.08, // Time delay between each word dropping in
-                        delayChildren: 0.1,    // Wait X before firing first word
-                    }
-                }
-            };
-
-            // Child variants (The Physical Node itself)
-            const childVariants = {
-                hidden: {
-                    y: "120%", // Completely translated below the masking baseline
-                    rotateX: -40, // Tilted heavily upward into the Z-axis
-                    opacity: 0,
-                    scale: 0.9
-                },
-                visible: {
-                    y: "0%", // Snap to zero baseline
-                    rotateX: 0, // Flatten out rigidly
-                    opacity: 1,
-                    scale: 1,
-                    transition: {
-                        type: "spring",
-                        damping: 12,
-                        stiffness: 80,
-                        mass: 0.8 // Heavy solid mass
-                    }
-                }
-            };
-
-            return (
-                <motion.div
-                    className="flex flex-wrap gap-x-4 gap-y-2 justify-center perspective-text"
-                    variants={containerVariants}
-                    // Trigger the sequence natively exactly when 50% of this parent enters the viewport
-                    initial="hidden"
-                    whileInView="visible"
-                    viewport={{ once: true, amount: 0.5 }}
-                >
-                    {words.map((word, index) => (
-                        // Each word MUST be wrapped in an overflow-hidden standard div first!
-                        // This acts as a physical 'mask' or 'clipper' that the text emerges upwards from
-                        <div key={index} className="word-wrapper pb-2">
-                            <motion.span
-                                className="inline-block origin-bottom break-words whitespace-pre-wrap"
-                                variants={childVariants}
-                            >
-                                {word}
-                            </motion.span>
-                        </div>
-                    ))}
-                </motion.div>
-            );
-        };
-
-        const App = () => {
-            return (
-                <div className="w-full tall-container flex flex-col items-center">
-                    
-                    <div className="w-full h-[60vh] flex flex-col items-center justify-end pb-32 bg-slate-100">
-                        <h2 className="text-3xl font-black text-slate-800 tracking-tighter uppercase mb-4">Start Scaling.</h2>
-                        <div className="text-slate-500 font-bold uppercase tracking-widest text-sm flex gap-4 animate-bounce">
-                            <span>Scroll Down Base</span> 
-                            <span>↓</span>
-                        </div>
-                    </div>
-
-                    <div className="py-40 px-8 max-w-5xl mx-auto text-center">
-                        <div className="text-7xl md:text-[110px] font-black tracking-tighter text-slate-900 leading-[0.85]">
-                            {/* Execute the Split Text Engine! */}
-                            <SplitText text="The definitive industry standard for premium kinetic typography." />
-                        </div>
-                    </div>
-                    
-                    <div className="py-20 px-8 max-w-3xl mx-auto text-center">
-                        <div className="text-3xl font-bold tracking-tight text-slate-500 leading-tight">
-                            <SplitText text="Framer Motion's staggerChildren orchestrator systematically cycles through an array of DOM text nodes wrapped tightly inside overflow-hidden masks. Each word is mathematically yanked to the 0px baseline via a heavily damped spring translation." />
-                        </div>
-                    </div>
-
-                    {/* Button trigger */}
-                    <div className="w-full flex justify-center pb-40">
-                        <motion.button 
-                            className="px-8 py-4 bg-indigo-600 text-white font-bold rounded-2xl shadow-xl hover:scale-105 transition-transform"
-                            initial={{ opacity: 0, y: 30 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true, amount: 1 }}
-                            transition={{ delay: 0.8, duration: 0.6 }}
-                        >
-                            Orchestrate Load
-                        </motion.button>
-                    </div>
-
+    <div id="root">
+        <div class="w-full tall-container flex flex-col items-center">
+            
+            <div class="w-full h-[60vh] flex flex-col items-center justify-end pb-32 bg-slate-100">
+                <h2 class="text-3xl font-black text-slate-800 tracking-tighter uppercase mb-4">Start Scaling.</h2>
+                <div class="text-slate-500 font-bold uppercase tracking-widest text-sm flex gap-4 animate-bounce">
+                    <span>Scroll Down Base</span> 
+                    <span>↓</span>
                 </div>
-            );
-        };
+            </div>
 
-        createRoot(document.getElementById('root')).render(<App />);
+            <div class="py-40 px-8 max-w-5xl mx-auto text-center">
+                <div class="text-7xl md:text-[110px] font-black tracking-tighter text-slate-900 leading-[0.85]">
+                    <div class="split-text-container flex flex-wrap gap-x-4 gap-y-2 justify-center perspective-text" data-text="The definitive industry standard for premium kinetic typography."></div>
+                </div>
+            </div>
+            
+            <div class="py-20 px-8 max-w-3xl mx-auto text-center">
+                <div class="text-3xl font-bold tracking-tight text-slate-500 leading-tight">
+                    <div class="split-text-container flex flex-wrap gap-x-2 gap-y-1 justify-center perspective-text" data-text="Vanilla JS systematically cycles through an array of DOM text nodes wrapped tightly inside overflow-hidden masks. Each word is mathematically yanked to the 0px baseline via a CSS cubic-bezier translation."></div>
+                </div>
+            </div>
+
+            <div class="w-full flex justify-center pb-40 relative">
+                <button id="trigger-btn" class="opacity-0 translate-y-8 px-8 py-4 bg-indigo-600 text-white font-bold rounded-2xl shadow-xl hover:scale-105 transition-all duration-700 ease-out">
+                    Orchestrate Load
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Setup text splitters
+        document.querySelectorAll('.split-text-container').forEach(container => {
+            const text = container.getAttribute('data-text');
+            const words = text.split(" ");
+            
+            words.forEach((word, index) => {
+                const delay = 0.1 + (index * 0.08); // stagger
+                const html = `
+                    <div class="word-wrapper pb-2">
+                        <span class="word-node whitespace-pre-wrap" style="transition-delay: ${delay}s">${word}</span>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+            });
+        });
+
+        // Intersection Observer for scroll triggers
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('revealed');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            },
+            { threshold: 0.5 }
+        );
+
+        document.querySelectorAll('.split-text-container').forEach(el => observer.observe(el));
+
+        // Button Reveal
+        const btnObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if(entry.isIntersecting) {
+                    entry.target.classList.remove('opacity-0', 'translate-y-8');
+                    btnObserver.unobserve(entry.target);
+                }
+            })
+        }, { threshold: 1 });
+        btnObserver.observe(document.getElementById('trigger-btn'));
     </script>
 </body>
 </html>

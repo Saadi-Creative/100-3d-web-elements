@@ -16,6 +16,14 @@
             border-radius: 28px;
             overflow: hidden;
             backdrop-filter: blur(10px);
+            opacity: 0;
+            transform: scale(0.8) translateY(50px);
+            transition: opacity 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .spotlight-card.visible {
+            opacity: 1;
+            transform: scale(1) translateY(0);
         }
         
         .spotlight-card::before {
@@ -23,7 +31,7 @@
             position: absolute;
             left: 0; top: 0; width: 100%; height: 100%;
             background: radial-gradient(
-                700px circle at var(--mouse-x) var(--mouse-y), 
+                700px circle at var(--mouse-x, 0px) var(--mouse-y, 0px), 
                 rgba(56, 189, 248, 0.5), /* Bright Sky Blue Spotlight */
                 transparent 40%
             );
@@ -32,9 +40,7 @@
             transition: opacity 0.4s ease-out;
         }
         
-        .spotlight-grid:hover .spotlight-card::before {
-            opacity: 1;
-        }
+        .spotlight-grid:hover .spotlight-card::before { opacity: 1; }
 
         .spotlight-inner {
             background-color: #0f172a;
@@ -45,151 +51,131 @@
             transition: background-color 0.4s ease;
         }
 
-        .spotlight-card:hover .spotlight-inner {
-            background-color: rgba(15, 23, 42, 0.7); /* Slightly transparent on hover so the blue light seeps through the body a bit */
+        .spotlight-card:hover .spotlight-inner { background-color: rgba(15, 23, 42, 0.7); }
+
+        .feat-icon {
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.5s ease;
         }
+        
+        /* Keyframe for hover wiggle */
+        @keyframes hoverWiggle {
+            0% { transform: scale(1.1) rotate(0deg); }
+            25% { transform: scale(1.1) rotate(-10deg); }
+            50% { transform: scale(1.1) rotate(10deg); }
+            75% { transform: scale(1.1) rotate(-10deg); }
+            100% { transform: scale(1.1) rotate(0deg); }
+        }
+
+        .spotlight-card:hover .feat-icon {
+            background-color: #334155; /* slate-700 */
+            animation: hoverWiggle 0.5s ease forwards;
+        }
+
+        .feat-title { transition: transform 0.3s ease; }
+        .spotlight-card:hover .feat-title { transform: translateX(5px); }
+
+        /* Background Breathing */
+        @keyframes breath {
+            0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.3; }
+            50% { transform: translateX(-50%) scale(1.2); opacity: 0.6; }
+        }
+        .ambient-bg {
+            animation: breath 8s ease-in-out infinite;
+        }
+        
+        /* Initial Title states */
+        .fade-up { opacity: 0; transform: translateY(-20px); transition: all 0.6s ease; }
+        .fade-scale { opacity: 0; transform: scale(0.9); transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .fade-in { opacity: 0; transition: all 0.6s ease; }
+        
+        .loaded .fade-up { opacity: 1; transform: translateY(0); }
+        .loaded .fade-scale { opacity: 1; transform: scale(1); }
+        .loaded .fade-in { opacity: 1; }
+
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body>
-    <div id="root"></div>
+<body class="loaded">
+    <div id="root" class="w-full min-h-screen flex flex-col items-center pt-48 pb-40 relative">
+        
+        <div class="ambient-bg absolute top-0 left-1/2 w-[1000px] h-[600px] bg-sky-600/20 rounded-full blur-[150px] pointer-events-none z-0"></div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useRef, useState, useEffect } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion } from 'framer-motion';
+        <div class="text-center max-w-4xl z-10 mb-32 px-6 relative">
+            <div class="fade-up inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-slate-800/80 backdrop-blur border border-slate-700 text-sky-400 font-bold tracking-widest uppercase text-sm mb-8 shadow-xl" style="transition-delay: 0s;">
+                <span class="w-2.5 h-2.5 rounded-full bg-sky-500 animate-pulse shadow-[0_0_10px_rgba(14,165,233,0.8)]"></span>
+                Hardware Accelerated
+            </div>
+            
+            <h1 class="fade-scale text-7xl md:text-[110px] font-black tracking-tighter text-white leading-[0.9] mb-8 drop-shadow-2xl" style="transition-delay: 0.2s;">
+                Tactile Grids.
+            </h1>
+            
+            <p class="fade-in text-2xl font-medium text-slate-400 max-w-2xl mx-auto leading-relaxed" style="transition-delay: 0.4s;">
+                We amplified the component payload. Staggered physics-based entry properties, a slow breathing ambient background, and violent icon rotations bound directly to hover logic.
+            </p>
+        </div>
 
+        <div id="spotlight-grid" class="spotlight-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl mx-auto z-10 p-4"></div>
+    </div>
+
+    <script>
         const FEATURES = [
-            { id: 1, icon: "⚡️", title: "Supersonic Edge", text: "Global cache routing pushing 10ms P99 responses." },
-            { id: 2, icon: "🛡️", title: "Zero Trust", text: "Hardware-level cryptographic validation protocols." },
-            { id: 3, icon: "🧠", title: "Neural Synthesis", text: "Organic LLM context embeddings directly on isolated silicon." },
-            { id: 4, icon: "🌊", title: "Liquid Scaling", text: "Thousands of containers provisioned without orchestration." },
-            { id: 5, icon: "👁️", title: "Absolute Vision", text: "Real-time 3D telemetry visualization of every function." },
-            { id: 6, icon: "💎", title: "Flawless State", text: "Distributed multi-region active-active database clusters." }
+            { icon: "⚡️", title: "Supersonic Edge", text: "Global cache routing pushing 10ms P99 responses." },
+            { icon: "🛡️", title: "Zero Trust", text: "Hardware-level cryptographic validation protocols." },
+            { icon: "🧠", title: "Neural Synthesis", text: "Organic LLM context embeddings directly on isolated silicon." },
+            { icon: "🌊", title: "Liquid Scaling", text: "Thousands of containers provisioned without orchestration." },
+            { icon: "👁️", title: "Absolute Vision", text: "Real-time 3D telemetry visualization of every function." },
+            { icon: "💎", title: "Flawless State", text: "Distributed multi-region active-active database clusters." }
         ];
 
-        const SpotlightGrid = () => {
-            const gridRef = useRef(null);
-            const [cards, setCards] = useState([]);
+        const grid = document.getElementById('spotlight-grid');
 
-            useEffect(() => {
-                const cardNodes = Array.from(document.querySelectorAll('.spotlight-card'));
-                setCards(cardNodes);
-            }, []);
-
-            const handleMouseMove = (e) => {
-                for (const card of cards) {
-                    const rect = card.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
-
-                    card.style.setProperty('--mouse-x', `${x}px`);
-                    card.style.setProperty('--mouse-y', `${y}px`);
-                }
-            };
-
-            return (
-                <div 
-                    ref={gridRef}
-                    onMouseMove={handleMouseMove}
-                    className="spotlight-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl mx-auto z-10 p-4"
-                >
-                    {FEATURES.map((feat, i) => (
-                        // ANIMATION 1: Staggered Framer Motion entrance based on grid index `i`.
-                        <motion.div 
-                            key={i} 
-                            initial={{ opacity: 0, scale: 0.8, y: 50 }}
-                            whileInView={{ opacity: 1, scale: 1, y: 0 }}
-                            viewport={{ once: true, margin: "-100px" }}
-                            transition={{ type: "spring", stiffness: 100, damping: 20, delay: i * 0.1 }}
-                            className="spotlight-card h-80 w-full group cursor-pointer shadow-2xl"
-                        >
-                            <div className="spotlight-inner p-10 flex flex-col items-start justify-center">
-                                
-                                {/* ANIMATION 2: The hover icon bounce-rotation */}
-                                <motion.div 
-                                    className="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700/50 flex items-center justify-center text-3xl mb-8 group-hover:bg-slate-700 transition-colors duration-500 shadow-inner"
-                                    whileHover={{ rotate: [0, -10, 10, -10, 0], scale: 1.1 }}
-                                    transition={{ duration: 0.5 }}
-                                >
-                                    {feat.icon}
-                                </motion.div>
-                                
-                                {/* ANIMATION 3: Typography shifting position smoothly on hover */}
-                                <motion.h3 
-                                    className="text-2xl font-black text-white tracking-tight mb-4"
-                                    whileHover={{ x: 5 }}
-                                >
-                                    {feat.title}
-                                </motion.h3>
-                                
-                                <p className="text-slate-400 font-medium leading-relaxed group-hover:text-slate-300 transition-colors">
-                                    {feat.text}
-                                </p>
-                                
-                            </div>
-                        </motion.div>
-                    ))}
-                </div>
-            );
-        };
-
-        const App = () => {
-            return (
-                <div className="w-full min-h-screen flex flex-col items-center pt-48 pb-40 relative">
-                    
-                    {/* ANIMATION 4: The massive atmospheric breathing lighting */}
-                    <motion.div 
-                        className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-sky-600/20 rounded-full blur-[150px] pointer-events-none z-0"
-                        animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
-                        transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
-                    />
-
-                    <div className="text-center max-w-4xl z-10 mb-32 px-6 relative">
-                        <motion.div 
-                            initial={{ opacity: 0, y: -20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-slate-800/80 backdrop-blur border border-slate-700 text-sky-400 font-bold tracking-widest uppercase text-sm mb-8 shadow-xl"
-                        >
-                            <span className="w-2.5 h-2.5 rounded-full bg-sky-500 animate-pulse shadow-[0_0_10px_rgba(14,165,233,0.8)]"></span>
-                            Hardware Accelerated
-                        </motion.div>
-                        
-                        <motion.h1 
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.2, type: "spring", stiffness: 100 }}
-                            className="text-7xl md:text-[110px] font-black tracking-tighter text-white leading-[0.9] mb-8 drop-shadow-2xl"
-                        >
-                            Tactile Grids.
-                        </motion.h1>
-                        
-                        <motion.p 
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.4 }}
-                            className="text-2xl font-medium text-slate-400 max-w-2xl mx-auto leading-relaxed"
-                        >
-                            We amplified the component payload. Staggered physics-based entry &lt;motion.div&gt; properties, a slow breathing ambient background &lt;motion.div&gt;, and violent icon rotations &lt;motion.h3&gt; bound directly to hover logic.
-                        </motion.p>
+        FEATURES.forEach((feat, i) => {
+            const html = `
+                <div class="spotlight-card h-80 w-full group cursor-pointer shadow-2xl" style="transition-delay: ${i * 0.1}s">
+                    <div class="spotlight-inner p-10 flex flex-col items-start justify-center pointer-events-none">
+                        <div class="feat-icon w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700/50 flex items-center justify-center text-3xl mb-8 shadow-inner">
+                            ${feat.icon}
+                        </div>
+                        <h3 class="feat-title text-2xl font-black text-white tracking-tight mb-4">
+                            ${feat.title}
+                        </h3>
+                        <p class="text-slate-400 font-medium leading-relaxed group-hover:text-slate-300 transition-colors">
+                            ${feat.text}
+                        </p>
                     </div>
-
-                    <SpotlightGrid />
                 </div>
-            );
-        };
+            `;
+            grid.insertAdjacentHTML('beforeend', html);
+        });
 
-        createRoot(document.getElementById('root')).render(<App />);
+        // Mouse tracking for spotlight
+        const cards = document.querySelectorAll('.spotlight-card');
+        grid.addEventListener('mousemove', (e) => {
+            cards.forEach(card => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                card.style.setProperty('--mouse-x', `${x}px`);
+                card.style.setProperty('--mouse-y', `${y}px`);
+            });
+        });
+
+        // Entrance observer
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            },
+            { rootMargin: "-50px" }
+        );
+
+        cards.forEach(card => observer.observe(card));
+
     </script>
 </body>
 </html>

@@ -9,116 +9,107 @@
         body, html { margin: 0; background: #fafaf9; font-family: 'Inter', sans-serif; overflow-x: hidden; }
         .parallax-pad { height: 250vh; position: relative; }
         .sticky-core { position: sticky; top: 0; height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        
+        .showcase-inner {
+            will-change: transform, opacity;
+            transition: transform 0.1s linear, opacity 0.1s linear;
+        }
+
+        .text-top, .text-bottom {
+            will-change: transform;
+            transition: transform 0.1s linear;
+        }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;800;900&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-    <div id="root"></div>
-
-    <script type="text/babel" data-type="module">
-        import React, { useRef } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
-
-        const UnveilEngine = () => {
-            const containerRef = useRef(null);
-
-            const { scrollYProgress } = useScroll({
-                target: containerRef,
-                offset: ["start start", "end end"]
-            });
-
-            const smooth = useSpring(scrollYProgress, { damping: 40, stiffness: 200 });
-
-            // The Typography Splitter Physics
-            // Top Half: Pulls violently UP
-            // Bottom Half: Pulls violently DOWN
-            // This physically slices the text in half, creating a gaping hole in the center.
-            const sliceTop = useTransform(smooth, [0, 1], ["0vh", "-60vh"]);
-            const sliceBottom = useTransform(smooth, [0, 1], ["0vh", "60vh"]);
-
-            // Replaces the hole with a massive product showcase emerging structurally from the Z-plane.
-            // It scales up from tiny to full resolution exactly within the newly opened gap.
-            const showcaseScale = useTransform(smooth, [0, 1], [0.6, 1.2]);
-            const showcaseOpacity = useTransform(smooth, [0, 0.4], [0, 1]);
-
-            return (
-                <div ref={containerRef} className="parallax-pad w-full">
-                    <div className="sticky-core bg-slate-100 flex-col">
-                        
-                        <div className="absolute top-12 left-0 w-full text-center z-50 text-slate-400 font-bold uppercase tracking-widest animate-pulse pointer-events-none">
-                            Scroll Down Explicitly
-                        </div>
-
-                        {/* --- THE EMERGING INNER SHOWCASE --- */}
-                        {/* Hidden initially, scales powerfully between the split halves. */}
-                        <motion.div 
-                            className="absolute inset-x-8 top-[25vh] bottom-[25vh] z-0 flex items-center justify-center pointer-events-none overflow-hidden rounded-[60px] shadow-[0_40px_100px_rgba(0,0,0,0.1)] border-4 border-white"
-                            style={{ 
-                                scale: showcaseScale, 
-                                opacity: showcaseOpacity 
-                            }}
-                        >
-                            <img 
-                                src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop" 
-                                alt="Abstract premium art"
-                                className="w-full h-full object-cover"
-                            />
-                            <div className="absolute inset-0 bg-black/20 flex flex-col items-center justify-center">
-                                <h2 className="text-white text-6xl md:text-8xl font-black tracking-tighter">Liquid Physics.</h2>
-                                <p className="text-white/80 font-bold text-xl mt-4 max-w-lg text-center leading-relaxed">The text layer was physically sheared in half, operating as an elegant stage curtain for the Z-level structure below.</p>
-                            </div>
-                        </motion.div>
-
-                        {/* --- THE TEXT CHASSIS (TOP HALF) --- */}
-                        <motion.div 
-                            className="w-full flex justify-center z-10 overflow-hidden absolute top-[50vh] -translate-y-full"
-                            style={{ y: sliceTop }}
-                        >
-                            <h1 
-                                className="text-[140px] md:text-[280px] font-black tracking-tighter text-slate-800 leading-none uppercase translate-y-1/2"
-                            >
-                                DISCOVER
-                            </h1>
-                        </motion.div>
-
-                        {/* --- THE TEXT CHASSIS (BOTTOM HALF) --- */}
-                        <motion.div 
-                            className="w-full flex justify-center z-10 overflow-hidden absolute top-[50vh]"
-                            style={{ y: sliceBottom }}
-                        >
-                            <h1 
-                                className="text-[140px] md:text-[280px] font-black tracking-tighter text-slate-800 leading-none uppercase -translate-y-1/2"
-                            >
-                                DISCOVER
-                            </h1>
-                        </motion.div>
-
+    <div id="root">
+        <div class="w-full flex flex-col">
+            
+            <div id="scroll-track" class="parallax-pad w-full">
+                <div class="sticky-core bg-slate-100 flex-col">
+                    
+                    <div class="absolute top-12 left-0 w-full text-center z-50 text-slate-400 font-bold uppercase tracking-widest animate-pulse pointer-events-none">
+                        Scroll Down Explicitly
                     </div>
-                </div>
-            );
-        };
 
-        const App = () => (
-            <div className="w-full flex flex-col">
-                <UnveilEngine />
-                <div className="h-screen bg-slate-900 w-full flex items-center justify-center text-center px-8 border-t-8 border-slate-800">
-                    <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter">Seamless Continuation.</h2>
+                    <!-- THE EMERGING INNER SHOWCASE -->
+                    <div id="showcase" class="showcase-inner absolute inset-x-8 top-[25vh] bottom-[25vh] z-0 flex items-center justify-center pointer-events-none overflow-hidden rounded-[60px] shadow-[0_40px_100px_rgba(0,0,0,0.1)] border-4 border-white" style="transform: scale(0.6); opacity: 0;">
+                        <img 
+                            src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop" 
+                            alt="Abstract premium art"
+                            class="w-full h-full object-cover"
+                        />
+                        <div class="absolute inset-0 bg-black/20 flex flex-col items-center justify-center">
+                            <h2 class="text-white text-6xl md:text-8xl font-black tracking-tighter">Liquid Physics.</h2>
+                            <p class="text-white/80 font-bold text-xl mt-4 max-w-lg text-center leading-relaxed">The text layer was physically sheared in half, operating as an elegant stage curtain for the Z-level structure below.</p>
+                        </div>
+                    </div>
+
+                    <!-- THE TEXT CHASSIS (TOP HALF) -->
+                    <div id="text-top" class="text-top w-full flex justify-center z-10 overflow-hidden absolute top-[50vh] -translate-y-full">
+                        <h1 class="text-[140px] md:text-[280px] font-black tracking-tighter text-slate-800 leading-none uppercase translate-y-1/2">
+                            DISCOVER
+                        </h1>
+                    </div>
+
+                    <!-- THE TEXT CHASSIS (BOTTOM HALF) -->
+                    <div id="text-bottom" class="text-bottom w-full flex justify-center z-10 overflow-hidden absolute top-[50vh]">
+                        <h1 class="text-[140px] md:text-[280px] font-black tracking-tighter text-slate-800 leading-none uppercase -translate-y-1/2">
+                            DISCOVER
+                        </h1>
+                    </div>
+
                 </div>
             </div>
-        );
 
-        createRoot(document.getElementById('root')).render(<App />);
+            <div class="h-screen bg-slate-900 w-full flex items-center justify-center text-center px-8 border-t-8 border-slate-800">
+                <h2 class="text-5xl md:text-7xl font-black text-white tracking-tighter">Seamless Continuation.</h2>
+            </div>
+            
+        </div>
+    </div>
+
+    <script>
+        const track = document.getElementById('scroll-track');
+        const textTop = document.getElementById('text-top');
+        const textBottom = document.getElementById('text-bottom');
+        const showcase = document.getElementById('showcase');
+
+        let smoothProgress = 0;
+        let lastScrollY = window.scrollY;
+
+        function render() {
+            const trackRect = track.getBoundingClientRect();
+            
+            // Calculate raw progress between 0 and 1
+            const maxScroll = trackRect.height - window.innerHeight;
+            let rawProgress = -trackRect.top / maxScroll;
+            rawProgress = Math.max(0, Math.min(1, rawProgress)); // clamp 0-1
+
+            // Lerp dampening
+            smoothProgress += (rawProgress - smoothProgress) * 0.1;
+
+            // Mappings
+            // Top: 0 to -60vh
+            // Bottom: 0 to 60vh
+            const topY = smoothProgress * -60;
+            const bottomY = smoothProgress * 60;
+            textTop.style.transform = `translateY(${topY}vh)`;
+            textBottom.style.transform = `translateY(${bottomY}vh)`;
+
+            // Showcase Scale: 0.6 to 1.2
+            // Showcase Opacity: 0 to 1 over first 40%
+            const scale = 0.6 + (smoothProgress * 0.6);
+            const opacity = Math.min(1, smoothProgress / 0.4);
+
+            showcase.style.transform = `scale(${scale})`;
+            showcase.style.opacity = opacity;
+
+            requestAnimationFrame(render);
+        }
+
+        render();
     </script>
 </body>
 </html>

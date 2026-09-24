@@ -7,129 +7,130 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body, html { margin: 0; background: #fafaf9; font-family: 'Inter', sans-serif; overflow-x: hidden; }
-        .will-change-opacity { will-change: opacity, filter; }
+        
+        .progressive-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #e2e8f0;
+            transform: translateZ(0);
+        }
+
+        .lq-image {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 10;
+            filter: blur(20px);
+            transform: scale(1.1); /* eliminate white edges from blur */
+            will-change: opacity, filter;
+            transition: opacity 0.6s ease-in-out;
+        }
+
+        .hq-image {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 0;
+            opacity: 0;
+            transform: scale(1.05);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+
+        .progressive-wrapper.loaded .lq-image {
+            opacity: 0;
+        }
+
+        .progressive-wrapper.loaded .hq-image {
+            opacity: 1;
+            transform: scale(1);
+        }
+
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root">
+        <div class="w-full min-h-screen flex flex-col items-center justify-center py-20 px-8">
+            
+            <div class="text-center max-w-2xl mb-16">
+                <h1 class="text-6xl font-black text-slate-900 tracking-tighter mb-4">Blur-Up Physics.</h1>
+                <p class="text-slate-500 font-medium text-lg mb-8 leading-relaxed">
+                    Web performance isn't about raw speed; it's about <span class="font-bold text-slate-800">perceived choreography</span>. Instead of a jagged loading bar or a blank white square, instant delivery of a heavily blurred 1kb placeholder acts as a watercolor foundation. When the heavy 4K image resolves, the blur seamlessly dissolves via Native JS image preloading.
+                </p>
+                <button 
+                    id="reload-btn"
+                    class="px-6 py-3 bg-indigo-600 text-white font-bold rounded-full shadow-[0_10px_20px_rgba(79,70,229,0.3)] hover:scale-105 active:scale-95 transition-transform"
+                >
+                    Flush Cache & Simulate Network Load
+                </button>
+            </div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useState, useEffect } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { motion, AnimatePresence } from 'framer-motion';
+            <div id="image-grid" class="grid grid-cols-1 md:grid-cols-2 gap-12 w-full max-w-5xl">
+                <!-- Images rendered by JS -->
+            </div>
 
-        const ProgressiveImage = ({ lowResSrc, highResSrc, alt, delayLoadMs = 0 }) => {
-            const [isLoaded, setIsLoaded] = useState(false);
-            const [localSrc, setLocalSrc] = useState(null);
+        </div>
+    </div>
 
-            // Added a dummy delay strictly to demonstrate the effect physically locally
-            // In a real environment, you don't use setTimeout. You just bind to onLoad natively.
-            useEffect(() => {
-                const img = new Image();
-                img.src = highResSrc;
-                img.onload = () => {
+    <script>
+        const hq1 = "https://images.unsplash.com/photo-1614145121029-83a9f7b68bf4?q=80&w=2000&auto=format&fit=crop";
+        const lq1 = "https://images.unsplash.com/photo-1614145121029-83a9f7b68bf4?q=80&w=20&blur=20&auto=format&fit=crop";
+
+        const hq2 = "https://images.unsplash.com/photo-1614113489855-66422ad300a4?q=80&w=2000&auto=format&fit=crop";
+        const lq2 = "https://images.unsplash.com/photo-1614113489855-66422ad300a4?q=80&w=20&blur=20&auto=format&fit=crop";
+
+        function mountImages() {
+            const container = document.getElementById('image-grid');
+            container.innerHTML = ''; // Clear
+
+            const data = [
+                { lq: lq1, hq: hq1, delay: 2500 },
+                { lq: lq2, hq: hq2, delay: 1500 }
+            ];
+
+            data.forEach((imgData, i) => {
+                const id = `prog-img-${i}`;
+                const html = `
+                    <div class="w-full aspect-square rounded-[40px] shadow-2xl overflow-hidden border border-slate-200">
+                        <div id="${id}" class="progressive-wrapper">
+                            <img src="${imgData.lq}" class="lq-image" alt="Blur placeholder">
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+
+                // Preload high res image with artificial delay to demonstrate the blur
+                const wrapper = document.getElementById(id);
+                const preload = new Image();
+                preload.src = imgData.hq;
+                
+                preload.onload = () => {
                     setTimeout(() => {
-                        setLocalSrc(highResSrc);
-                        setIsLoaded(true);
-                    }, delayLoadMs); // Artificial delay to ensure you see the blur first
-                };
-            }, [highResSrc, delayLoadMs]);
-
-            return (
-                <div className="relative w-full h-full overflow-hidden bg-slate-200" style={{ transform: "translateZ(0)" }}>
-                    
-                    {/* The Full Resolution Image 
-                        This mounts natively, but it sits quietly in the background loading. */}
-                    {localSrc && (
-                        <motion.img 
-                            src={localSrc} 
-                            alt={alt}
-                            className="absolute inset-0 w-full h-full object-cover z-0"
-                            initial={{ opacity: 0, scale: 1.05 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.8, ease: "easeOut" }}
-                        />
-                    )}
-
-                    {/* The Tiny Pixel Placeholder Image 
-                        This renders INSTANTLY (under 1kb). It is heavily blurred to obscure the pixelation. 
-                        When the high-res successfully hits the DOM, this placeholder smoothly fades out. */}
-                    <AnimatePresence>
-                        {!isLoaded && (
-                            <motion.img 
-                                src={lowResSrc} 
-                                alt={`Placeholder for ${alt}`}
-                                className="absolute inset-0 w-full h-full object-cover z-10 will-change-opacity blur-2xl scale-[1.1]"
-                                // Using 1.1 scale eliminates any white edges caused by aggressive blur
-                                initial={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 0.6, ease: "easeInOut" }}
-                            />
-                        )}
-                    </AnimatePresence>
-                    
-                </div>
-            );
-        };
-
-        const App = () => {
-            // Unsplash parameters:
-            // &w=2000 = Crisp 4k image
-            // &w=20&blur=10 = Tiny 20px image pre-blurred by Unsplash's CDN for instant delivery
-            const hq1 = "https://images.unsplash.com/photo-1614145121029-83a9f7b68bf4?q=80&w=2000&auto=format&fit=crop";
-            const lq1 = "https://images.unsplash.com/photo-1614145121029-83a9f7b68bf4?q=80&w=20&blur=20&auto=format&fit=crop";
-
-            const hq2 = "https://images.unsplash.com/photo-1614113489855-66422ad300a4?q=80&w=2000&auto=format&fit=crop";
-            const lq2 = "https://images.unsplash.com/photo-1614113489855-66422ad300a4?q=80&w=20&blur=20&auto=format&fit=crop";
-
-            const [key, setKey] = useState(0); // For forcing re-render simulation
-
-            return (
-                <div className="w-full min-h-screen flex flex-col items-center justify-center py-20 px-8">
-                    
-                    <div className="text-center max-w-2xl mb-16">
-                        <h1 className="text-6xl font-black text-slate-900 tracking-tighter mb-4">Blur-Up Physics.</h1>
-                        <p className="text-slate-500 font-medium text-lg mb-8 leading-relaxed">
-                            Web performance isn't about raw speed; it's about <span className="font-bold text-slate-800">perceived choreography</span>. Instead of a jagged loading bar or a blank white square, instant delivery of a heavily blurred 1kb placeholder acts as a watercolor foundation. When the heavy 4K image resolves, the blur seamlessly dissolves.
-                        </p>
-                        <button 
-                            onClick={() => setKey(prev => prev + 1)}
-                            className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-full shadow-[0_10px_20px_rgba(79,70,229,0.3)] hover:scale-105 active:scale-95 transition-transform"
-                        >
-                            Flush Cache & Simulate Network Load
-                        </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 w-full max-w-5xl">
+                        const hqTag = document.createElement('img');
+                        hqTag.src = imgData.hq;
+                        hqTag.className = 'hq-image';
+                        wrapper.insertBefore(hqTag, wrapper.firstChild);
                         
-                        <div key={`card1-${key}`} className="w-full aspect-square rounded-[40px] shadow-2xl overflow-hidden border border-slate-200">
-                            {/* Adding a massive 2-second artificial simulated load time for demonstration */}
-                            <ProgressiveImage lowResSrc={lq1} highResSrc={hq1} alt="Abstract 3D Shape" delayLoadMs={2500} />
-                        </div>
+                        // Small timeout to allow DOM to register the class before triggering transition
+                        setTimeout(() => {
+                            wrapper.classList.add('loaded');
+                        }, 50);
 
-                        <div key={`card2-${key}`} className="w-full aspect-square rounded-[40px] shadow-2xl overflow-hidden border border-slate-200">
-                            {/* Adding a 1.5 second simulated load time */}
-                            <ProgressiveImage lowResSrc={lq2} highResSrc={hq2} alt="Abstract Gold Shape" delayLoadMs={1500} />
-                        </div>
+                    }, imgData.delay); // Artificial delay
+                };
+            });
+        }
 
-                    </div>
-
-                </div>
-            );
-        };
-
-        createRoot(document.getElementById('root')).render(<App />);
+        document.getElementById('reload-btn').addEventListener('click', mountImages);
+        
+        // Initial Mount
+        mountImages();
     </script>
 </body>
 </html>

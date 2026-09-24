@@ -8,21 +8,18 @@
     <style>
         body, html { margin: 0; background: #000; font-family: 'Inter', sans-serif; overflow-x: hidden; }
         
-        /* The secret to this layout is stacking contexts and margins */
         .page-content {
             position: relative;
             z-index: 10;
             background: #ffffff;
-            /* CRITICAL: Margin bottom must EXACTLY match the height of the fixed footer underneath it */
             margin-bottom: 500px; 
             box-shadow: 0 40px 100px rgba(0,0,0,0.8);
             border-bottom-left-radius: 40px;
             border-bottom-right-radius: 40px;
-            min-height: 150vh; /* Just to ensure scrolling */
+            min-height: 150vh;
         }
 
         .footer-curtain {
-            /* Sits perfectly anchored to the bottom of the viewport behind everything */
             position: fixed;
             bottom: 0;
             left: 0;
@@ -33,85 +30,60 @@
         }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom"
-        }
-    }
-    </script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-    <div id="root"></div>
-
-    <script type="text/babel" data-type="module">
-        import React from 'react';
-        import { createRoot } from 'react-dom/client';
-
-        const App = () => {
-            return (
-                <div className="w-full">
-                    
-                    {/* THE FOREGROUND CURTAIN (Standard Website Content) */}
-                    <main className="page-content flex flex-col items-center p-8 pt-32 transition-transform duration-700">
-                        <h1 className="text-6xl md:text-8xl font-black text-slate-900 tracking-tighter mb-6 text-center">
-                            Curtain Drop<br/><span className="text-slate-300">Footer.</span>
-                        </h1>
-                        <div className="w-full max-w-2xl mx-auto space-y-8 mt-16 pb-32">
-                            <p className="text-xl text-slate-500 font-medium my-12 text-center">Scroll all the way down. The footer does not scroll up from the bottom; it is waiting permanently fixed behind the document. The main document visually lifts out of the way to expose it like a theater curtain.</p>
-                            
-                            <div className="w-full h-64 bg-slate-50 rounded-[32px] border border-slate-200"></div>
-                            <div className="w-full h-64 bg-slate-50 rounded-[32px] border border-slate-200"></div>
-                            <div className="w-full h-64 bg-slate-50 rounded-[32px] border border-slate-200"></div>
-                            
-                            <div className="text-center pt-24 font-bold text-slate-300 uppercase tracking-widest text-sm">
-                                SCROLL ↓
-                            </div>
-                        </div>
-                    </main>
-
-                    {/* THE PERMANENT BACKGROUND FOOTER */}
-                    <footer className="footer-curtain flex flex-col p-16">
-                        <div className="max-w-7xl w-full mx-auto flex-1 flex flex-col justify-between">
-                            
-                            <div className="flex justify-between items-start">
-                                <h2 className="text-5xl font-black text-white tracking-tighter">Spatial.<br/>Engine</h2>
-                                
-                                <div className="flex gap-16 text-white/50 font-medium">
-                                    <div className="flex flex-col gap-4">
-                                        <div className="text-white font-bold mb-2">Systems</div>
-                                        <a href="#" className="hover:text-white transition-colors">Integrations</a>
-                                        <a href="#" className="hover:text-white transition-colors">Changelog</a>
-                                        <a href="#" className="hover:text-white transition-colors">Documentation</a>
-                                    </div>
-                                    <div className="flex flex-col gap-4">
-                                        <div className="text-white font-bold mb-2">Company</div>
-                                        <a href="#" className="hover:text-white transition-colors">About Us</a>
-                                        <a href="#" className="hover:text-white transition-colors">Careers</a>
-                                        <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div className="w-full pt-8 border-t border-white/10 flex justify-between items-center mt-auto">
-                                <span className="text-white/30 text-sm font-bold tracking-widest uppercase">© 2026 Spatial Interactive</span>
-                                <div className="flex gap-4">
-                                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white transition-colors cursor-pointer">X</div>
-                                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white transition-colors cursor-pointer">In</div>
-                                </div>
-                            </div>
-
-                        </div>
-                    </footer>
-
+    <div id="root" class="w-full">
+        <!-- THE FOREGROUND CURTAIN -->
+        <main class="page-content flex flex-col items-center p-8 pt-32 transition-transform duration-700">
+            <h1 class="text-6xl md:text-8xl font-black text-slate-900 tracking-tighter mb-6 text-center">
+                Curtain Drop<br/><span class="text-slate-300">Footer.</span>
+            </h1>
+            <div class="w-full max-w-2xl mx-auto space-y-8 mt-16 pb-32">
+                <p class="text-xl text-slate-500 font-medium my-12 text-center">Scroll all the way down. The footer does not scroll up from the bottom; it is waiting permanently fixed behind the document. The main document visually lifts out of the way to expose it like a theater curtain.</p>
+                
+                <div class="w-full h-64 bg-slate-50 rounded-[32px] border border-slate-200"></div>
+                <div class="w-full h-64 bg-slate-50 rounded-[32px] border border-slate-200"></div>
+                <div class="w-full h-64 bg-slate-50 rounded-[32px] border border-slate-200"></div>
+                
+                <div class="text-center pt-24 font-bold text-slate-300 uppercase tracking-widest text-sm">
+                    SCROLL ↓
                 </div>
-            );
-        };
+            </div>
+        </main>
 
-        createRoot(document.getElementById('root')).render(<App />);
-    </script>
+        <!-- THE PERMANENT BACKGROUND FOOTER -->
+        <footer class="footer-curtain flex flex-col p-16">
+            <div class="max-w-7xl w-full mx-auto flex-1 flex flex-col justify-between">
+                
+                <div class="flex justify-between items-start">
+                    <h2 class="text-5xl font-black text-white tracking-tighter">Spatial.<br/>Engine</h2>
+                    
+                    <div class="flex gap-16 text-white/50 font-medium">
+                        <div class="flex flex-col gap-4">
+                            <div class="text-white font-bold mb-2">Systems</div>
+                            <a href="#" class="hover:text-white transition-colors">Integrations</a>
+                            <a href="#" class="hover:text-white transition-colors">Changelog</a>
+                            <a href="#" class="hover:text-white transition-colors">Documentation</a>
+                        </div>
+                        <div class="flex flex-col gap-4">
+                            <div class="text-white font-bold mb-2">Company</div>
+                            <a href="#" class="hover:text-white transition-colors">About Us</a>
+                            <a href="#" class="hover:text-white transition-colors">Careers</a>
+                            <a href="#" class="hover:text-white transition-colors">Terms of Service</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="w-full pt-8 border-t border-white/10 flex justify-between items-center mt-auto">
+                    <span class="text-white/30 text-sm font-bold tracking-widest uppercase">© 2026 Spatial Interactive</span>
+                    <div class="flex gap-4">
+                        <div class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white transition-colors cursor-pointer">X</div>
+                        <div class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white transition-colors cursor-pointer">In</div>
+                    </div>
+                </div>
+
+            </div>
+        </footer>
+    </div>
 </body>
 </html>
